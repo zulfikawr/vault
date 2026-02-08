@@ -57,19 +57,30 @@ func NewApp() *App {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := registry.BootstrapSystemCollections(); err != nil {
-		slog.Error("Failed to bootstrap system collections", "error", err)
+	if err := registry.BootstrapRefreshTokensCollection(); err != nil {
+		slog.Error("Failed to bootstrap refresh tokens collection", "error", err)
+		os.Exit(1)
+	}
+
+	if err := registry.BootstrapUsersCollection(); err != nil {
+		slog.Error("Failed to bootstrap users collection", "error", err)
 		os.Exit(1)
 	}
 
 	// Sync system tables
-	col, _ := registry.GetCollection("_collections")
-	if err := migration.SyncCollection(ctx, col); err != nil {
-		slog.Error("Failed to sync system collections", "error", err)
-		os.Exit(1)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	systemCols := []string{"_collections", "_refresh_tokens", "users"}
+	for _, name := range systemCols {
+		col, _ := registry.GetCollection(name)
+		if err := migration.SyncCollection(ctx, col); err != nil {
+			slog.Error("Failed to sync system collection", "name", name, "error", err)
+			os.Exit(1)
+		}
 	}
 
-	router := api.NewRouter()
+	router := api.NewRouter(executor, cfg)
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,

@@ -1,4 +1,4 @@
-# Phase 3: Authentication & Identity - COMPLETED (Steps 1-5)
+# Phase 3: Authentication & Identity - COMPLETED
 
 ## Objective
 Implement a robust, secure authentication system. This includes a specialized "Auth" collection type, JWT-based session management, password hashing, and protected route middleware.
@@ -28,10 +28,21 @@ Implement a robust, secure authentication system. This includes a specialized "A
 - [x] Implemented `AuthMiddleware` in `internal/api/middleware.go`.
 - [x] Added `WithAuth` and `GetAuth` context helpers in `internal/core/context.go`.
 
+## Step 6: Token Refresh Mechanism [DONE]
+- [x] Added `_refresh_tokens` system collection.
+- [x] Implemented `POST /api/collections/users/auth-refresh` endpoint.
+- [x] Logic for token rotation and secure storage in database.
+
+## Step 7: Password Reset Flow (Skeleton) [DONE]
+- [x] Implemented `POST /api/collections/users/request-password-reset` skeleton.
+- [x] Implemented `POST /api/collections/users/confirm-password-reset` skeleton.
+- [x] Created `Mailer` interface in `internal/core/mail.go`.
+
 ---
 
 ## Verification Checklist (Phase 3 Done)
 - [x] User registration automatically hashes passwords via hooks.
-- [x] Login returns a signed JWT containing the `request_id`.
+- [x] Login returns a signed JWT and a refresh token.
+- [x] Auth-refresh returns a new JWT for valid refresh tokens.
 - [x] AuthMiddleware correctly validates tokens and injects claims into context.
 - [x] Passwords are hidden in response JSON via `HideField`.

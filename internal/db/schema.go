@@ -77,3 +77,19 @@ func (s *SchemaRegistry) BootstrapUsersCollection() error {
 	s.AddCollection(usersTable)
 	return nil
 }
+
+func (s *SchemaRegistry) BootstrapRefreshTokensCollection() error {
+	tokensTable := &models.Collection{
+		ID:   "system_refresh_tokens",
+		Name: "_refresh_tokens",
+		Type: models.CollectionTypeSystem,
+		Fields: []models.Field{
+			{Name: "token", Type: models.FieldTypeText, Required: true, Unique: true},
+			{Name: "user_id", Type: models.FieldTypeText, Required: true},
+			{Name: "expires", Type: models.FieldTypeDate, Required: true},
+		},
+	}
+
+	s.AddCollection(tokensTable)
+	return nil
+}
