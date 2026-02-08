@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/zulfikawr/vault/internal/api"
+	"github.com/zulfikawr/vault/internal/auth"
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/models"
 )
 
 type App struct {
@@ -36,6 +38,20 @@ func NewApp() *App {
 	registry := db.NewSchemaRegistry(database)
 	migration := db.NewMigrationEngine(database)
 	executor := db.NewExecutor(database, registry)
+
+	// Register Auth Hooks
+	db.GetHooks("users").BeforeCreate = append(db.GetHooks("users").BeforeCreate, func(ctx context.Context, record *models.Record) error {
+		password := record.GetString("password")
+		if password == "" {
+			return nil // Validator will catch this if required
+		}
+		hashed, err := auth.HashPassword(ctx, password)
+		if err != nil {
+			return err
+		}
+		record.Data["password"] = hashed
+		return nil
+	})
 
 	// Bootstrap system using a background context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

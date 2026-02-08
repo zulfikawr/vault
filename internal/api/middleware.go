@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/zulfikawr/vault/internal/auth"
 	"github.com/zulfikawr/vault/internal/core"
 )
 
@@ -86,6 +87,29 @@ func CORSMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func AuthMiddleware(secret string) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tokenStr := r.Header.Get("Authorization")
+			if len(tokenStr) > 7 && tokenStr[:7] == "Bearer " {
+				tokenStr = tokenStr[7:]
+			} else {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			claims, err := auth.ValidateToken(r.Context(), tokenStr, secret)
+			if err != nil {
+				core.SendError(w, err)
+				return
+			}
+
+			ctx := core.WithAuth(r.Context(), claims)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 type responseWriter struct {

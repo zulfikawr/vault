@@ -8,6 +8,10 @@ type Record struct {
 	Updated    string         `json:"updated"`
 }
 
+func (r *Record) HideField(name string) {
+	delete(r.Data, name)
+}
+
 func NewRecord(collection string) *Record {
 	return &Record{
 		Collection: collection,

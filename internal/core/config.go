@@ -7,19 +7,23 @@ import (
 )
 
 type Config struct {
-	Port     int    `json:"port"`
-	DBPath   string `json:"db_path"`
-	LogLevel string `json:"log_level"`
+	Port      int    `json:"port"`
+	DBPath    string `json:"db_path"`
+	LogLevel  string `json:"log_level"`
 	LogFormat string `json:"log_format"`
+	JWTSecret string `json:"jwt_secret"`
+	JWTExpiry int    `json:"jwt_expiry"` // in hours
 }
 
 func LoadConfig() *Config {
 	// Defaults
 	cfg := &Config{
-		Port:     8090,
-		DBPath:   "./vault_data/vault.db",
-		LogLevel: "INFO",
+		Port:      8090,
+		DBPath:    "./vault_data/vault.db",
+		LogLevel:  "INFO",
 		LogFormat: "text",
+		JWTSecret: "change-me-please-use-a-strong-secret",
+		JWTExpiry: 72,
 	}
 
 	// Load from config.json if exists
@@ -41,6 +45,14 @@ func LoadConfig() *Config {
 	}
 	if logFormat := os.Getenv("VAULT_LOG_FORMAT"); logFormat != "" {
 		cfg.LogFormat = logFormat
+	}
+	if jwtSecret := os.Getenv("VAULT_JWT_SECRET"); jwtSecret != "" {
+		cfg.JWTSecret = jwtSecret
+	}
+	if jwtExpiry := os.Getenv("VAULT_JWT_EXPIRY"); jwtExpiry != "" {
+		if expiry, err := strconv.Atoi(jwtExpiry); err == nil {
+			cfg.JWTExpiry = expiry
+		}
 	}
 
 	return cfg
