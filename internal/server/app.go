@@ -15,9 +15,12 @@ import (
 )
 
 type App struct {
-	Config *core.Config
-	DB     *sql.DB
-	Server *Server
+	Config    *core.Config
+	DB        *sql.DB
+	Server    *Server
+	Registry  *db.SchemaRegistry
+	Migration *db.MigrationEngine
+	Executor  *db.Executor
 }
 
 func NewApp() *App {
@@ -27,6 +30,23 @@ func NewApp() *App {
 	database, err := db.Connect(cfg.DBPath)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+
+	registry := db.NewSchemaRegistry(database)
+	migration := db.NewMigrationEngine(database)
+	executor := db.NewExecutor(database, registry)
+
+	// Bootstrap system
+	if err := registry.BootstrapSystemCollections(); err != nil {
+		slog.Error("Failed to bootstrap system collections", "error", err)
+		os.Exit(1)
+	}
+
+	// Sync system tables
+	col, _ := registry.GetCollection("_collections")
+	if err := migration.SyncCollection(col); err != nil {
+		slog.Error("Failed to sync system collections", "error", err)
 		os.Exit(1)
 	}
 
@@ -41,9 +61,12 @@ func NewApp() *App {
 	srv := NewServer(cfg.Port, handler)
 
 	return &App{
-		Config: cfg,
-		DB:     database,
-		Server: srv,
+		Config:    cfg,
+		DB:        database,
+		Server:    srv,
+		Registry:  registry,
+		Migration: migration,
+		Executor:  executor,
 	}
 }
 
