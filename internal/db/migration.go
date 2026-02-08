@@ -1,10 +1,14 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
+	"net/http"
 	"strings"
 
+	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -16,21 +20,20 @@ func NewMigrationEngine(db *sql.DB) *MigrationEngine {
 	return &MigrationEngine{db: db}
 }
 
-func (m *MigrationEngine) SyncCollection(c *models.Collection) error {
-	// 1. Check if table exists
+func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collection) error {
 	var tableName string
-	err := m.db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
+	err := m.db.QueryRowContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
 	
 	if err == sql.ErrNoRows {
-		return m.createTable(c)
+		return m.createTable(ctx, c)
 	} else if err != nil {
-		return err
+		return core.NewError(http.StatusInternalServerError, "DB_SYNC_FAILED", "Failed to check table existence").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
 	}
 
-	return m.updateTable(c)
+	return m.updateTable(ctx, c)
 }
 
-func (m *MigrationEngine) createTable(c *models.Collection) error {
+func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection) error {
 	columns := []string{
 		"id TEXT PRIMARY KEY",
 		"created TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
@@ -56,15 +59,19 @@ func (m *MigrationEngine) createTable(c *models.Collection) error {
 	}
 
 	query := fmt.Sprintf("CREATE TABLE %s (%s)", c.Name, strings.Join(columns, ", "))
-	_, err := m.db.Exec(query)
-	return err
+	_, err := m.db.ExecContext(ctx, query)
+	if err != nil {
+		return core.NewError(http.StatusInternalServerError, "DB_CREATE_TABLE_FAILED", "Failed to create table").WithDetails(map[string]any{"error": err.Error(), "query": query})
+	}
+
+	slog.Info("Created table", "collection", c.Name, "request_id", core.GetRequestID(ctx))
+	return nil
 }
 
-func (m *MigrationEngine) updateTable(c *models.Collection) error {
-	// For simplicity in Phase 2, we'll only handle adding new columns
-	rows, err := m.db.Query(fmt.Sprintf("PRAGMA table_info(%s)", c.Name))
+func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection) error {
+	rows, err := m.db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info(%s)", c.Name))
 	if err != nil {
-		return err
+		return core.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to get table info").WithDetails(map[string]any{"error": err.Error()})
 	}
 	defer rows.Close()
 
@@ -88,9 +95,10 @@ func (m *MigrationEngine) updateTable(c *models.Collection) error {
 			}
 			
 			query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.Name, f.Name, sqlType)
-			if _, err := m.db.Exec(query); err != nil {
-				return err
+			if _, err := m.db.ExecContext(ctx, query); err != nil {
+				return core.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})
 			}
+			slog.Info("Added column", "collection", c.Name, "field", f.Name, "request_id", core.GetRequestID(ctx))
 		}
 	}
 

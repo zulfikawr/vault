@@ -37,7 +37,10 @@ func NewApp() *App {
 	migration := db.NewMigrationEngine(database)
 	executor := db.NewExecutor(database, registry)
 
-	// Bootstrap system
+	// Bootstrap system using a background context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	if err := registry.BootstrapSystemCollections(); err != nil {
 		slog.Error("Failed to bootstrap system collections", "error", err)
 		os.Exit(1)
@@ -45,7 +48,7 @@ func NewApp() *App {
 
 	// Sync system tables
 	col, _ := registry.GetCollection("_collections")
-	if err := migration.SyncCollection(col); err != nil {
+	if err := migration.SyncCollection(ctx, col); err != nil {
 		slog.Error("Failed to sync system collections", "error", err)
 		os.Exit(1)
 	}

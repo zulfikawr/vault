@@ -1,9 +1,12 @@
 package db
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -14,10 +17,10 @@ type QueryParams struct {
 	Filter  string
 }
 
-func (e *Executor) ListRecords(collectionName string, params QueryParams) ([]*models.Record, int, error) {
+func (e *Executor) ListRecords(ctx context.Context, collectionName string, params QueryParams) ([]*models.Record, int, error) {
 	col, ok := e.registry.GetCollection(collectionName)
 	if !ok {
-		return nil, 0, fmt.Errorf("collection %s not found", collectionName)
+		return nil, 0, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
 	}
 
 	if params.Page <= 0 { params.Page = 1 }
@@ -25,9 +28,9 @@ func (e *Executor) ListRecords(collectionName string, params QueryParams) ([]*mo
 
 	// Count total
 	var total int
-	err := e.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", collectionName)).Scan(&total)
+	err := e.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", collectionName)).Scan(&total)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, core.NewError(http.StatusInternalServerError, "DB_COUNT_FAILED", "Failed to count records").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	columns := []string{"id", "created", "updated"}
@@ -41,9 +44,9 @@ func (e *Executor) ListRecords(collectionName string, params QueryParams) ([]*mo
 	)
 
 	offset := (params.Page - 1) * params.PerPage
-	rows, err := e.db.Query(query, params.PerPage, offset)
+	rows, err := e.db.QueryContext(ctx, query, params.PerPage, offset)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_LIST_FAILED", "Failed to list records").WithDetails(map[string]any{"error": err.Error()})
 	}
 	defer rows.Close()
 
@@ -56,7 +59,7 @@ func (e *Executor) ListRecords(collectionName string, params QueryParams) ([]*mo
 		}
 
 		if err := rows.Scan(valPtrs...); err != nil {
-			return nil, 0, err
+			return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_SCAN_FAILED", "Failed to scan record").WithDetails(map[string]any{"error": err.Error()})
 		}
 
 		record := &models.Record{

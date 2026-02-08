@@ -1,8 +1,12 @@
 package db
 
-import "github.com/zulfikawr/vault/internal/models"
+import (
+	"context"
 
-type HookFunc func(record *models.Record) error
+	"github.com/zulfikawr/vault/internal/models"
+)
+
+type HookFunc func(ctx context.Context, record *models.Record) error
 
 type Hooks struct {
 	BeforeCreate []HookFunc
@@ -24,18 +28,18 @@ func GetHooks(collection string) *Hooks {
 	return h
 }
 
-func (h *Hooks) TriggerBeforeCreate(record *models.Record) error {
+func (h *Hooks) TriggerBeforeCreate(ctx context.Context, record *models.Record) error {
 	for _, fn := range h.BeforeCreate {
-		if err := fn(record); err != nil {
+		if err := fn(ctx, record); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *Hooks) TriggerAfterCreate(record *models.Record) error {
+func (h *Hooks) TriggerAfterCreate(ctx context.Context, record *models.Record) error {
 	for _, fn := range h.AfterCreate {
-		if err := fn(record); err != nil {
+		if err := fn(ctx, record); err != nil {
 			return err
 		}
 	}

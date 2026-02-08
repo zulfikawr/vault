@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -18,10 +21,10 @@ func NewExecutor(db *sql.DB, registry *SchemaRegistry) *Executor {
 	return &Executor{db: db, registry: registry}
 }
 
-func (e *Executor) CreateRecord(collectionName string, data map[string]any) (*models.Record, error) {
+func (e *Executor) CreateRecord(ctx context.Context, collectionName string, data map[string]any) (*models.Record, error) {
 	col, ok := e.registry.GetCollection(collectionName)
 	if !ok {
-		return nil, fmt.Errorf("collection %s not found", collectionName)
+		return nil, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
 	}
 
 	id := uuid.New().String()
@@ -34,7 +37,7 @@ func (e *Executor) CreateRecord(collectionName string, data map[string]any) (*mo
 	}
 
 	hooks := GetHooks(collectionName)
-	if err := hooks.TriggerBeforeCreate(record); err != nil {
+	if err := hooks.TriggerBeforeCreate(ctx, record); err != nil {
 		return nil, err
 	}
 
@@ -56,19 +59,19 @@ func (e *Executor) CreateRecord(collectionName string, data map[string]any) (*mo
 		strings.Join(placeholders, ", "),
 	)
 
-	err := e.db.QueryRow(query, values...).Scan(&record.Created, &record.Updated)
+	err := e.db.QueryRowContext(ctx, query, values...).Scan(&record.Created, &record.Updated)
 	if err != nil {
-		return nil, err
+		return nil, core.NewError(http.StatusInternalServerError, "RECORD_CREATE_FAILED", "Failed to create record").WithDetails(map[string]any{"error": err.Error()})
 	}
 
-	hooks.TriggerAfterCreate(record)
+	hooks.TriggerAfterCreate(ctx, record)
 	return record, nil
 }
 
-func (e *Executor) FindRecordByID(collectionName string, id string) (*models.Record, error) {
+func (e *Executor) FindRecordByID(ctx context.Context, collectionName string, id string) (*models.Record, error) {
 	col, ok := e.registry.GetCollection(collectionName)
 	if !ok {
-		return nil, fmt.Errorf("collection %s not found", collectionName)
+		return nil, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
 	}
 
 	columns := []string{"id", "created", "updated"}
@@ -77,7 +80,7 @@ func (e *Executor) FindRecordByID(collectionName string, id string) (*models.Rec
 	}
 
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(columns, ", "), collectionName)
-	row := e.db.QueryRow(query, id)
+	row := e.db.QueryRowContext(ctx, query, id)
 
 	vals := make([]any, len(columns))
 	valPtrs := make([]any, len(columns))
@@ -86,7 +89,10 @@ func (e *Executor) FindRecordByID(collectionName string, id string) (*models.Rec
 	}
 
 	if err := row.Scan(valPtrs...); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, core.NewError(http.StatusNotFound, "RECORD_NOT_FOUND", "Record not found")
+		}
+		return nil, core.NewError(http.StatusInternalServerError, "RECORD_FETCH_FAILED", "Failed to fetch record").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	record := &models.Record{
