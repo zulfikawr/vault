@@ -1,0 +1,26 @@
+# Binaries
+vault
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Data
+vault_data/
+*.db
+*.db-journal
+*.db-wal
+
+# Dependency directories
+vendor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
