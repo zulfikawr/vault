@@ -43,7 +43,7 @@ func NewApp() *App {
 	db.GetHooks("users").BeforeCreate = append(db.GetHooks("users").BeforeCreate, func(ctx context.Context, record *models.Record) error {
 		password := record.GetString("password")
 		if password == "" {
-			return nil // Validator will catch this if required
+			return nil
 		}
 		hashed, err := auth.HashPassword(ctx, password)
 		if err != nil {
@@ -53,9 +53,11 @@ func NewApp() *App {
 		return nil
 	})
 
-	// Bootstrap system using a background context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	// Bootstrap system
+	if err := registry.BootstrapSystemCollections(); err != nil {
+		slog.Error("Failed to bootstrap system collections", "error", err)
+		os.Exit(1)
+	}
 
 	if err := registry.BootstrapRefreshTokensCollection(); err != nil {
 		slog.Error("Failed to bootstrap refresh tokens collection", "error", err)
@@ -68,12 +70,16 @@ func NewApp() *App {
 	}
 
 	// Sync system tables
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	systemCols := []string{"_collections", "_refresh_tokens", "users"}
 	for _, name := range systemCols {
-		col, _ := registry.GetCollection(name)
+		col, ok := registry.GetCollection(name)
+		if !ok || col == nil {
+			slog.Error("Failed to find system collection in registry", "name", name)
+			os.Exit(1)
+		}
 		if err := migration.SyncCollection(ctx, col); err != nil {
 			slog.Error("Failed to sync system collection", "name", name, "error", err)
 			os.Exit(1)
