@@ -5,15 +5,17 @@ import (
 
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/realtime"
 	"github.com/zulfikawr/vault/internal/storage"
 )
 
-func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, config *core.Config) *http.ServeMux {
+func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, hub *realtime.Hub, config *core.Config) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	authHandler := NewAuthHandler(executor, config)
 	crudHandler := NewCollectionHandler(executor, registry)
 	fileHandler := NewFileHandler(store, executor)
+	realtimeHandler := NewRealtimeHandler(hub)
 
 	// Base routes
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +38,9 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	// File routes
 	mux.HandleFunc("GET /api/files/{collection}/{id}/{filename}", fileHandler.Serve)
 	mux.HandleFunc("POST /api/files", fileHandler.Upload)
+
+	// Realtime routes
+	mux.HandleFunc("GET /api/realtime", realtimeHandler.Connect)
 
 	return mux
 }

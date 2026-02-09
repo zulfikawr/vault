@@ -10,15 +10,27 @@ import (
 	"github.com/google/uuid"
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
+	"github.com/zulfikawr/vault/internal/realtime"
 )
 
 type Executor struct {
 	db       *sql.DB
 	registry *SchemaRegistry
+	hub      *realtime.Hub
 }
 
-func NewExecutor(db *sql.DB, registry *SchemaRegistry) *Executor {
-	return &Executor{db: db, registry: registry}
+func NewExecutor(db *sql.DB, registry *SchemaRegistry, hub *realtime.Hub) *Executor {
+	return &Executor{db: db, registry: registry, hub: hub}
+}
+
+func (e *Executor) broadcast(action string, collection string, record *models.Record) {
+	if e.hub != nil {
+		e.hub.Broadcast(&realtime.Message{
+			Action:     action,
+			Collection: collection,
+			Record:     record,
+		})
+	}
 }
 
 func (e *Executor) CreateRecord(ctx context.Context, collectionName string, data map[string]any) (*models.Record, error) {
@@ -65,6 +77,7 @@ func (e *Executor) CreateRecord(ctx context.Context, collectionName string, data
 	}
 
 	hooks.TriggerAfterCreate(ctx, record)
+	e.broadcast("create", collectionName, record)
 	return record, nil
 }
 
@@ -219,6 +232,7 @@ func (e *Executor) UpdateRecord(ctx context.Context, collectionName string, id s
 		return nil, core.NewError(http.StatusInternalServerError, "RECORD_UPDATE_FAILED", "Failed to update record").WithDetails(map[string]any{"error": err.Error()})
 	}
 
+	e.broadcast("update", collectionName, record)
 	return record, nil
 }
 
@@ -239,5 +253,6 @@ func (e *Executor) DeleteRecord(ctx context.Context, collectionName string, id s
 		return core.NewError(http.StatusNotFound, "RECORD_NOT_FOUND", "Record not found")
 	}
 
+	e.broadcast("delete", collectionName, &models.Record{ID: id})
 	return nil
 }

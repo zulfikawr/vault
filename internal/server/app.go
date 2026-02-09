@@ -14,6 +14,7 @@ import (
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/models"
+	"github.com/zulfikawr/vault/internal/realtime"
 	"github.com/zulfikawr/vault/internal/storage"
 )
 
@@ -25,6 +26,7 @@ type App struct {
 	Migration *db.MigrationEngine
 	Executor  *db.Executor
 	Storage   storage.Storage
+	Hub       *realtime.Hub
 }
 
 func NewApp() *App {
@@ -47,9 +49,13 @@ func NewApp() *App {
 		os.Exit(1)
 	}
 
+	// Initialize Realtime Hub
+	hub := realtime.NewHub()
+	go hub.Run(context.Background())
+
 	registry := db.NewSchemaRegistry(database)
 	migration := db.NewMigrationEngine(database)
-	executor := db.NewExecutor(database, registry)
+	executor := db.NewExecutor(database, registry, hub)
 
 	// Register Auth Hooks
 	db.GetHooks("users").BeforeCreate = append(db.GetHooks("users").BeforeCreate, func(ctx context.Context, record *models.Record) error {
@@ -98,7 +104,7 @@ func NewApp() *App {
 		}
 	}
 
-	router := api.NewRouter(executor, registry, store, cfg)
+	router := api.NewRouter(executor, registry, store, hub, cfg)
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,
@@ -116,6 +122,7 @@ func NewApp() *App {
 		Migration: migration,
 		Executor:  executor,
 		Storage:   store,
+		Hub:       hub,
 	}
 }
 
