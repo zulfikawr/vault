@@ -111,47 +111,71 @@ func (e *Executor) FindRecordByID(ctx context.Context, collectionName string, id
 }
 
 func (e *Executor) expandRecords(ctx context.Context, collection *models.Collection, records []*models.Record, expand string) {
-	if expand == "" {
+	if expand == "" || len(records) == 0 {
 		return
 	}
 
 	expandFields := strings.Split(expand, ",")
-	for _, record := range records {
-		for _, fieldName := range expandFields {
-			fieldName = strings.TrimSpace(fieldName)
-			
-			// Find field in collection
-			var relField *models.Field
-			for _, f := range collection.Fields {
-				if f.Name == fieldName && f.Type == models.FieldTypeRelation {
-					relField = &f
-					break
+	for _, fieldName := range expandFields {
+		fieldName = strings.TrimSpace(fieldName)
+
+		// 1. Find the relationship metadata
+		var relField *models.Field
+		for _, f := range collection.Fields {
+			if f.Name == fieldName && f.Type == models.FieldTypeRelation {
+				relField = &f
+				break
+			}
+		}
+		if relField == nil { continue }
+
+		targetCol := ""
+		if options, ok := relField.Options.(map[string]any); ok {
+			targetCol, _ = options["collection"].(string)
+		}
+		if targetCol == "" { continue }
+
+		// 2. Collect all unique IDs to fetch
+		relIDs := make([]string, 0)
+		idMap := make(map[string]bool)
+		for _, r := range records {
+			if id, ok := r.Data[fieldName].(string); ok && id != "" {
+				if !idMap[id] {
+					relIDs = append(relIDs, id)
+					idMap[id] = true
 				}
 			}
+		}
+		if len(relIDs) == 0 { continue }
 
-			if relField == nil {
-				continue
-			}
+		// 3. Batch fetch records (Fixing N+1)
+		placeholders := make([]string, len(relIDs))
+		args := make([]any, len(relIDs))
+		for i, id := range relIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
 
-			// Get the ID from data
-			relID, ok := record.Data[fieldName].(string)
-			if !ok || relID == "" {
-				continue
-			}
+		// Simplified batch fetch logic for this prototype
+		// We use ListRecords internally with a raw IN filter for efficiency
+		filter := fmt.Sprintf("id IN (%s)", strings.Join(placeholders, ","))
+		targetRecords, _, err := e.ListRecords(ctx, targetCol, QueryParams{
+			Filter:  filter,
+			PerPage: len(relIDs),
+		})
+		if err != nil { continue }
 
-			// Get target collection from options (assuming Options holds target collection name)
-			targetCol := ""
-			if options, ok := relField.Options.(map[string]any); ok {
-				targetCol, _ = options["collection"].(string)
-			}
-			if targetCol == "" {
-				continue
-			}
+		// 4. Map back to original records
+		resMap := make(map[string]*models.Record)
+		for _, tr := range targetRecords {
+			resMap[tr.ID] = tr
+		}
 
-			// Fetch related record
-			relRecord, err := e.FindRecordByID(ctx, targetCol, relID)
-			if err == nil {
-				record.Expand[fieldName] = relRecord
+		for _, r := range records {
+			if id, ok := r.Data[fieldName].(string); ok {
+				if expanded, exists := resMap[id]; exists {
+					r.Expand[fieldName] = expanded
+				}
 			}
 		}
 	}

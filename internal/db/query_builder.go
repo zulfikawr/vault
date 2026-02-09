@@ -27,14 +27,17 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	if params.Page <= 0 { params.Page = 1 }
 	if params.PerPage <= 0 { params.PerPage = 30 }
 
-	// Prepare WHERE clause
+	// Prepare WHERE clause and values
 	whereClauses := []string{"1=1"}
 	whereValues := []any{}
 
 	if params.Filter != "" {
-		// Basic filter support (simplified mapping)
-		// WARNING: This is a placeholder for a real SQL generator to prevent injection
-		whereClauses = append(whereClauses, params.Filter)
+		clause, values, err := e.parseSafeFilter(col, params.Filter)
+		if err != nil {
+			return nil, 0, err
+		}
+		whereClauses = append(whereClauses, clause)
+		whereValues = append(whereValues, values...)
 	}
 
 	whereQuery := strings.Join(whereClauses, " AND ")
@@ -96,4 +99,45 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	}
 
 	return records, total, nil
+}
+
+// parseSafeFilter implements basic parameterized filtering to prevent SQL injection
+func (e *Executor) parseSafeFilter(col *models.Collection, filter string) (string, []any, error) {
+	// Simple support for: field = 'value' or field != 'value'
+	operators := []string{" != ", " = ", " > ", " < ", " >= ", " <= "}
+	
+	for _, op := range operators {
+		if strings.Contains(filter, op) {
+			parts := strings.Split(filter, op)
+			if len(parts) != 2 { continue }
+
+			fieldName := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+
+			// 1. Validate field name exists in collection
+			validField := false
+			if fieldName == "id" {
+				validField = true
+			} else {
+				for _, f := range col.Fields {
+					if f.Name == fieldName {
+						validField = true
+						break
+					}
+				}
+			}
+
+			if !validField {
+				return "", nil, core.NewError(http.StatusBadRequest, "INVALID_FILTER", fmt.Sprintf("Unknown field in filter: %s", fieldName))
+			}
+
+			// 2. Clean value (remove single quotes if present)
+			value = strings.Trim(value, "'")
+
+			// 3. Return parameterized clause
+			return fmt.Sprintf("%s %s ?", fieldName, strings.TrimSpace(op)), []any{value}, nil
+		}
+	}
+
+	return "", nil, core.NewError(http.StatusBadRequest, "UNSUPPORTED_FILTER", "Filter format not supported. Use 'field = value'")
 }

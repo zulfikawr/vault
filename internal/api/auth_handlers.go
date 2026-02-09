@@ -117,11 +117,44 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Request) {
-	// Skeleton implementation
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		return
+	}
+
+	// 1. Find user
+	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Email})
+	if err != nil || len(records) == 0 {
+		// Silent fail for security: don't reveal if email exists
+		SendJSON(w, http.StatusOK, map[string]string{"message": "If the email exists, a reset link will be sent"}, nil)
+		return
+	}
+
+	// 2. Generate a temporary token (mocked for this checkpoint)
+	resetToken := uuid.New().String()
+	
+	// In a real implementation, we'd save this to a 'password_resets' collection with an expiry.
+	// For now, we log it (representing the "email" being sent).
+	core.InitLogger("INFO", "text") // Ensure logger is ready
+	slog.Info("Password reset requested", "email", req.Email, "token", resetToken, "request_id", core.GetRequestID(r.Context()))
+
 	SendJSON(w, http.StatusOK, map[string]string{"message": "If the email exists, a reset link will be sent"}, nil)
 }
 
 func (h *AuthHandler) ConfirmPasswordReset(w http.ResponseWriter, r *http.Request) {
-	// Skeleton implementation
-	SendJSON(w, http.StatusOK, map[string]string{"message": "Password has been successfully reset"}, nil)
+	var req struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		return
+	}
+
+	// In a real implementation, we'd verify the token from the DB.
+	// Since we don't have the table yet, we'll return an error for now to show logic is present.
+	core.SendError(w, core.NewError(http.StatusNotImplemented, "RESET_NOT_FULLY_IMPLEMENTED", "Token verification table not yet migrated"))
 }
