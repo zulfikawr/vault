@@ -35,7 +35,7 @@ func SendJSON(w http.ResponseWriter, status int, data any, meta any) {
 				totalPages = int(math.Ceil(float64(totalItems) / float64(perPage)))
 			}
 			
-			json.NewEncoder(w).Encode(PaginatedResponse{
+			_ = json.NewEncoder(w).Encode(PaginatedResponse{
 				Page:       page,
 				PerPage:    perPage,
 				TotalItems: totalItems,
@@ -51,5 +51,5 @@ func SendJSON(w http.ResponseWriter, status int, data any, meta any) {
 		Meta: meta,
 	}
 	
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }

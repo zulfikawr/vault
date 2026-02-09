@@ -43,14 +43,14 @@ func (h *RealtimeHandler) Connect(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case <-ticker.C:
-			fmt.Fprintf(w, ": ping\n\n")
+			_, _ = fmt.Fprintf(w, ": ping\n\n")
 			flusher.Flush()
 		case msg := <-client:
 			if msg == nil {
 				return
 			}
 			data, _ := json.Marshal(msg)
-			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", msg.Action, string(data))
+			_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", msg.Action, string(data))
 			flusher.Flush()
 		}
 	}

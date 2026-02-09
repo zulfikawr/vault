@@ -33,7 +33,7 @@ func (l *Local) Save(ctx context.Context, path string, data io.Reader) error {
 	if err != nil {
 		return core.NewError(http.StatusInternalServerError, "STORAGE_CREATE_FAILED", "Failed to create file").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	if _, err := io.Copy(file, data); err != nil {
 		return core.NewError(http.StatusInternalServerError, "STORAGE_WRITE_FAILED", "Failed to write data").WithDetails(map[string]any{"error": err.Error(), "path": path})

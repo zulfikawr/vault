@@ -76,7 +76,7 @@ func (e *Executor) CreateRecord(ctx context.Context, collectionName string, data
 		return nil, core.NewError(http.StatusInternalServerError, "RECORD_CREATE_FAILED", "Failed to create record").WithDetails(map[string]any{"error": err.Error()})
 	}
 
-	hooks.TriggerAfterCreate(ctx, record)
+	_ = hooks.TriggerAfterCreate(ctx, record)
 	e.broadcast("create", collectionName, record)
 	return record, nil
 }

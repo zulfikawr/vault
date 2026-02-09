@@ -34,7 +34,7 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 		core.SendError(w, err)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Simple content type detection
 	contentType := "application/octet-stream"
@@ -48,7 +48,7 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=31536000")
-	io.Copy(w, file)
+	_, _ = io.Copy(w, file)
 }
 
 func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +65,7 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		core.SendError(w, core.NewError(http.StatusBadRequest, "FILE_REQUIRED", "No file provided"))
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	collection := r.FormValue("collection")
 	recordID := r.FormValue("recordID")

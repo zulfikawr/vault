@@ -42,9 +42,10 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 
 	for _, f := range c.Fields {
 		sqlType := "TEXT"
-		if f.Type == models.FieldTypeNumber {
+		switch f.Type {
+		case models.FieldTypeNumber:
 			sqlType = "REAL"
-		} else if f.Type == models.FieldTypeBool {
+		case models.FieldTypeBool:
 			sqlType = "INTEGER"
 		}
 		
@@ -73,7 +74,7 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 	if err != nil {
 		return core.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to get table info").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	existingCols := make(map[string]bool)
 	for rows.Next() {
@@ -81,16 +82,19 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 		var name, dtype string
 		var notnull, pk int
 		var dfltValue any
-		rows.Scan(&cid, &name, &dtype, &notnull, &pk, &dfltValue)
+		if err := rows.Scan(&cid, &name, &dtype, &notnull, &pk, &dfltValue); err != nil {
+			return core.NewError(http.StatusInternalServerError, "DB_SCAN_FAILED", "Failed to scan table info").WithDetails(map[string]any{"error": err.Error()})
+		}
 		existingCols[name] = true
 	}
 
 	for _, f := range c.Fields {
 		if !existingCols[f.Name] {
 			sqlType := "TEXT"
-			if f.Type == models.FieldTypeNumber {
+			switch f.Type {
+			case models.FieldTypeNumber:
 				sqlType = "REAL"
-			} else if f.Type == models.FieldTypeBool {
+			case models.FieldTypeBool:
 				sqlType = "INTEGER"
 			}
 			

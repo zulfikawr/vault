@@ -76,6 +76,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"user_id": userRecord.ID,
 		"expires": time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339),
 	})
+	if err != nil {
+		core.SendError(w, err)
+		return
+	}
 
 	SendJSON(w, http.StatusOK, map[string]any{
 		"token":         token,

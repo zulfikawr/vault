@@ -52,7 +52,7 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var name, ctype, fieldsJSON string

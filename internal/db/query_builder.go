@@ -66,7 +66,7 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	if err != nil {
 		return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_LIST_FAILED", "Failed to list records").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var records []*models.Record
 	for rows.Next() {

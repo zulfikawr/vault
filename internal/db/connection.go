@@ -34,7 +34,7 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 
 	for _, pragma := range pragmas {
 		if _, err := db.ExecContext(ctx, pragma); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, core.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to execute pragma").WithDetails(map[string]any{"error": err.Error(), "pragma": pragma})
 		}
 	}
@@ -43,7 +43,7 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 	db.SetMaxOpenConns(1)
 
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, core.NewError(http.StatusInternalServerError, "DB_PING_FAILED", "Failed to ping database").WithDetails(map[string]any{"error": err.Error()})
 	}
 

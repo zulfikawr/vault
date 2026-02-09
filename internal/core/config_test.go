@@ -13,8 +13,8 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	// Test Env Overrides
-	os.Setenv("VAULT_PORT", "9090")
-	defer os.Unsetenv("VAULT_PORT")
+	_ = os.Setenv("VAULT_PORT", "9090")
+	defer func() { _ = os.Unsetenv("VAULT_PORT") }()
 
 	cfg = LoadConfig()
 	if cfg.Port != 9090 {
