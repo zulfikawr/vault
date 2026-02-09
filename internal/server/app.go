@@ -29,7 +29,10 @@ func NewApp() *App {
 	cfg := core.LoadConfig()
 	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
 
-	database, err := db.Connect(cfg.DBPath)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	database, err := db.Connect(ctx, cfg.DBPath)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
 		os.Exit(1)
@@ -70,7 +73,7 @@ func NewApp() *App {
 	}
 
 	// Sync system tables
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	systemCols := []string{"_collections", "_refresh_tokens", "users"}
