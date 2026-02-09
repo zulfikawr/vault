@@ -1,9 +1,13 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"net/http"
 	"sync"
 
+	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -27,14 +31,61 @@ func (s *SchemaRegistry) GetCollection(name string) (*models.Collection, bool) {
 	return c, ok
 }
 
+func (s *SchemaRegistry) GetCollections() []*models.Collection {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	list := make([]*models.Collection, 0, len(s.collections))
+	for _, c := range s.collections {
+		list = append(list, c)
+	}
+	return list
+}
+
 func (s *SchemaRegistry) AddCollection(c *models.Collection) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.collections[c.Name] = c
 }
 
-func (s *SchemaRegistry) LoadFromDB() error {
-	// We'll implement the logic to load from _collections table later
+func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
+	rows, err := s.db.QueryContext(ctx, "SELECT name, type, fields FROM _collections")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name, ctype, fieldsJSON string
+		if err := rows.Scan(&name, &ctype, &fieldsJSON); err != nil {
+			return err
+		}
+
+		var fields []models.Field
+		if err := json.Unmarshal([]byte(fieldsJSON), &fields); err != nil {
+			return err
+		}
+
+		s.AddCollection(&models.Collection{
+			Name:   name,
+			Type:   models.CollectionType(ctype),
+			Fields: fields,
+		})
+	}
+	return nil
+}
+
+func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collection) error {
+	fieldsJSON, _ := json.Marshal(c.Fields)
+	
+	query := `INSERT INTO _collections (name, type, fields) VALUES (?, ?, ?) 
+	          ON CONFLICT(name) DO UPDATE SET type=excluded.type, fields=excluded.fields`
+	
+	_, err := s.db.ExecContext(ctx, query, c.Name, c.Type, string(fieldsJSON))
+	if err != nil {
+		return core.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
+	}
+
+	s.AddCollection(c)
 	return nil
 }
 

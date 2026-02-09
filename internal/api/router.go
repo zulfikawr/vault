@@ -9,13 +9,14 @@ import (
 	"github.com/zulfikawr/vault/internal/storage"
 )
 
-func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, hub *realtime.Hub, config *core.Config) *http.ServeMux {
+func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, hub *realtime.Hub, migration *db.MigrationEngine, config *core.Config) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	authHandler := NewAuthHandler(executor, config)
 	crudHandler := NewCollectionHandler(executor, registry)
 	fileHandler := NewFileHandler(store, executor)
 	realtimeHandler := NewRealtimeHandler(hub)
+	adminHandler := NewAdminHandler(executor, registry, migration)
 
 	// Base routes
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,16 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 
 	// Realtime routes
 	mux.HandleFunc("GET /api/realtime", realtimeHandler.Connect)
+
+	// Admin routes (Protected by AdminOnly)
+	adminRouter := http.NewServeMux()
+	adminRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
+	adminRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
+	adminRouter.HandleFunc("GET /settings", adminHandler.GetSettings)
+	adminRouter.HandleFunc("POST /backups", adminHandler.CreateBackup)
+
+	// Mount admin router with middleware
+	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))
 
 	return mux
 }

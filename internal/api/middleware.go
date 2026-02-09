@@ -113,6 +113,25 @@ func AuthMiddleware(secret string) Middleware {
 	}
 }
 
+func AdminOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authClaims := core.GetAuth(r.Context())
+		claims, ok := authClaims.(*auth.Claims)
+		if !ok || claims == nil {
+			core.SendError(w, core.NewError(http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required"))
+			return
+		}
+
+		// Simple rule: any user in 'users' collection is admin for this prototype
+		if claims.Collection != "users" {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "Admin access required"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func GetEvaluationContext(r *http.Request, recordData map[string]any) rules.EvaluationContext {
 	authClaims := core.GetAuth(r.Context())
 	

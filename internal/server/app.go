@@ -104,7 +104,13 @@ func NewApp() *App {
 		}
 	}
 
-	router := api.NewRouter(executor, registry, store, hub, cfg)
+	// Load dynamic collections from DB
+	if err := registry.LoadFromDB(ctx); err != nil {
+		slog.Error("Failed to load dynamic collections", "error", err)
+		os.Exit(1)
+	}
+
+	router := api.NewRouter(executor, registry, store, hub, migration, cfg)
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,
