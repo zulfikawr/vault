@@ -76,10 +76,10 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 
 func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collection) error {
 	fieldsJSON, _ := json.Marshal(c.Fields)
-	
+
 	query := `INSERT INTO _collections (name, type, fields) VALUES (?, ?, ?) 
 	          ON CONFLICT(name) DO UPDATE SET type=excluded.type, fields=excluded.fields`
-	
+
 	_, err := s.db.ExecContext(ctx, query, c.Name, c.Type, string(fieldsJSON))
 	if err != nil {
 		return core.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
@@ -106,7 +106,7 @@ func (s *SchemaRegistry) BootstrapSystemCollections() error {
 			{Name: "deleteRule", Type: models.FieldTypeText},
 		},
 	}
-	
+
 	s.AddCollection(collectionsTable)
 	return nil
 }

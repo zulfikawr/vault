@@ -24,7 +24,7 @@ func NewLocal(basePath string) (*Local, error) {
 
 func (l *Local) Save(ctx context.Context, path string, data io.Reader) error {
 	fullPath := filepath.Join(l.basePath, path)
-	
+
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 		return core.NewError(http.StatusInternalServerError, "STORAGE_DIR_CREATE_FAILED", "Failed to create directory").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}

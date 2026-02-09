@@ -20,7 +20,7 @@ type Claims struct {
 
 func GenerateToken(ctx context.Context, record *models.Record, secret string, expiryHours int) (string, error) {
 	requestID := core.GetRequestID(ctx)
-	
+
 	claims := Claims{
 		RecordID:   record.ID,
 		Collection: record.Collection,

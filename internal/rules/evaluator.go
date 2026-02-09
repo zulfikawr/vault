@@ -28,8 +28,12 @@ func Evaluate(rule string, ctx EvaluationContext) (bool, error) {
 	rule = strings.TrimSpace(rule)
 
 	// 2. Handle simple boolean strings
-	if rule == "true" { return true, nil }
-	if rule == "false" { return false, nil }
+	if rule == "true" {
+		return true, nil
+	}
+	if rule == "false" {
+		return false, nil
+	}
 
 	// 3. Simple equality check (e.g., "id = @request.auth.id")
 	if strings.Contains(rule, " = ") {

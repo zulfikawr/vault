@@ -28,7 +28,7 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 	filename := r.PathValue("filename")
 
 	path := filepath.Join(collection, recordID, filename)
-	
+
 	file, err := h.storage.Retrieve(r.Context(), path)
 	if err != nil {
 		core.SendError(w, err)
@@ -54,7 +54,7 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	// For this prototype, we'll implement a standalone upload that returns the filename/metadata.
 	// Later we can integrate it directly into the Record Create/Update handlers.
-	
+
 	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max
 		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_MULTIPART", "Failed to parse multipart form"))
 		return

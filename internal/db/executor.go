@@ -140,13 +140,17 @@ func (e *Executor) expandRecords(ctx context.Context, collection *models.Collect
 				break
 			}
 		}
-		if relField == nil { continue }
+		if relField == nil {
+			continue
+		}
 
 		targetCol := ""
 		if options, ok := relField.Options.(map[string]any); ok {
 			targetCol, _ = options["collection"].(string)
 		}
-		if targetCol == "" { continue }
+		if targetCol == "" {
+			continue
+		}
 
 		// 2. Collect all unique IDs to fetch
 		relIDs := make([]string, 0)
@@ -159,7 +163,9 @@ func (e *Executor) expandRecords(ctx context.Context, collection *models.Collect
 				}
 			}
 		}
-		if len(relIDs) == 0 { continue }
+		if len(relIDs) == 0 {
+			continue
+		}
 
 		// 3. Batch fetch records (Fixing N+1)
 		placeholders := make([]string, len(relIDs))
@@ -176,7 +182,9 @@ func (e *Executor) expandRecords(ctx context.Context, collection *models.Collect
 			Filter:  filter,
 			PerPage: len(relIDs),
 		})
-		if err != nil { continue }
+		if err != nil {
+			continue
+		}
 
 		// 4. Map back to original records
 		resMap := make(map[string]*models.Record)

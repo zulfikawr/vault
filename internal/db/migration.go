@@ -23,7 +23,7 @@ func NewMigrationEngine(db *sql.DB) *MigrationEngine {
 func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collection) error {
 	var tableName string
 	err := m.db.QueryRowContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
-	
+
 	if err == sql.ErrNoRows {
 		return m.createTable(ctx, c)
 	} else if err != nil {
@@ -48,7 +48,7 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 		case models.FieldTypeBool:
 			sqlType = "INTEGER"
 		}
-		
+
 		col := fmt.Sprintf("%s %s", f.Name, sqlType)
 		if f.Required {
 			col += " NOT NULL"
@@ -97,7 +97,7 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 			case models.FieldTypeBool:
 				sqlType = "INTEGER"
 			}
-			
+
 			query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.Name, f.Name, sqlType)
 			if _, err := m.db.ExecContext(ctx, query); err != nil {
 				return core.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})

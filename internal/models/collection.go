@@ -14,7 +14,7 @@ type Collection struct {
 	Type    CollectionType `json:"type"`
 	Fields  []Field        `json:"fields"`
 	Indexes []string       `json:"indexes"`
-	
+
 	// API Rules (simple string filters for now)
 	ListRule   *string `json:"list_rule"`
 	ViewRule   *string `json:"view_rule"`

@@ -12,7 +12,7 @@ func ValidateRecord(col *models.Collection, data map[string]any) error {
 
 	for _, f := range col.Fields {
 		val, ok := data[f.Name]
-		
+
 		if f.Required && (!ok || val == nil || val == "") {
 			details[f.Name] = "this field is required"
 			continue

@@ -28,7 +28,7 @@ func RequestIDMiddleware(next http.Handler) http.Handler {
 			id = uuid.New().String()
 		}
 		w.Header().Set("X-Request-ID", id)
-		
+
 		ctx := core.WithRequestID(r.Context(), id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -38,11 +38,11 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		ww := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-		
+
 		next.ServeHTTP(ww, r)
-		
+
 		requestID := ww.Header().Get("X-Request-ID")
-		
+
 		slog.Info("Request",
 			"request_id", requestID,
 			"method", r.Method,
@@ -58,12 +58,12 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				requestID := core.GetRequestID(r.Context())
-				slog.Error("Panic recovered", 
+				slog.Error("Panic recovered",
 					"request_id", requestID,
-					"error", err, 
+					"error", err,
 					"stack", string(debug.Stack()),
 				)
-				
+
 				core.SendError(w, core.NewError(
 					http.StatusInternalServerError,
 					"INTERNAL_SERVER_ERROR",
@@ -134,7 +134,7 @@ func AdminOnly(next http.Handler) http.Handler {
 
 func GetEvaluationContext(r *http.Request, recordData map[string]any) rules.EvaluationContext {
 	authClaims := core.GetAuth(r.Context())
-	
+
 	evalCtx := rules.EvaluationContext{
 		Auth:    make(map[string]any),
 		Data:    make(map[string]any),
@@ -146,7 +146,7 @@ func GetEvaluationContext(r *http.Request, recordData map[string]any) rules.Eval
 	if claims, ok := authClaims.(*auth.Claims); ok {
 		evalCtx.Auth["id"] = claims.RecordID
 		evalCtx.Auth["collection"] = claims.Collection
-		
+
 		// For now, any user in the 'users' collection is an admin if they have a certain flag
 		// but let's just say any verified user in 'users' is admin for this prototype
 		// or better: check a specific 'is_admin' field.

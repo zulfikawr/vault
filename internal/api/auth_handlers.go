@@ -39,7 +39,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// This is a simplified lookup. In a real scenario, we'd use the QueryBuilder to find by email or username.
 	// For now, let's assume we have a way to find a record by a filter.
 	// I'll add a temporary FindOne helper to executor later, but for this step, let's assume it exists.
-	
+
 	// Find user by email
 	// In Phase 5 we implemented a simple filter parser that requires valid field names.
 	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Identity})
@@ -68,7 +68,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userRecord.HideField("password")
-	
+
 	// Generate Refresh Token
 	refreshToken := uuid.New().String()
 	_, err = h.executor.CreateRecord(r.Context(), "_refresh_tokens", map[string]any{
@@ -106,7 +106,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	refreshTokenRecord := records[0]
 	// Check expiry (omitted for brevity, but should be checked)
-	
+
 	userID := refreshTokenRecord.GetString("user_id")
 	userRecord, err := h.executor.FindRecordByID(r.Context(), "users", userID)
 	if err != nil {
@@ -146,7 +146,7 @@ func (h *AuthHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Reques
 
 	// 2. Generate a temporary token (mocked for this checkpoint)
 	resetToken := uuid.New().String()
-	
+
 	// In a real implementation, we'd save this to a 'password_resets' collection with an expiry.
 	// For now, we log it (representing the "email" being sent).
 	core.InitLogger("INFO", "text") // Ensure logger is ready

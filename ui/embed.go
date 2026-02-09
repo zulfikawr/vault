@@ -22,7 +22,7 @@ func Handler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		
+
 		// If the path doesn't have an extension, it's likely a client-side route
 		// so serve index.html
 		if !strings.Contains(path, ".") && path != "/" {
@@ -37,7 +37,7 @@ func Handler() http.Handler {
 				w.Header().Set("Content-Type", contentType)
 			}
 		}
-		
+
 		r.URL.Path = path
 		fileServer.ServeHTTP(w, r)
 	})

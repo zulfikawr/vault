@@ -24,8 +24,12 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 		return nil, 0, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
 	}
 
-	if params.Page <= 0 { params.Page = 1 }
-	if params.PerPage <= 0 { params.PerPage = 30 }
+	if params.Page <= 0 {
+		params.Page = 1
+	}
+	if params.PerPage <= 0 {
+		params.PerPage = 30
+	}
 
 	// Prepare WHERE clause and values
 	whereClauses := []string{"1=1"}
@@ -54,8 +58,8 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 		columns = append(columns, f.Name)
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s LIMIT ? OFFSET ?", 
-		strings.Join(columns, ", "), 
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s LIMIT ? OFFSET ?",
+		strings.Join(columns, ", "),
 		collectionName,
 		whereQuery,
 	)
@@ -105,11 +109,13 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 func (e *Executor) parseSafeFilter(col *models.Collection, filter string) (string, []any, error) {
 	// Simple support for: field = 'value' or field != 'value'
 	operators := []string{" != ", " = ", " > ", " < ", " >= ", " <= "}
-	
+
 	for _, op := range operators {
 		if strings.Contains(filter, op) {
 			parts := strings.Split(filter, op)
-			if len(parts) != 2 { continue }
+			if len(parts) != 2 {
+				continue
+			}
 
 			fieldName := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])

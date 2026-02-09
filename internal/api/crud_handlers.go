@@ -31,7 +31,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// For Phase 5, if listRule is nil/empty, it's public.
-	// If it's set, we check basic auth for now. 
+	// If it's set, we check basic auth for now.
 	// (Step 3 will implement full SQL-level filtering)
 	if col.ListRule != nil && *col.ListRule != "" {
 		evalCtx := GetEvaluationContext(r, nil)
@@ -97,7 +97,7 @@ func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
 
 func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	collectionName := r.PathValue("collection")
-	
+
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
 		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
@@ -223,10 +223,10 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *CollectionHandler) parseQueryParams(r *http.Request) db.QueryParams {
 	q := r.URL.Query()
-	
+
 	page, _ := strconv.Atoi(q.Get("page"))
 	perPage, _ := strconv.Atoi(q.Get("perPage"))
-	
+
 	return db.QueryParams{
 		Page:    page,
 		PerPage: perPage,

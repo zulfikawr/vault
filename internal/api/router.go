@@ -27,7 +27,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 			http.Redirect(w, r, "/_/", http.StatusFound)
 			return
 		}
-		
+
 		// If it's not root and not matched by other handlers, it's a 404
 		http.NotFound(w, r)
 	})
