@@ -27,9 +27,21 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	if params.Page <= 0 { params.Page = 1 }
 	if params.PerPage <= 0 { params.PerPage = 30 }
 
+	// Prepare WHERE clause
+	whereClauses := []string{"1=1"}
+	whereValues := []any{}
+
+	if params.Filter != "" {
+		// Basic filter support (simplified mapping)
+		// WARNING: This is a placeholder for a real SQL generator to prevent injection
+		whereClauses = append(whereClauses, params.Filter)
+	}
+
+	whereQuery := strings.Join(whereClauses, " AND ")
+
 	// Count total
 	var total int
-	err := e.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", collectionName)).Scan(&total)
+	err := e.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", collectionName, whereQuery), whereValues...).Scan(&total)
 	if err != nil {
 		return nil, 0, core.NewError(http.StatusInternalServerError, "DB_COUNT_FAILED", "Failed to count records").WithDetails(map[string]any{"error": err.Error()})
 	}
@@ -39,13 +51,15 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 		columns = append(columns, f.Name)
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM %s LIMIT ? OFFSET ?", 
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s LIMIT ? OFFSET ?", 
 		strings.Join(columns, ", "), 
 		collectionName,
+		whereQuery,
 	)
 
 	offset := (params.Page - 1) * params.PerPage
-	rows, err := e.db.QueryContext(ctx, query, params.PerPage, offset)
+	allValues := append(whereValues, params.PerPage, offset)
+	rows, err := e.db.QueryContext(ctx, query, allValues...)
 	if err != nil {
 		return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_LIST_FAILED", "Failed to list records").WithDetails(map[string]any{"error": err.Error()})
 	}

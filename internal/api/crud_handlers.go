@@ -7,6 +7,7 @@ import (
 
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/rules"
 )
 
 type CollectionHandler struct {
@@ -22,19 +23,34 @@ func NewCollectionHandler(executor *db.Executor, registry *db.SchemaRegistry) *C
 }
 
 func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
-	collection := r.PathValue("collection")
-	
+	collectionName := r.PathValue("collection")
+	col, ok := h.registry.GetCollection(collectionName)
+	if !ok {
+		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		return
+	}
+
+	// For Phase 5, if listRule is nil/empty, it's public.
+	// If it's set, we check basic auth for now. 
+	// (Step 3 will implement full SQL-level filtering)
+	if col.ListRule != nil && *col.ListRule != "" {
+		evalCtx := GetEvaluationContext(r, nil)
+		allowed, err := rules.Evaluate(*col.ListRule, evalCtx)
+		if !allowed || err != nil {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to list this collection"))
+			return
+		}
+	}
+
 	params := h.parseQueryParams(r)
-	
-	records, total, err := h.executor.ListRecords(r.Context(), collection, params)
+	records, total, err := h.executor.ListRecords(r.Context(), collectionName, params)
 	if err != nil {
 		core.SendError(w, err)
 		return
 	}
 
-	// Hide sensitive fields for all records
 	for _, record := range records {
-		if collection == "users" {
+		if collectionName == "users" {
 			record.HideField("password")
 		}
 	}
@@ -47,16 +63,32 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
-	collection := r.PathValue("collection")
+	collectionName := r.PathValue("collection")
 	id := r.PathValue("id")
 
-	record, err := h.executor.FindRecordByID(r.Context(), collection, id)
+	col, ok := h.registry.GetCollection(collectionName)
+	if !ok {
+		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		return
+	}
+
+	record, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
 		core.SendError(w, err)
 		return
 	}
 
-	if collection == "users" {
+	// Rule Check
+	if col.ViewRule != nil && *col.ViewRule != "" {
+		evalCtx := GetEvaluationContext(r, record.Data)
+		allowed, err := rules.Evaluate(*col.ViewRule, evalCtx)
+		if !allowed || err != nil {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to view this record"))
+			return
+		}
+	}
+
+	if collectionName == "users" {
 		record.HideField("password")
 	}
 
@@ -78,7 +110,17 @@ func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate against schema
+	// Rule Check (Pre-create check)
+	if col.CreateRule != nil && *col.CreateRule != "" {
+		evalCtx := GetEvaluationContext(r, nil)
+		evalCtx.Data = data // Inject incoming data
+		allowed, err := rules.Evaluate(*col.CreateRule, evalCtx)
+		if !allowed || err != nil {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to create records in this collection"))
+			return
+		}
+	}
+
 	if err := db.ValidateRecord(col, data); err != nil {
 		core.SendError(w, err)
 		return
@@ -101,7 +143,8 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	collectionName := r.PathValue("collection")
 	id := r.PathValue("id")
 
-	if _, ok := h.registry.GetCollection(collectionName); !ok {
+	col, ok := h.registry.GetCollection(collectionName)
+	if !ok {
 		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
@@ -112,10 +155,23 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate provided fields (simplified PATCH validation)
-	// We only validate what's provided. db.ValidateRecord currently checks 'Required', 
-	// which might be problematic for PATCH if not all fields are sent.
-	// For now, let's just use it and assume we'll refine validation later.
+	// Fetch current for rule evaluation
+	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
+	if err != nil {
+		core.SendError(w, err)
+		return
+	}
+
+	// Rule Check
+	if col.UpdateRule != nil && *col.UpdateRule != "" {
+		evalCtx := GetEvaluationContext(r, existing.Data)
+		evalCtx.Data = data
+		allowed, err := rules.Evaluate(*col.UpdateRule, evalCtx)
+		if !allowed || err != nil {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to update this record"))
+			return
+		}
+	}
 
 	record, err := h.executor.UpdateRecord(r.Context(), collectionName, id, data)
 	if err != nil {
@@ -133,6 +189,29 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	collectionName := r.PathValue("collection")
 	id := r.PathValue("id")
+
+	col, ok := h.registry.GetCollection(collectionName)
+	if !ok {
+		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		return
+	}
+
+	// Fetch current for rule evaluation
+	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
+	if err != nil {
+		core.SendError(w, err)
+		return
+	}
+
+	// Rule Check
+	if col.DeleteRule != nil && *col.DeleteRule != "" {
+		evalCtx := GetEvaluationContext(r, existing.Data)
+		allowed, err := rules.Evaluate(*col.DeleteRule, evalCtx)
+		if !allowed || err != nil {
+			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to delete this record"))
+			return
+		}
+	}
 
 	if err := h.executor.DeleteRecord(r.Context(), collectionName, id); err != nil {
 		core.SendError(w, err)
