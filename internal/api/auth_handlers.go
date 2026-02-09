@@ -40,8 +40,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// For now, let's assume we have a way to find a record by a filter.
 	// I'll add a temporary FindOne helper to executor later, but for this step, let's assume it exists.
 	
-	// mock finding user
-	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "identity = " + req.Identity})
+	// Find user by email
+	// In Phase 5 we implemented a simple filter parser that requires valid field names.
+	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Identity})
+	if err != nil || len(records) == 0 {
+		// If not found by email, try username
+		records, _, err = h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "username = " + req.Identity})
+	}
+
 	if err != nil || len(records) == 0 {
 		core.SendError(w, core.NewError(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid identity or password"))
 		return

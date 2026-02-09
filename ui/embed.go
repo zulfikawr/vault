@@ -3,7 +3,9 @@ package ui
 import (
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
 
@@ -11,7 +13,6 @@ import (
 var distFS embed.FS
 
 func Handler() http.Handler {
-	// Get the sub-filesystem from the dist directory
 	stripped, err := fs.Sub(distFS, "dist")
 	if err != nil {
 		panic(err)
@@ -20,12 +21,24 @@ func Handler() http.Handler {
 	fileServer := http.FileServer(http.FS(stripped))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		
 		// If the path doesn't have an extension, it's likely a client-side route
 		// so serve index.html
-		if !strings.Contains(r.URL.Path, ".") && r.URL.Path != "/" {
-			r.URL.Path = "/"
+		if !strings.Contains(path, ".") && path != "/" {
+			path = "/"
+		}
+
+		// Manually set MIME types for embedded files because http.FS might not detect them correctly
+		ext := filepath.Ext(path)
+		if ext != "" {
+			contentType := mime.TypeByExtension(ext)
+			if contentType != "" {
+				w.Header().Set("Content-Type", contentType)
+			}
 		}
 		
+		r.URL.Path = path
 		fileServer.ServeHTTP(w, r)
 	})
 }

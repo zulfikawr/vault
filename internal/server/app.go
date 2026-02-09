@@ -114,6 +114,7 @@ func NewApp() *App {
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,
+		api.AuthMiddleware(cfg.JWTSecret), // Added this line
 		api.RequestIDMiddleware,
 		api.CORSMiddleware,
 	)

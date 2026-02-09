@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/zulfikawr/vault/internal/core"
@@ -20,6 +21,16 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminHandler := NewAdminHandler(executor, registry, migration)
 
 	// Base routes
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			slog.Info("Redirecting root to /_/", "request_id", core.GetRequestID(r.Context()))
+			http.Redirect(w, r, "/_/", http.StatusFound)
+			return
+		}
+		
+		// If it's not root and not matched by other handlers, it's a 404
+		http.NotFound(w, r)
+	})
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		SendJSON(w, http.StatusOK, map[string]string{"status": "ok"}, nil)
 	})
