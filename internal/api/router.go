@@ -7,6 +7,7 @@ import (
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/realtime"
 	"github.com/zulfikawr/vault/internal/storage"
+	"github.com/zulfikawr/vault/ui"
 )
 
 func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, hub *realtime.Hub, migration *db.MigrationEngine, config *core.Config) *http.ServeMux {
@@ -52,6 +53,9 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 
 	// Mount admin router with middleware
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))
+
+	// Mount UI handler
+	mux.Handle("/_/", http.StripPrefix("/_", ui.Handler()))
 
 	return mux
 }
