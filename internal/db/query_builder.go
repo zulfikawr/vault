@@ -15,6 +15,7 @@ type QueryParams struct {
 	PerPage int
 	Sort    string
 	Filter  string
+	Expand  string
 }
 
 func (e *Executor) ListRecords(ctx context.Context, collectionName string, params QueryParams) ([]*models.Record, int, error) {
@@ -74,6 +75,10 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 			record.Data[f.Name] = vals[i+3]
 		}
 		records = append(records, record)
+	}
+
+	if params.Expand != "" {
+		e.expandRecords(ctx, col, records, params.Expand)
 	}
 
 	return records, total, nil

@@ -89,7 +89,7 @@ func NewApp() *App {
 		}
 	}
 
-	router := api.NewRouter(executor, cfg)
+	router := api.NewRouter(executor, registry, cfg)
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,

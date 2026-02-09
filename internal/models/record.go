@@ -4,6 +4,7 @@ type Record struct {
 	ID         string         `json:"id"`
 	Collection string         `json:"collection"`
 	Data       map[string]any `json:"data"`
+	Expand     map[string]any `json:"expand,omitempty"`
 	Created    string         `json:"created"`
 	Updated    string         `json:"updated"`
 }
@@ -16,6 +17,7 @@ func NewRecord(collection string) *Record {
 	return &Record{
 		Collection: collection,
 		Data:       make(map[string]any),
+		Expand:     make(map[string]any),
 	}
 }
 
