@@ -9,6 +9,7 @@ const (
 	FieldTypeJSON     FieldType = "json"
 	FieldTypeDate     FieldType = "date"
 	FieldTypeRelation FieldType = "relation"
+	FieldTypeFile     FieldType = "file"
 )
 
 type Field struct {

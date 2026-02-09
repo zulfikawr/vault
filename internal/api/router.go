@@ -5,13 +5,15 @@ import (
 
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/storage"
 )
 
-func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, config *core.Config) *http.ServeMux {
+func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, config *core.Config) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	authHandler := NewAuthHandler(executor, config)
 	crudHandler := NewCollectionHandler(executor, registry)
+	fileHandler := NewFileHandler(store, executor)
 
 	// Base routes
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +32,10 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, config *core.
 	mux.HandleFunc("GET /api/collections/{collection}/records/{id}", crudHandler.View)
 	mux.HandleFunc("PATCH /api/collections/{collection}/records/{id}", crudHandler.Update)
 	mux.HandleFunc("DELETE /api/collections/{collection}/records/{id}", crudHandler.Delete)
+
+	// File routes
+	mux.HandleFunc("GET /api/files/{collection}/{id}/{filename}", fileHandler.Serve)
+	mux.HandleFunc("POST /api/files", fileHandler.Upload)
 
 	return mux
 }

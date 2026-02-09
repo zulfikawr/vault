@@ -14,6 +14,7 @@ import (
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/models"
+	"github.com/zulfikawr/vault/internal/storage"
 )
 
 type App struct {
@@ -23,6 +24,7 @@ type App struct {
 	Registry  *db.SchemaRegistry
 	Migration *db.MigrationEngine
 	Executor  *db.Executor
+	Storage   storage.Storage
 }
 
 func NewApp() *App {
@@ -35,6 +37,13 @@ func NewApp() *App {
 	database, err := db.Connect(ctx, cfg.DBPath)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+
+	// Initialize Storage
+	store, err := storage.NewLocal("./vault_data/storage")
+	if err != nil {
+		slog.Error("Failed to initialize storage", "error", err)
 		os.Exit(1)
 	}
 
@@ -89,7 +98,7 @@ func NewApp() *App {
 		}
 	}
 
-	router := api.NewRouter(executor, registry, cfg)
+	router := api.NewRouter(executor, registry, store, cfg)
 	handler := api.Chain(router,
 		api.RecoveryMiddleware,
 		api.LoggerMiddleware,
@@ -106,6 +115,7 @@ func NewApp() *App {
 		Registry:  registry,
 		Migration: migration,
 		Executor:  executor,
+		Storage:   store,
 	}
 }
 
