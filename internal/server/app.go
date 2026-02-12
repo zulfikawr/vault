@@ -102,6 +102,12 @@ func NewApp() *App {
 			slog.Error("Failed to sync system collection", "name", name, "error", err)
 			os.Exit(1)
 		}
+		// Save system collection metadata to _collections table (except _collections itself to avoid recursion)
+		if name != "_collections" {
+			if err := registry.SaveCollection(ctx, col); err != nil {
+				slog.Warn("Failed to save system collection metadata", "name", name, "error", err)
+			}
+		}
 	}
 
 	// Load dynamic collections from DB

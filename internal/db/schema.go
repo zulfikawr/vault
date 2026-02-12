@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/models"
@@ -48,15 +50,21 @@ func (s *SchemaRegistry) AddCollection(c *models.Collection) {
 }
 
 func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
-	rows, err := s.db.QueryContext(ctx, "SELECT name, type, fields FROM _collections")
+	// First, ensure all existing records have IDs (migration for old data)
+	_, err := s.db.ExecContext(ctx, `UPDATE _collections SET id = 'col_' || name WHERE id IS NULL`)
+	if err != nil {
+		slog.Warn("Failed to migrate _collections IDs", "error", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, "SELECT id, name, type, fields, created, updated FROM _collections")
 	if err != nil {
 		return err
 	}
 	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
-		var name, ctype, fieldsJSON string
-		if err := rows.Scan(&name, &ctype, &fieldsJSON); err != nil {
+		var id, name, ctype, fieldsJSON, created, updated string
+		if err := rows.Scan(&id, &name, &ctype, &fieldsJSON, &created, &updated); err != nil {
 			return err
 		}
 
@@ -66,9 +74,12 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 		}
 
 		s.AddCollection(&models.Collection{
-			Name:   name,
-			Type:   models.CollectionType(ctype),
-			Fields: fields,
+			ID:      id,
+			Name:    name,
+			Type:    models.CollectionType(ctype),
+			Fields:  fields,
+			Created: created,
+			Updated: updated,
 		})
 	}
 	return nil
@@ -77,10 +88,15 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collection) error {
 	fieldsJSON, _ := json.Marshal(c.Fields)
 
-	query := `INSERT INTO _collections (name, type, fields) VALUES (?, ?, ?) 
+	// Generate ID if not present
+	if c.ID == "" {
+		c.ID = "col_" + c.Name
+	}
+
+	query := `INSERT INTO _collections (id, name, type, fields) VALUES (?, ?, ?, ?) 
 	          ON CONFLICT(name) DO UPDATE SET type=excluded.type, fields=excluded.fields`
 
-	_, err := s.db.ExecContext(ctx, query, c.Name, c.Type, string(fieldsJSON))
+	_, err := s.db.ExecContext(ctx, query, c.ID, c.Name, c.Type, string(fieldsJSON))
 	if err != nil {
 		return core.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
 	}
@@ -105,6 +121,8 @@ func (s *SchemaRegistry) BootstrapSystemCollections() error {
 			{Name: "updateRule", Type: models.FieldTypeText},
 			{Name: "deleteRule", Type: models.FieldTypeText},
 		},
+		Created: time.Now().Format(time.RFC3339),
+		Updated: time.Now().Format(time.RFC3339),
 	}
 
 	s.AddCollection(collectionsTable)

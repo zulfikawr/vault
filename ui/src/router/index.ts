@@ -41,6 +41,12 @@ const router = createRouter({
       component: () => import('../views/RecordNew.vue'),
       meta: { requiresAuth: true }
     },
+    { 
+      path: '/collections/:name/edit/:id', 
+      name: 'RecordEdit', 
+      component: () => import('../views/RecordEdit.vue'),
+      meta: { requiresAuth: true }
+    },
     { path: '/login', name: 'Login', component: Login },
   ],
 });

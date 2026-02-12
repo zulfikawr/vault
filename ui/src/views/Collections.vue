@@ -75,13 +75,14 @@ onMounted(fetchCollections);
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Name</th>
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Type</th>
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Fields</th>
+                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Created</th>
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
-                  <tr v-for="col in collections" :key="col.name" @click="router.push(`/collections/${col.name}`)" class="hover:bg-background/50 transition-colors group cursor-pointer">
-                    <td class="px-6 py-4">
+                  <tr v-for="col in collections" :key="col.name" class="hover:bg-background/50 transition-colors group">
+                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
                       <div class="flex items-center gap-3">
                         <div class="p-1.5 rounded bg-primary/10 text-primary">
                           <FolderOpen class="w-4 h-4" />
@@ -89,25 +90,28 @@ onMounted(fetchCollections);
                         <span class="font-medium text-text">{{ col.name }}</span>
                       </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
                       <span class="text-text-muted">{{ col.type }}</span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
                       <span class="text-text-muted">{{ col.fields?.length || 0 }} fields</span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
+                      <span class="text-text-muted text-xs">{{ col.created ? new Date(col.created).toLocaleDateString() : '-' }}</span>
+                    </td>
+                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
                       <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success">
                         Active
                       </span>
                     </td>
                     <td class="px-6 py-4 text-right">
-                      <button class="text-text-muted hover:text-primary transition-colors">
+                      <button @click.stop class="text-text-muted hover:text-primary transition-colors">
                         <MoreHorizontal class="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
                   <tr v-if="collections.length === 0">
-                    <td colspan="5" class="px-6 py-12 text-center text-text-muted">
+                    <td colspan="6" class="px-6 py-12 text-center text-text-muted">
                       <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p class="text-sm mb-4">No collections found</p>
                       <button @click="router.push('/collections/new')" class="text-sm text-primary hover:text-primary-hover">Create your first collection</button>

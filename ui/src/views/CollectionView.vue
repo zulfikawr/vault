@@ -135,7 +135,7 @@ onMounted(() => {
                     </td>
                     <td class="px-6 py-4 text-right">
                       <div class="flex justify-end items-center gap-2">
-                        <button class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors">
+                        <button @click="router.push(`/collections/${collectionName}/edit/${record.id}`)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors">
                           <Edit class="w-4 h-4" />
                         </button>
                         <button @click="deleteRecord(record.id)" class="p-2 text-text-muted hover:text-error hover:bg-error/10 rounded transition-colors">
