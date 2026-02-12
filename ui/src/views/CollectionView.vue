@@ -128,7 +128,10 @@ onMounted(() => {
                 <tbody class="divide-y divide-border">
                   <tr v-for="record in records" :key="record.id" class="hover:bg-background/50 transition-colors group">
                     <td v-for="field in collection?.fields" :key="field.name" class="px-6 py-4">
-                      <span class="text-text">{{ record[field.name] || '-' }}</span>
+                      <span v-if="field.type === 'bool'" class="text-text">
+                        {{ record.data?.[field.name] === 1 || record.data?.[field.name] === true ? 'true' : 'false' }}
+                      </span>
+                      <span v-else class="text-text">{{ record.data?.[field.name] ?? '-' }}</span>
                     </td>
                     <td class="px-6 py-4 text-right">
                       <div class="flex justify-end items-center gap-2">
@@ -145,7 +148,7 @@ onMounted(() => {
                     <td :colspan="(collection?.fields?.length || 0) + 1" class="px-6 py-12 text-center text-text-muted">
                       <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p class="text-sm mb-4">No records found</p>
-                      <button class="text-sm text-primary hover:text-primary-hover">Create your first record</button>
+                      <button @click="router.push(`/collections/${collectionName}/new`)" class="text-sm text-primary hover:text-primary-hover">Create your first record</button>
                     </td>
                   </tr>
                 </tbody>

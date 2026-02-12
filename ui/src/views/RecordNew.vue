@@ -6,7 +6,8 @@ import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { 
   FolderOpen, 
-  X
+  X,
+  Save
 } from 'lucide-vue-next';
 
 const router = useRouter();

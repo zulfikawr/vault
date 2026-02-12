@@ -61,6 +61,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update lastLogin timestamp
+	_, err = h.executor.UpdateRecord(r.Context(), "users", userRecord.ID, map[string]any{
+		"lastLogin": time.Now().Format(time.RFC3339),
+	})
+	if err != nil {
+		slog.Warn("Failed to update lastLogin", "error", err)
+	}
+
+	// Refresh the user record to get updated lastLogin
+	records, _, err = h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "id = " + userRecord.ID})
+	if err == nil && len(records) > 0 {
+		userRecord = records[0]
+	}
+
 	token, err := auth.GenerateToken(r.Context(), userRecord, h.config.JWTSecret, h.config.JWTExpiry)
 	if err != nil {
 		core.SendError(w, err)

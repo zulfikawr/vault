@@ -111,16 +111,16 @@ onMounted(fetchCollections);
       <div class="p-4 border-t border-border">
         <div v-if="!sidebarCollapsed" class="flex items-center gap-3 w-full p-2 rounded-lg mb-2">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
-            {{ auth.user?.username?.charAt(0).toUpperCase() || 'A' }}
+            {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate text-text">{{ auth.user?.username || 'Admin' }}</p>
-            <p class="text-xs text-text-muted truncate">Admin Workspace</p>
+            <p class="text-sm font-medium truncate text-text">{{ auth.user?.data?.username || 'Admin' }}</p>
+            <p class="text-xs text-text-muted truncate">{{ auth.user?.data?.email || 'admin@vault.local' }}</p>
           </div>
         </div>
         <div v-else class="flex justify-center mb-2">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
-            {{ auth.user?.username?.charAt(0).toUpperCase() || 'A' }}
+            {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
         </div>
         <button 
