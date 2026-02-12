@@ -23,6 +23,24 @@ const router = createRouter({
       component: () => import('../views/CollectionNew.vue'),
       meta: { requiresAuth: true }
     },
+    { 
+      path: '/collections/:name', 
+      name: 'CollectionView', 
+      component: () => import('../views/CollectionView.vue'),
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/collections/:name/settings', 
+      name: 'CollectionSettings', 
+      component: () => import('../views/CollectionSettings.vue'),
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/collections/:name/new', 
+      name: 'RecordNew', 
+      component: () => import('../views/RecordNew.vue'),
+      meta: { requiresAuth: true }
+    },
     { path: '/login', name: 'Login', component: Login },
   ],
 });

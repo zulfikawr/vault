@@ -92,7 +92,7 @@ onMounted(fetchCollections);
         <div v-if="!sidebarCollapsed" class="px-4 mt-6">
           <div class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-2 px-3">Recent Collections</div>
           <ul class="space-y-1">
-            <li v-for="col in collections.slice(0, 3)" :key="col.name">
+            <li v-for="col in collections.filter(c => !c.name.startsWith('_')).slice(0, 3)" :key="col.name">
               <a href="#" class="flex items-center justify-between px-3 py-1.5 text-sm text-text-muted hover:text-text group transition-colors">
                 <span class="text-xs">{{ col.name }}</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-success group-hover:scale-110 transition-transform"></span>
