@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { Search, Bell } from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 
 const systemStatus = ref<'checking' | 'online' | 'offline'>('checking');
 const backendPort = ref('');
@@ -50,15 +50,10 @@ onMounted(checkSystemStatus);
         <input 
           type="text" 
           placeholder="Search (Ctrl+K)" 
-          class="w-64 bg-surface-dark border-border rounded-md py-1.5 pl-9 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-text placeholder-text-muted transition-all"
+          class="w-64 bg-surface-dark border-border rounded-md py-1.5 pl-9 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none text-text placeholder-text-muted transition-all"
         />
         <Search class="absolute left-2.5 top-2 text-text-muted w-4 h-4" />
       </div>
-      
-      <button class="relative p-1.5 text-text-muted hover:text-text rounded-md hover:bg-surface-dark transition-colors">
-        <Bell class="w-5 h-5" />
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-surface"></span>
-      </button>
     </div>
   </header>
 </template>
