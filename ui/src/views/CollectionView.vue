@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
 import { 
   FolderOpen, 
   Filter,
@@ -19,6 +20,8 @@ const route = useRoute();
 const collections = ref([]);
 const collection = ref(null);
 const records = ref([]);
+const showDeleteModal = ref(false);
+const recordToDelete = ref('');
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -50,19 +53,20 @@ const fetchRecords = async () => {
   }
 };
 
-const deleteRecord = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this record?')) return;
+const confirmDelete = (id: string) => {
+  recordToDelete.value = id;
+  showDeleteModal.value = true;
+};
+
+const deleteRecord = async () => {
   try {
-    await axios.delete(`/api/collections/${collectionName.value}/records/${id}`);
+    await axios.delete(`/api/collections/${collectionName.value}/records/${recordToDelete.value}`);
+    showDeleteModal.value = false;
+    recordToDelete.value = '';
     fetchRecords();
   } catch (error) {
     console.error('Delete failed', error);
   }
-};
-
-const handleLogout = () => {
-  auth.logout();
-  router.push({ name: 'Login' });
 };
 
 onMounted(() => {
@@ -74,6 +78,16 @@ onMounted(() => {
 
 <template>
   <AppLayout>
+    <ConfirmModal
+      :show="showDeleteModal"
+      title="Delete Record"
+      message="Are you sure you want to delete this record? This action cannot be undone."
+      confirm-text="Delete"
+      cancel-text="Cancel"
+      variant="danger"
+      @confirm="deleteRecord"
+      @cancel="showDeleteModal = false"
+    />
     
       <!-- Header -->
       <AppHeader>
@@ -138,7 +152,7 @@ onMounted(() => {
                         <button @click="router.push(`/collections/${collectionName}/edit/${record.id}`)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors">
                           <Edit class="w-4 h-4" />
                         </button>
-                        <button @click="deleteRecord(record.id)" class="p-2 text-text-muted hover:text-error hover:bg-error/10 rounded transition-colors">
+                        <button @click="confirmDelete(record.id)" class="p-2 text-text-muted hover:text-error hover:bg-error/10 rounded transition-colors">
                           <Trash2 class="w-4 h-4" />
                         </button>
                       </div>

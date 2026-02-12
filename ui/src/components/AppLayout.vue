@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
+import ConfirmModal from './ConfirmModal.vue';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -19,6 +20,7 @@ const router = useRouter();
 const route = useRoute();
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
 const collections = ref([]);
+const showLogoutModal = ref(false);
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/';
@@ -49,6 +51,17 @@ onMounted(fetchCollections);
 
 <template>
   <div class="flex h-screen bg-background text-text overflow-hidden">
+    <ConfirmModal
+      :show="showLogoutModal"
+      title="Confirm Logout"
+      message="Are you sure you want to log out? You will need to sign in again to access the admin panel."
+      confirm-text="Logout"
+      cancel-text="Cancel"
+      variant="warning"
+      @confirm="handleLogout"
+      @cancel="showLogoutModal = false"
+    />
+    
     <!-- Sidebar -->
     <aside :class="sidebarCollapsed ? 'w-16' : 'w-64'" class="flex-shrink-0 border-r border-border bg-surface flex flex-col justify-between transition-all duration-300">
       <div>
@@ -124,7 +137,7 @@ onMounted(fetchCollections);
           </div>
         </div>
         <button 
-          @click="handleLogout" 
+          @click="showLogoutModal = true" 
           :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'"
           class="w-full flex items-center py-2 rounded-lg text-xs font-bold text-error hover:bg-error/10 transition-colors"
         >
