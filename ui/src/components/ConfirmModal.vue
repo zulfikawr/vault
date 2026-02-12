@@ -28,12 +28,12 @@ const emit = defineEmits<{
       <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <!-- Backdrop -->
         <div 
-          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/70"
           @click="emit('cancel')"
         ></div>
         
         <!-- Modal -->
-        <div class="relative bg-surface border border-border rounded-lg shadow-2xl max-w-md w-full">
+        <div class="relative bg-surface border border-border rounded-lg shadow-2xl max-w-lg w-full">
           <!-- Header -->
           <div class="flex items-start justify-between p-6 border-b border-border">
             <div class="flex items-center gap-3">
@@ -66,16 +66,16 @@ const emit = defineEmits<{
           <div class="flex justify-end gap-3 p-6 border-t border-border bg-surface-dark/50">
             <button 
               @click="emit('cancel')"
-              class="px-4 py-2 bg-surface border border-border rounded-lg font-medium text-text hover:bg-surface-dark transition-colors"
+              class="px-5 py-2.5 bg-surface border border-border rounded-lg font-medium text-text hover:bg-surface-dark transition-colors"
             >
               {{ cancelText }}
             </button>
             <button 
               @click="emit('confirm')"
               :class="[
-                'px-4 py-2 rounded-lg font-medium transition-colors',
+                'px-5 py-2.5 rounded-lg font-medium transition-colors',
                 variant === 'danger' ? 'bg-error hover:bg-error/90 text-white' : '',
-                variant === 'warning' ? 'bg-warning hover:bg-warning/90 text-background' : '',
+                variant === 'warning' ? 'bg-primary hover:bg-primary-hover text-white' : '',
                 variant === 'info' ? 'bg-primary hover:bg-primary-hover text-white' : ''
               ]"
             >
