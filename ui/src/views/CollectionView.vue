@@ -8,7 +8,7 @@ import {
   FolderOpen, 
   Filter,
   Plus,
-  MoreHorizontal
+  MoreHorizontal,
   Edit,
   Trash2
 } from 'lucide-vue-next';
