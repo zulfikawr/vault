@@ -17,12 +17,17 @@ import {
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
-const sidebarCollapsed = ref(false);
+const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
 const collections = ref([]);
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/';
   return route.path.startsWith(path);
+};
+
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+  localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed.value));
 };
 
 const fetchCollections = async () => {
@@ -50,7 +55,7 @@ onMounted(fetchCollections);
         <!-- Brand -->
         <div class="h-16 flex items-center border-b border-border" :class="sidebarCollapsed ? 'justify-center' : 'justify-between px-6'">
           <span v-if="!sidebarCollapsed" class="font-bold text-lg tracking-tight text-primary">vault</span>
-          <button @click="sidebarCollapsed = !sidebarCollapsed" class="p-1 hover:bg-surface-dark rounded transition-colors">
+          <button @click="toggleSidebar" class="p-1 hover:bg-surface-dark rounded transition-colors">
             <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
             <ChevronRight v-else class="w-5 h-5 text-text-muted" />
           </button>
