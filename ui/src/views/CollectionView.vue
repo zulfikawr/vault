@@ -10,7 +10,8 @@ import {
   Plus,
   MoreHorizontal,
   Edit,
-  Trash2
+  Trash2,
+  Settings
 } from 'lucide-vue-next';
 
 const router = useRouter();
