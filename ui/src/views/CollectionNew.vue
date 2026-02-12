@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
+import AppHeader from '../components/AppHeader.vue';
 import { 
   Plus, 
   Trash2, 
@@ -189,4 +190,5 @@ const handleLogout = () => {
       </div>
       </AppLayout>
 </template>
+
 

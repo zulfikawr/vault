@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
+import AppHeader from '../components/AppHeader.vue';
 import { 
   FolderOpen, 
   Terminal, 
@@ -180,4 +181,5 @@ onMounted(() => {
       </div>
       </AppLayout>
 </template>
+
 

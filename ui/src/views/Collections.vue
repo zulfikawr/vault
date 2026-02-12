@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
+import AppHeader from '../components/AppHeader.vue';
 import { 
   FolderOpen, 
   Terminal, 
@@ -38,39 +39,15 @@ onMounted(fetchCollections);
   <AppLayout>
     
       <!-- Header -->
-      <header class="h-16 flex items-center justify-between px-8 border-b border-border bg-surface z-10">
-        <!-- Breadcrumbs -->
+      <AppHeader>
+      <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
           <span class="hover:text-text cursor-pointer" @click="router.push('/')">Vault</span>
           <span class="mx-2">/</span>
           <span class="font-medium text-text">Collections</span>
         </div>
-        
-        <!-- Actions -->
-        <div class="flex items-center gap-4">
-          <!-- Environment Badge -->
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-success/10 text-success border border-success/20">
-            <span class="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span>
-            Production
-          </span>
-          
-          <!-- Search -->
-          <div class="relative hidden sm:block group">
-            <input 
-              type="text" 
-              placeholder="Search (Ctrl+K)" 
-              class="w-64 bg-surface-dark border-border rounded-md py-1.5 pl-9 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-text placeholder-text-muted transition-all"
-            />
-            <Search class="absolute left-2.5 top-2 text-text-muted w-4 h-4" />
-          </div>
-          
-          <!-- Notifications -->
-          <button class="relative p-1.5 text-text-muted hover:text-text rounded-md hover:bg-surface-dark transition-colors">
-            <Bell class="w-5 h-5" />
-            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-surface"></span>
-          </button>
-        </div>
-      </header>
+      </template>
+    </AppHeader>
 
       <!-- Main Scrollable Area -->
       <div class="flex-1 overflow-auto p-8">
@@ -159,4 +136,5 @@ onMounted(fetchCollections);
       </div>
       </AppLayout>
 </template>
+
 
