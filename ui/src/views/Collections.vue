@@ -5,15 +5,11 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { 
-  FolderOpen, 
-  Terminal, 
-  Settings, 
-  Cloud
-  Search,
-  Bell,
+  FolderOpen,
   Filter,
   Plus,
-  MoreHorizontal} from 'lucide-vue-next';
+  MoreHorizontal
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const collections = ref([]);

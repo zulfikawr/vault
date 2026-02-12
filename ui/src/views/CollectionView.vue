@@ -6,11 +6,6 @@ import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { 
   FolderOpen, 
-  Terminal, 
-  Settings, 
-  Cloud
-  Search,
-  Bell,
   Filter,
   Plus,
   MoreHorizontal

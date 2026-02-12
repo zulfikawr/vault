@@ -11,9 +11,6 @@ import {
   X, 
   FolderPlus 
   FolderOpen, 
-  Terminal, 
-  Settings, 
-  Cloud} from 'lucide-vue-next';
 
 const router = useRouter();
 
