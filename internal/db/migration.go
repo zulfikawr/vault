@@ -78,14 +78,18 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 
 	existingCols := make(map[string]bool)
 	for rows.Next() {
-		var cid int
-		var name, dtype string
-		var notnull, pk int
-		var dfltValue any
-		if err := rows.Scan(&cid, &name, &dtype, &notnull, &pk, &dfltValue); err != nil {
-			return core.NewError(http.StatusInternalServerError, "DB_SCAN_FAILED", "Failed to scan table info").WithDetails(map[string]any{"error": err.Error()})
+		var cid sql.NullInt64
+		var name, dtype sql.NullString
+		var notnull sql.NullInt64
+		var dfltValue sql.NullString
+		var pk sql.NullInt64
+		if err := rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk); err != nil {
+			slog.Error("PRAGMA scan failed", "error", err, "collection", c.Name)
+			return core.NewError(http.StatusInternalServerError, "DB_SCAN_FAILED", "Failed to scan table info").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
 		}
-		existingCols[name] = true
+		if name.Valid {
+			existingCols[name.String] = true
+		}
 	}
 
 	for _, f := range c.Fields {

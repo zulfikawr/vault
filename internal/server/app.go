@@ -134,6 +134,15 @@ func NewApp() *App {
 }
 
 func (a *App) Run() {
+	// Check if any users exist
+	ctx := context.Background()
+	var count int
+	err := a.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&count)
+	if err == nil && count == 0 {
+		slog.Warn("⚠️  No users found!")
+		slog.Warn("Create an admin user with: ./vault admin create --email <email> --password <password> --username <username>")
+	}
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 

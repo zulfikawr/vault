@@ -33,6 +33,10 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      const rememberMe = localStorage.getItem('rememberMe');
+      if (!rememberMe) {
+        localStorage.removeItem('rememberMeExpiry');
+      }
       delete axios.defaults.headers.common['Authorization'];
     },
   },

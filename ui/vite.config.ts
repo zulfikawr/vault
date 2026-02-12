@@ -8,5 +8,15 @@ export default defineConfig({
     vue(),
     tailwindcss(),
   ],
-  base: '/_/',
+  server: {
+    port: 3000,
+    host: true,
+    allowedHosts: ['dev.zulfikar.site'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8090',
+        changeOrigin: true,
+      },
+    },
+  },
 })

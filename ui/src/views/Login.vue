@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { Lock, User, AlertCircle } from 'lucide-vue-next';
+import { Mail, KeyRound, AlertCircle, LockKeyhole } from 'lucide-vue-next';
 
 const identity = ref('');
 const password = ref('');
+const rememberMe = ref(false);
 const error = ref('');
+const systemStatus = ref<'checking' | 'online' | 'offline'>('checking');
+const backendPort = ref('');
 const auth = useAuthStore();
 const router = useRouter();
 
@@ -14,68 +17,162 @@ const handleLogin = async () => {
   error.value = '';
   const success = await auth.login(identity.value, password.value);
   if (success) {
+    if (rememberMe.value) {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 7);
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('rememberMeExpiry', expiryDate.toISOString());
+    }
     router.push({ name: 'Dashboard' });
   } else {
     error.value = 'Invalid identity or password';
   }
 };
+
+const checkSystemStatus = async () => {
+  try {
+    const response = await fetch('/api/health', { method: 'HEAD' });
+    if (response.ok) {
+      systemStatus.value = 'online';
+      // Try to get port from response header or use window location
+      backendPort.value = response.headers.get('X-Server-Port') || import.meta.env.VITE_API_PORT || '8090';
+    } else {
+      systemStatus.value = 'offline';
+    }
+  } catch {
+    systemStatus.value = 'offline';
+  }
+};
+
+onMounted(() => {
+  checkSystemStatus();
+  // Check if remember me is still valid
+  const rememberMeExpiry = localStorage.getItem('rememberMeExpiry');
+  if (rememberMeExpiry && new Date(rememberMeExpiry) > new Date()) {
+    rememberMe.value = true;
+  } else {
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('rememberMeExpiry');
+  }
+});
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-monokai-bg p-6">
-    <div class="max-w-md w-full">
+  <div class="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative">
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 z-0 pointer-events-none opacity-10" style="background-image: radial-gradient(var(--color-border) 1px, transparent 1px); background-size: 24px 24px;"></div>
+    
+    <main class="w-full max-w-md relative z-10">
+      <!-- Brand Header -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-white tracking-tight">Vault</h1>
-        <p class="text-monokai-gray mt-2">Administrative Interface</p>
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-surface border border-border shadow-lg mb-4 group transition-transform duration-300 hover:scale-105">
+          <LockKeyhole class="text-primary w-8 h-8 group-hover:text-white transition-colors" />
+        </div>
+        <h1 class="text-3xl font-bold tracking-tight text-text mb-1">Vault Admin</h1>
+        <p class="text-sm text-text-muted">Backend Management System</p>
       </div>
 
-      <div class="bg-monokai-panel p-8 rounded-2xl border border-white/10 shadow-2xl">
-        <form @submit.prevent="handleLogin" class="space-y-5">
-          <div>
-            <label class="block text-xs font-semibold text-monokai-gray uppercase tracking-wider mb-2">Identity</label>
-            <div class="relative">
-              <User class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-monokai-gray" />
-              <input 
-                v-model="identity" 
-                type="text" 
-                required 
-                placeholder="Email or username"
-                class="w-full bg-monokai-header border border-monokai-gray/30 rounded-xl py-3 pl-10 pr-4 text-white focus:border-monokai-blue focus:ring-1 focus:ring-monokai-blue/50 outline-none transition-all" 
-              />
+      <!-- Login Card -->
+      <div class="bg-surface border border-border shadow-2xl rounded-xl overflow-hidden">
+        <!-- Top Accent Line -->
+        <div class="h-1 w-full bg-gradient-to-r from-primary via-accent to-secondary"></div>
+        
+        <div class="p-8">
+          <form @submit.prevent="handleLogin" class="space-y-6">
+            <!-- Email Input -->
+            <div class="space-y-2">
+              <label for="email" class="block text-sm font-medium text-text">Email Address</label>
+              <div class="relative group">
+                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                <input 
+                  v-model="identity"
+                  id="email"
+                  type="text"
+                  required
+                  placeholder="admin@company.com"
+                  class="block w-full pl-10 pr-3 py-2.5 border border-border rounded-lg bg-surface-dark text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm transition-all shadow-sm"
+                />
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <label class="block text-xs font-semibold text-monokai-gray uppercase tracking-wider mb-2">Password</label>
-            <div class="relative">
-              <Lock class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-monokai-gray" />
-              <input 
-                v-model="password" 
-                type="password" 
-                required 
-                placeholder="••••••••"
-                class="w-full bg-monokai-header border border-monokai-gray/30 rounded-xl py-3 pl-10 pr-4 text-white focus:border-monokai-blue focus:ring-1 focus:ring-monokai-blue/50 outline-none transition-all" 
-              />
+
+            <!-- Password Input -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="password" class="block text-sm font-medium text-text">Password</label>
+                <a href="#" class="text-xs font-medium text-primary hover:text-primary-hover hover:underline transition-colors">Forgot password?</a>
+              </div>
+              <div class="relative group">
+                <KeyRound class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                <input 
+                  v-model="password"
+                  id="password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  class="block w-full pl-10 pr-3 py-2.5 border border-border rounded-lg bg-surface-dark text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm transition-all shadow-sm"
+                />
+              </div>
             </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center">
+              <input 
+                v-model="rememberMe"
+                id="remember-me"
+                type="checkbox"
+                class="h-4 w-4 text-primary focus:ring-primary border-border bg-surface-dark rounded cursor-pointer"
+              />
+              <label for="remember-me" class="ml-2 block text-sm text-text-muted select-none cursor-pointer">
+                Keep me signed in for 7 days
+              </label>
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="error" class="flex items-center space-x-2 bg-error/10 border border-error/20 text-error p-3 rounded-lg text-sm">
+              <AlertCircle class="w-4 h-4" />
+              <span>{{ error }}</span>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              type="submit"
+              class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-surface transition-all transform active:scale-[0.98]"
+            >
+              Authenticate Access
+            </button>
+          </form>
+        </div>
+
+        <!-- Bottom Status -->
+        <div class="px-8 py-4 bg-surface-dark border-t border-border flex justify-between items-center">
+          <div class="flex items-center space-x-2">
+            <span v-if="systemStatus === 'checking'" class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-warning"></span>
+            </span>
+            <span v-else-if="systemStatus === 'online'" class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+            </span>
+            <span v-else class="relative flex h-2.5 w-2.5 bg-error rounded-full"></span>
+            <span class="text-xs text-text-muted uppercase tracking-wide">
+              {{ systemStatus === 'checking' ? 'Checking...' : systemStatus === 'online' ? `System Operational (Port: ${backendPort})` : 'System Offline' }}
+            </span>
           </div>
-          
-          <div v-if="error" class="flex items-center space-x-2 bg-monokai-pink/10 border border-monokai-pink/20 text-monokai-pink p-3 rounded-xl text-sm">
-            <AlertCircle class="w-4 h-4" />
-            <span>{{ error }}</span>
-          </div>
-          
-          <button 
-            type="submit" 
-            class="w-full py-3 bg-monokai-blue hover:bg-monokai-blue/90 text-monokai-bg font-bold rounded-xl transition-all shadow-lg shadow-monokai-blue/20 active:scale-[0.98]"
-          >
-            Sign In
-          </button>
-        </form>
+          <a href="#" class="text-xs text-text-muted hover:text-primary transition-colors">Help</a>
+        </div>
       </div>
-      
-      <p class="text-center text-monokai-gray text-xs mt-8 uppercase tracking-widest opacity-50">
-        Vault Framework v0.1.0
-      </p>
-    </div>
+
+      <!-- Footer -->
+      <div class="mt-8 text-center space-y-2">
+        <p class="text-xs text-text-dim">
+          Vault Framework v0.1.0 <span class="mx-1">·</span> Build #8892
+        </p>
+        <div class="flex justify-center space-x-4 text-xs text-text-dim">
+          <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
+          <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>
+        </div>
+      </div>
+    </main>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 import { 
   LayoutDashboard, 
@@ -9,19 +9,11 @@ import {
   Terminal, 
   Settings, 
   Cloud, 
-  LogOut, 
-  Search, 
+  LogOut,
+  Search,
   Bell,
   Filter,
   Plus,
-  Database,
-  TrendingUp,
-  CheckCircle,
-  Users,
-  FileText,
-  Lock,
-  ShoppingCart,
-  Image,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight
@@ -30,7 +22,6 @@ import {
 const auth = useAuthStore();
 const router = useRouter();
 const collections = ref([]);
-const selectedCollection = ref(null);
 const sidebarCollapsed = ref(false);
 
 const fetchCollections = async () => {
@@ -66,11 +57,11 @@ onMounted(fetchCollections);
         
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
-          <a href="/" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg bg-surface-dark text-primary border-l-2 border-primary transition-colors">
+          <a href="/" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <LayoutDashboard class="w-5 h-5 flex-shrink-0" />
             <span v-if="!sidebarCollapsed">Dashboard</span>
           </a>
-          <a href="/collections" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          <a href="/collections" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg bg-surface-dark text-primary border-l-2 border-primary transition-colors">
             <FolderOpen class="w-5 h-5 flex-shrink-0" />
             <span v-if="!sidebarCollapsed">Collections</span>
           </a>
@@ -135,7 +126,9 @@ onMounted(fetchCollections);
       <header class="h-16 flex items-center justify-between px-8 border-b border-border bg-surface z-10">
         <!-- Breadcrumbs -->
         <div class="flex items-center text-sm text-text-muted">
-          <span class="font-medium text-text">Dashboard</span>
+          <span class="hover:text-text cursor-pointer" @click="router.push('/')">Vault</span>
+          <span class="mx-2">/</span>
+          <span class="font-medium text-text">Collections</span>
         </div>
         
         <!-- Actions -->
@@ -168,123 +161,82 @@ onMounted(fetchCollections);
       <div class="flex-1 overflow-auto p-8">
         <div class="max-w-7xl mx-auto space-y-8">
           <!-- Page Title -->
-          <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Dashboard</h1>
-            <p class="mt-1 text-sm text-text-muted">Overview of your Vault instance</p>
-          </div>
-
-          <!-- Stats Cards -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Collections</p>
-                  <h3 class="mt-1 text-2xl font-bold text-text">{{ collections.length }}</h3>
-                </div>
-                <span class="p-2 rounded bg-primary/10 text-primary">
-                  <FolderOpen class="w-5 h-5" />
-                </span>
-              </div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-text tracking-tight">Data Collections</h1>
+              <p class="mt-1 text-sm text-text-muted">Manage your database schemas, content types, and API endpoints.</p>
             </div>
-
-            <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Total Records</p>
-                  <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
-                </div>
-                <span class="p-2 rounded bg-primary/10 text-primary">
-                  <Database class="w-5 h-5" />
-                </span>
-              </div>
-            </div>
-
-            <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="text-xs font-medium text-text-muted uppercase tracking-wider">API Requests</p>
-                  <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
-                </div>
-                <span class="p-2 rounded bg-primary/10 text-primary">
-                  <TrendingUp class="w-5 h-5" />
-                </span>
-              </div>
-            </div>
-
-            <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Storage</p>
-                  <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
-                </div>
-                <span class="p-2 rounded bg-primary/10 text-primary">
-                  <Cloud class="w-5 h-5" />
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="bg-surface-dark border border-border rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-text mb-4">Quick Actions</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button @click="router.push('/collections/new')" class="flex items-center gap-4 p-4 bg-surface border border-border rounded-lg hover:border-primary transition-colors text-left">
-                <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                  <Plus class="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 class="font-medium text-text">New Collection</h3>
-                  <p class="text-xs text-text-muted mt-1">Create a new data schema</p>
-                </div>
+            <div class="flex items-center gap-3">
+              <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
+                <Filter class="w-4 h-4" />
+                Filter
               </button>
-
-              <button class="flex items-center gap-4 p-4 bg-surface border border-border rounded-lg hover:border-primary transition-colors text-left">
-                <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                  <Terminal class="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 class="font-medium text-text">View Logs</h3>
-                  <p class="text-xs text-text-muted mt-1">Check system activity</p>
-                </div>
-              </button>
-
-              <button class="flex items-center gap-4 p-4 bg-surface border border-border rounded-lg hover:border-primary transition-colors text-left">
-                <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                  <Settings class="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 class="font-medium text-text">Settings</h3>
-                  <p class="text-xs text-text-muted mt-1">Configure your instance</p>
-                </div>
+              <button @click="router.push('/collections/new')" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center gap-2">
+                <Plus class="w-4 h-4" />
+                New Collection
               </button>
             </div>
           </div>
 
-          <!-- Recent Collections -->
-          <div class="bg-surface-dark border border-border rounded-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-text">Recent Collections</h2>
-              <button @click="router.push('/collections')" class="text-sm text-primary hover:text-primary-hover transition-colors">View All</button>
+          <!-- Data Table -->
+          <div class="bg-surface-dark rounded-lg border border-border shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-surface border-b border-border">
+                  <tr>
+                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Fields</th>
+                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                  <tr v-for="col in collections" :key="col.name" class="hover:bg-background/50 transition-colors group">
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-3">
+                        <div class="p-1.5 rounded bg-primary/10 text-primary">
+                          <FolderOpen class="w-4 h-4" />
+                        </div>
+                        <span class="font-medium text-text">{{ col.name }}</span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="text-text-muted">{{ col.type }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="text-text-muted">{{ col.fields?.length || 0 }} fields</span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success">
+                        Active
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                      <button class="text-text-muted hover:text-primary transition-colors">
+                        <MoreHorizontal class="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="collections.length === 0">
+                    <td colspan="5" class="px-6 py-12 text-center text-text-muted">
+                      <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p class="text-sm mb-4">No collections found</p>
+                      <button @click="router.push('/collections/new')" class="text-sm text-primary hover:text-primary-hover">Create your first collection</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="divide-y divide-border">
-              <div v-for="col in collections.slice(0, 5)" :key="col.name" class="px-6 py-4 hover:bg-surface transition-colors cursor-pointer">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 rounded bg-primary/10 text-primary">
-                      <FolderOpen class="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 class="font-medium text-text">{{ col.name }}</h3>
-                      <p class="text-xs text-text-muted">{{ col.type }} collection</p>
-                    </div>
-                  </div>
-                  <span class="text-xs text-text-muted">{{ col.fields?.length || 0 }} fields</span>
-                </div>
+            
+            <!-- Pagination -->
+            <div class="bg-surface px-6 py-3 border-t border-border flex items-center justify-between">
+              <div class="text-xs text-text-muted">
+                Showing <span class="font-medium text-text">{{ collections.length }}</span> of <span class="font-medium text-text">{{ collections.length }}</span> results
               </div>
-              <div v-if="collections.length === 0" class="px-6 py-12 text-center text-text-muted">
-                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p class="text-sm">No collections yet</p>
-                <button @click="router.push('/collections/new')" class="mt-4 text-sm text-primary hover:text-primary-hover">Create your first collection</button>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 text-xs font-medium rounded border border-border bg-surface-dark text-text hover:bg-surface transition-colors disabled:opacity-50" disabled>Previous</button>
+                <button class="px-3 py-1 text-xs font-medium rounded border border-border bg-surface-dark text-text hover:bg-surface transition-colors">Next</button>
               </div>
             </div>
           </div>
