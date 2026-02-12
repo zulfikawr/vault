@@ -5,6 +5,9 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import Popover from '../components/Popover.vue';
+import PopoverItem from '../components/PopoverItem.vue';
+import Checkbox from '../components/Checkbox.vue';
 import { 
   FolderOpen, 
   Filter,
@@ -22,6 +25,7 @@ const collection = ref(null);
 const records = ref([]);
 const showDeleteModal = ref(false);
 const recordToDelete = ref('');
+const visibleFields = ref<Record<string, boolean>>({});
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -39,10 +43,23 @@ const fetchCollection = async () => {
     const response = await axios.get(`/api/admin/collections`);
     const col = response.data.data.find((c: any) => c.name === collectionName.value);
     collection.value = col;
+    
+    // Initialize all fields as visible
+    if (col?.fields) {
+      visibleFields.value = col.fields.reduce((acc: Record<string, boolean>, field: any) => {
+        acc[field.name] = true;
+        return acc;
+      }, {});
+    }
   } catch (error) {
     console.error('Failed to fetch collection', error);
   }
 };
+
+const filteredFields = computed(() => {
+  if (!collection.value?.fields) return [];
+  return collection.value.fields.filter((f: any) => visibleFields.value[f.name]);
+});
 
 const fetchRecords = async () => {
   try {
@@ -116,10 +133,29 @@ onMounted(() => {
                 <Settings class="w-4 h-4" />
                 Settings
               </button>
-              <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
-                <Filter class="w-4 h-4" />
-                Filter
-              </button>
+              <Popover align="right">
+                <template #trigger>
+                  <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
+                    <Filter class="w-4 h-4" />
+                    Filter
+                  </button>
+                </template>
+                <template #default>
+                  <div class="p-3">
+                    <div class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 px-1">
+                      Visible Fields
+                    </div>
+                    <div class="space-y-2">
+                      <Checkbox
+                        v-for="field in collection?.fields"
+                        :key="field.name"
+                        v-model="visibleFields[field.name]"
+                        :label="field.name"
+                      />
+                    </div>
+                  </div>
+                </template>
+              </Popover>
               <button @click="router.push(`/collections/${collectionName}/new`)" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center gap-2">
                 <Plus class="w-4 h-4" />
                 New Record
@@ -128,38 +164,54 @@ onMounted(() => {
           </div>
 
           <!-- Data Table -->
-          <div class="bg-surface-dark rounded-lg border border-border shadow-sm overflow-hidden">
+          <div class="bg-surface-dark rounded-lg border border-border shadow-sm">
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-surface border-b border-border">
                   <tr>
-                    <th v-for="field in collection?.fields" :key="field.name" class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
+                    <th v-for="field in filteredFields" :key="field.name" class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
                       {{ field.name }}
                     </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
+                    <th class="sticky right-0 bg-surface px-6 py-3 text-center text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
                   <tr v-for="record in records" :key="record.id" class="hover:bg-background/50 transition-colors group">
-                    <td v-for="field in collection?.fields" :key="field.name" class="px-6 py-4">
+                    <td v-for="field in filteredFields" :key="field.name" class="px-6 py-4">
                       <span v-if="field.type === 'bool'" class="text-text">
                         {{ record.data?.[field.name] === 1 || record.data?.[field.name] === true ? 'true' : 'false' }}
                       </span>
                       <span v-else class="text-text">{{ record.data?.[field.name] ?? '-' }}</span>
                     </td>
-                    <td class="px-6 py-4 text-right">
-                      <div class="flex justify-end items-center gap-2">
-                        <button @click="router.push(`/collections/${collectionName}/edit/${record.id}`)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors">
-                          <Edit class="w-4 h-4" />
-                        </button>
-                        <button @click="confirmDelete(record.id)" class="p-2 text-text-muted hover:text-error hover:bg-error/10 rounded transition-colors">
-                          <Trash2 class="w-4 h-4" />
-                        </button>
+                    <td class="sticky right-0 bg-surface-dark px-6 py-4 group-hover:bg-background">
+                      <div class="flex justify-center">
+                        <Popover align="right">
+                          <template #trigger>
+                            <button class="p-2 text-text-muted hover:text-text hover:bg-surface-dark rounded transition-colors">
+                              <MoreHorizontal class="w-4 h-4" />
+                            </button>
+                          </template>
+                          <template #default="{ close }">
+                            <PopoverItem 
+                              :icon="Edit" 
+                              @click="close(); router.push(`/collections/${collectionName}/edit/${record.id}`)"
+                            >
+                              Edit
+                            </PopoverItem>
+                            <PopoverItem 
+                              :icon="Trash2" 
+                              variant="danger"
+                              @click="close(); confirmDelete(record.id)"
+                            >
+                              Delete
+                            </PopoverItem>
+                          </template>
+                        </Popover>
                       </div>
                     </td>
                   </tr>
                   <tr v-if="records.length === 0">
-                    <td :colspan="(collection?.fields?.length || 0) + 1" class="px-6 py-12 text-center text-text-muted">
+                    <td :colspan="filteredFields.length + 1" class="px-6 py-12 text-center text-text-muted">
                       <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p class="text-sm mb-4">No records found</p>
                       <button @click="router.push(`/collections/${collectionName}/new`)" class="text-sm text-primary hover:text-primary-hover">Create your first record</button>

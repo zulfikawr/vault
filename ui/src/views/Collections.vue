@@ -1,18 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
+import Popover from '../components/Popover.vue';
+import PopoverItem from '../components/PopoverItem.vue';
+import Checkbox from '../components/Checkbox.vue';
 import { 
   FolderOpen,
   Filter,
   Plus,
-  MoreHorizontal
+  MoreHorizontal,
+  Settings,
+  Trash2
 } from 'lucide-vue-next';
 
 const router = useRouter();
 const collections = ref([]);
+const showSystemCollections = ref(true);
+const filterTypes = ref({
+  base: true,
+  auth: true,
+  system: true
+});
+
+const filteredCollections = computed(() => {
+  return collections.value.filter((col: any) => {
+    // Filter by system collections
+    if (!showSystemCollections.value && col.name.startsWith('_')) {
+      return false;
+    }
+    // Filter by type
+    return filterTypes.value[col.type as keyof typeof filterTypes.value];
+  });
+});
 
 const fetchCollections = async () => {
   try {
@@ -23,12 +45,9 @@ const fetchCollections = async () => {
   }
 };
 
-const handleLogout = () => {
-  auth.logout();
-  router.push({ name: 'Login' });
-};
-
-onMounted(fetchCollections);
+onMounted(() => {
+  fetchCollections();
+});
 </script>
 
 <template>
@@ -55,10 +74,29 @@ onMounted(fetchCollections);
               <p class="mt-1 text-sm text-text-muted">Manage your database schemas, content types, and API endpoints.</p>
             </div>
             <div class="flex items-center gap-3">
-              <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
-                <Filter class="w-4 h-4" />
-                Filter
-              </button>
+              <Popover align="right">
+                <template #trigger>
+                  <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
+                    <Filter class="w-4 h-4" />
+                    Filter
+                  </button>
+                </template>
+                <template #default>
+                  <div class="p-3 min-w-[200px]">
+                    <div class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 px-1">
+                      Collection Type
+                    </div>
+                    <div class="space-y-2 mb-4">
+                      <Checkbox v-model="filterTypes.base" label="Base" />
+                      <Checkbox v-model="filterTypes.auth" label="Auth" />
+                      <Checkbox v-model="filterTypes.system" label="System" />
+                    </div>
+                    <div class="border-t border-border pt-3">
+                      <Checkbox v-model="showSystemCollections" label="Show system collections" />
+                    </div>
+                  </div>
+                </template>
+              </Popover>
               <button @click="router.push('/collections/new')" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center gap-2">
                 <Plus class="w-4 h-4" />
                 New Collection
@@ -77,11 +115,11 @@ onMounted(fetchCollections);
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Fields</th>
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Created</th>
                     <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
+                    <th class="sticky right-0 bg-surface px-6 py-3 text-center text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
-                  <tr v-for="col in collections" :key="col.name" class="hover:bg-background/50 transition-colors group">
+                  <tr v-for="col in filteredCollections" :key="col.name" class="hover:bg-background/50 transition-colors group">
                     <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
                       <div class="flex items-center gap-3">
                         <div class="p-1.5 rounded bg-primary/10 text-primary">
@@ -104,13 +142,34 @@ onMounted(fetchCollections);
                         Active
                       </span>
                     </td>
-                    <td class="px-6 py-4 text-right">
-                      <button @click.stop class="text-text-muted hover:text-primary transition-colors">
-                        <MoreHorizontal class="w-4 h-4" />
-                      </button>
+                    <td class="sticky right-0 bg-surface-dark px-6 py-4 group-hover:bg-background">
+                      <div class="flex justify-center">
+                      <Popover align="right">
+                        <template #trigger>
+                          <button class="text-text-muted hover:text-text hover:bg-surface-dark rounded p-1 transition-colors">
+                            <MoreHorizontal class="w-4 h-4" />
+                          </button>
+                        </template>
+                        <template #default="{ close }">
+                          <PopoverItem 
+                            :icon="Settings" 
+                            @click="close(); router.push(`/collections/${col.name}/settings`)"
+                          >
+                            Settings
+                          </PopoverItem>
+                          <PopoverItem 
+                            :icon="Trash2" 
+                            variant="danger"
+                            @click="close()"
+                          >
+                            Delete
+                          </PopoverItem>
+                        </template>
+                      </Popover>
+                      </div>
                     </td>
                   </tr>
-                  <tr v-if="collections.length === 0">
+                  <tr v-if="filteredCollections.length === 0">
                     <td colspan="6" class="px-6 py-12 text-center text-text-muted">
                       <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p class="text-sm mb-4">No collections found</p>
@@ -124,7 +183,7 @@ onMounted(fetchCollections);
             <!-- Pagination -->
             <div class="bg-surface px-6 py-3 border-t border-border flex items-center justify-between">
               <div class="text-xs text-text-muted">
-                Showing <span class="font-medium text-text">{{ collections.length }}</span> of <span class="font-medium text-text">{{ collections.length }}</span> results
+                Showing <span class="font-medium text-text">{{ filteredCollections.length }}</span> of <span class="font-medium text-text">{{ collections.length }}</span> results
               </div>
               <div class="flex gap-2">
                 <button class="px-3 py-1 text-xs font-medium rounded border border-border bg-surface-dark text-text hover:bg-surface transition-colors disabled:opacity-50" disabled>Previous</button>
