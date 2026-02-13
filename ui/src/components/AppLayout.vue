@@ -139,12 +139,13 @@ onMounted(fetchCollections);
           </Button>
           <Button
             as="RouterLink"
-            to="#"
+            to="/logs"
             variant="ghost"
             size="sm"
             :class="[
               'w-full !justify-start',
               sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
+              isActive('/logs') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
             <template #leftIcon>

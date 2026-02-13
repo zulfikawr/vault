@@ -32,6 +32,10 @@ type App struct {
 func NewApp() *App {
 	cfg := core.LoadConfig()
 	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+	
+	if err := core.InitFileLogger("./vault_data"); err != nil {
+		slog.Error("Failed to initialize file logger", "error", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
