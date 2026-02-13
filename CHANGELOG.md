@@ -5,6 +5,31 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-13
+
+### Added
+- **Storage Browser UI**
+  - Web interface for managing uploaded files
+  - Browse storage hierarchy (collection/recordID/files)
+  - Storage statistics dashboard (total files, size, collections)
+  - Folder navigation with breadcrumb
+  - File list with name, size, type, and modified date
+  - Upload files via modal with collection and recordID selection
+  - Download files
+  - Delete files with confirmation dialog
+  - Responsive design with Gruvbox theme
+  - MIME type detection for common file types
+
+- **Storage API Endpoints**
+  - `GET /api/admin/storage` - List files and folders
+  - `GET /api/admin/storage/stats` - Storage statistics
+  - `DELETE /api/admin/storage` - Delete file
+
+### Improved
+- Enhanced file management capabilities
+- Better visibility into storage usage
+- Streamlined file upload workflow
+
 ## [0.3.0] - 2026-02-13
 
 ### Added
@@ -115,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.4.0]: https://github.com/zulfikawr/vault/releases/tag/v0.4.0
 [0.3.0]: https://github.com/zulfikawr/vault/releases/tag/v0.3.0
 [0.2.0]: https://github.com/zulfikawr/vault/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zulfikawr/vault/releases/tag/v0.1.0
