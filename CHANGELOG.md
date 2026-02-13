@@ -5,6 +5,26 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-13
+
+### Added
+- **Migration Commands**
+  - `vault migrate sync` - Synchronize database schema with collections
+    - Optional `--collection NAME` flag to sync specific collection
+    - Optional `--verbose` flag for detailed output
+    - Shows migration summary with success/failure counts
+  - `vault migrate status` - Display current database and collection status
+    - Shows database path and total collections
+    - Lists all collections with type and field count
+    - Formatted table output
+- **Version Command**
+  - `vault version` - Display current version
+
+### Improved
+- Enhanced CLI with migration management capabilities
+- Better schema synchronization control
+- Detailed migration process logging
+
 ## [0.1.0] - 2026-02-13
 
 ### Added
@@ -73,4 +93,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.2.0]: https://github.com/zulfikawr/vault/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zulfikawr/vault/releases/tag/v0.1.0

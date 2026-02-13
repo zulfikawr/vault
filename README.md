@@ -43,6 +43,7 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 
 ### Server
 - `vault serve [--port PORT] [--dir DIR]` - Starts the HTTP server
+- `vault version` - Display current version
 
 ### Admin Management
 - `vault admin create --email EMAIL --password PASSWORD --username USERNAME` - Create new admin user
@@ -54,6 +55,10 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 - `vault backup create [--output FILE]` - Create backup (default: vault_backup_TIMESTAMP.zip)
 - `vault backup list` - List all backups
 - `vault backup restore --input FILE [--force]` - Restore from backup (with confirmation)
+
+### Migration
+- `vault migrate sync [--collection NAME] [--verbose]` - Synchronize database schema with collections
+- `vault migrate status` - Show current database and collection status
 
 ## 🏗 Project Structure
 
