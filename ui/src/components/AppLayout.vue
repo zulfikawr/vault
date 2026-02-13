@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal.vue';
 import Button from './Button.vue';
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  Terminal, 
-  Settings, 
-  Cloud, 
+import {
+  LayoutDashboard,
+  FolderOpen,
+  Terminal,
+  Settings,
+  Cloud,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
 } from 'lucide-vue-next';
 
 const auth = useAuthStore();
@@ -33,10 +33,6 @@ const isActive = (path: string) => {
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
   localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed.value));
-};
-
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
 const fetchCollections = async () => {
@@ -68,37 +64,44 @@ onMounted(fetchCollections);
       @confirm="handleLogout"
       @cancel="showLogoutModal = false"
     />
-    
+
     <!-- Mobile Backdrop -->
-    <div 
-      v-if="isMobileMenuOpen" 
+    <div
+      v-if="isMobileMenuOpen"
       class="fixed inset-0 bg-black/50 z-40 lg:hidden"
       @click="isMobileMenuOpen = false"
     ></div>
 
     <!-- Sidebar -->
-    <aside 
+    <aside
       :class="[
         sidebarCollapsed ? 'lg:w-16' : 'lg:w-64',
-        isMobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'
-      ]" 
+        isMobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0',
+      ]"
       class="fixed lg:static inset-y-0 left-0 z-50 flex-shrink-0 border-r border-border bg-surface flex flex-col justify-between transition-all duration-300"
     >
       <div>
         <!-- Brand -->
-        <div class="h-16 flex items-center border-b border-border px-6" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-between'">
-          <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="font-bold text-lg tracking-tight text-primary">vault</span>
+        <div
+          class="h-16 flex items-center border-b border-border px-6"
+          :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-between'"
+        >
+          <span
+            v-if="!sidebarCollapsed || isMobileMenuOpen"
+            class="font-bold text-lg tracking-tight text-primary"
+            >vault</span
+          >
           <div class="hidden lg:block">
-            <Button @click="toggleSidebar" variant="ghost" size="xs">
+            <Button variant="ghost" size="xs" @click="toggleSidebar">
               <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
               <ChevronRight v-else class="w-5 h-5 text-text-muted" />
             </Button>
           </div>
         </div>
-        
+
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
-          <Button 
+          <Button
             as="RouterLink"
             to="/"
             variant="ghost"
@@ -106,7 +109,7 @@ onMounted(fetchCollections);
             :class="[
               'w-full !justify-start',
               sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
-              isActive('/') ? '!bg-primary/10 !text-primary' : ''
+              isActive('/') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
             <template #leftIcon>
@@ -114,7 +117,7 @@ onMounted(fetchCollections);
             </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Dashboard</span>
           </Button>
-          <Button 
+          <Button
             as="RouterLink"
             to="/collections"
             variant="ghost"
@@ -122,7 +125,7 @@ onMounted(fetchCollections);
             :class="[
               'w-full !justify-start',
               sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
-              isActive('/collections') ? '!bg-primary/10 !text-primary' : ''
+              isActive('/collections') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
             <template #leftIcon>
@@ -130,14 +133,14 @@ onMounted(fetchCollections);
             </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Collections</span>
           </Button>
-          <Button 
+          <Button
             as="RouterLink"
             to="#"
             variant="ghost"
             size="sm"
             :class="[
               'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
             ]"
           >
             <template #leftIcon>
@@ -145,14 +148,14 @@ onMounted(fetchCollections);
             </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Logs</span>
           </Button>
-          <Button 
+          <Button
             as="RouterLink"
             to="#"
             variant="ghost"
             size="sm"
             :class="[
               'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
             ]"
           >
             <template #leftIcon>
@@ -160,14 +163,14 @@ onMounted(fetchCollections);
             </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Settings</span>
           </Button>
-          <Button 
+          <Button
             as="RouterLink"
             to="#"
             variant="ghost"
             size="sm"
             :class="[
               'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
             ]"
           >
             <template #leftIcon>
@@ -176,47 +179,73 @@ onMounted(fetchCollections);
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Storage</span>
           </Button>
         </nav>
-        
+
         <!-- Collections Quick List -->
         <div v-if="!sidebarCollapsed || isMobileMenuOpen" class="px-4 mt-6">
-          <div class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-2 px-3">Recent Collections</div>
+          <div class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-2 px-3">
+            Recent Collections
+          </div>
           <ul class="space-y-1">
-            <li v-for="col in collections.filter(c => !c.name.startsWith('_')).slice(0, 3)" :key="col.name">
-              <RouterLink :to="`/collections/${col.name}`" :class="[
-                route.params.name === col.name ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-              ]" class="flex items-center justify-between px-3 py-1.5 text-sm group transition-colors">
+            <li
+              v-for="col in collections.filter((c) => !c.name.startsWith('_')).slice(0, 3)"
+              :key="col.name"
+            >
+              <RouterLink
+                :to="`/collections/${col.name}`"
+                :class="[
+                  route.params.name === col.name
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-muted hover:text-text',
+                ]"
+                class="flex items-center justify-between px-3 py-1.5 text-sm group transition-colors"
+              >
                 <span class="text-xs">{{ col.name }}</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-success group-hover:scale-110 transition-transform"></span>
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-success group-hover:scale-110 transition-transform"
+                ></span>
               </RouterLink>
             </li>
           </ul>
         </div>
       </div>
-      
+
       <!-- User Profile -->
       <div class="p-4 border-t border-border">
-        <div v-if="!sidebarCollapsed || isMobileMenuOpen" class="flex items-center gap-3 w-full p-2 rounded-lg mb-2">
-          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
+        <div
+          v-if="!sidebarCollapsed || isMobileMenuOpen"
+          class="flex items-center gap-3 w-full p-2 rounded-lg mb-2"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm"
+          >
             {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate text-text">{{ auth.user?.data?.username || 'Admin' }}</p>
-            <p class="text-xs text-text-muted truncate">{{ auth.user?.data?.email || 'admin@vault.local' }}</p>
+            <p class="text-sm font-medium truncate text-text">
+              {{ auth.user?.data?.username || 'Admin' }}
+            </p>
+            <p class="text-xs text-text-muted truncate">
+              {{ auth.user?.data?.email || 'admin@vault.local' }}
+            </p>
           </div>
         </div>
         <div v-else class="flex justify-center mb-2">
-          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
+          <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm"
+          >
             {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
         </div>
-        <Button 
-          @click="showLogoutModal = true" 
+        <Button
           variant="ghost"
           class="w-full !text-error hover:!bg-error/10"
           :class="sidebarCollapsed && !isMobileMenuOpen ? '!justify-center' : '!justify-start px-3'"
+          @click="showLogoutModal = true"
         >
           <LogOut class="w-4 h-4 flex-shrink-0" />
-          <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="text-xs font-bold">Sign Out</span>
+          <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="text-xs font-bold"
+            >Sign Out</span
+          >
         </Button>
       </div>
     </aside>
@@ -225,7 +254,7 @@ onMounted(fetchCollections);
     <main class="flex-1 flex flex-col min-w-0 min-h-0 bg-background overflow-hidden">
       <!-- Mobile Header Toggle (Visible only on mobile) -->
       <div class="lg:hidden h-16 flex items-center px-4 border-b border-border bg-surface shrink-0">
-        <Button @click="isMobileMenuOpen = true" variant="ghost" size="xs" class="-ml-2">
+        <Button variant="ghost" size="xs" class="-ml-2" @click="isMobileMenuOpen = true">
           <Menu class="h-6 w-6 text-text" />
         </Button>
         <span class="ml-4 font-bold text-lg tracking-tight text-primary">vault</span>

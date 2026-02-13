@@ -10,15 +10,7 @@ import ConfirmModal from '../components/ConfirmModal.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
 import Checkbox from '../components/Checkbox.vue';
-import { 
-  FolderOpen, 
-  Filter,
-  Plus,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Settings
-} from 'lucide-vue-next';
+import { FolderOpen, Filter, Plus, MoreHorizontal, Edit, Trash2, Settings } from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();
@@ -43,15 +35,20 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find((c: any) => c.name === collectionName.value);
+    const col = response.data.data.find(
+      (c: Record<string, unknown>) => c.name === collectionName.value
+    );
     collection.value = col;
-    
+
     // Initialize all fields as visible
     if (col?.fields) {
-      visibleFields.value = col.fields.reduce((acc: Record<string, boolean>, field: any) => {
-        acc[field.name] = true;
-        return acc;
-      }, {});
+      visibleFields.value = col.fields.reduce(
+        (acc: Record<string, boolean>, field: Record<string, unknown>) => {
+          acc[field.name] = true;
+          return acc;
+        },
+        {}
+      );
     }
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -60,7 +57,9 @@ const fetchCollection = async () => {
 
 const filteredFields = computed(() => {
   if (!collection.value?.fields) return [];
-  return collection.value.fields.filter((f: any) => visibleFields.value[f.name]);
+  return collection.value.fields.filter(
+    (f: Record<string, unknown>) => visibleFields.value[f.name]
+  );
 });
 
 const fetchRecords = async () => {
@@ -107,127 +106,155 @@ onMounted(() => {
       @confirm="deleteRecord"
       @cancel="showDeleteModal = false"
     />
-    
-      <!-- Header -->
-      <AppHeader>
+
+    <!-- Header -->
+    <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
           <span class="hover:text-text cursor-pointer" @click="router.push('/')">Vault</span>
           <span class="mx-2">/</span>
-          <span class="hover:text-text cursor-pointer" @click="router.push('/collections')">Collections</span>
+          <span class="hover:text-text cursor-pointer" @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="mx-2">/</span>
           <span class="font-medium text-text">{{ collectionName }}</span>
         </div>
       </template>
     </AppHeader>
 
-      <!-- Main Scrollable Area -->
-      <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-        <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-          <!-- Page Title -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 class="text-2xl font-bold text-text tracking-tight">{{ collectionName }}</h1>
-              <p class="mt-1 text-sm text-text-muted">{{ collection?.type }} collection • {{ collection?.fields?.length || 0 }} fields</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <Button @click="router.push(`/collections/${collectionName}/settings`)" variant="secondary" class="flex-1 sm:flex-none">
-                <Settings class="w-4 h-4" />
-                <span class="hidden sm:inline">Settings</span>
-              </Button>
-              <Popover align="right">
-                <template #trigger>
-                  <Button variant="secondary" class="flex-1 sm:flex-none">
-                    <Filter class="w-4 h-4" />
-                    <span class="hidden sm:inline">Filter</span>
-                  </Button>
-                </template>
-                <template #default>
-                  <div class="p-3 min-w-[200px]">
-                    <div class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 px-1">
-                      Visible Fields
-                    </div>
-                    <div class="space-y-2">
-                      <Checkbox
-                        v-for="field in collection?.fields"
-                        :key="field.name"
-                        v-model="visibleFields[field.name]"
-                        :label="field.name"
-                      />
-                    </div>
-                  </div>
-                </template>
-              </Popover>
-              <Button @click="router.push(`/collections/${collectionName}/new`)" class="flex-1 sm:flex-none">
-                <Plus class="w-4 h-4" />
-                <span class="whitespace-nowrap">New Record</span>
-              </Button>
-            </div>
+    <!-- Main Scrollable Area -->
+    <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <!-- Page Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">{{ collectionName }}</h1>
+            <p class="mt-1 text-sm text-text-muted">
+              {{ collection?.type }} collection • {{ collection?.fields?.length || 0 }} fields
+            </p>
           </div>
-
-          <!-- Data Table -->
-          <Table
-            :headers="[
-              ...filteredFields.map(f => ({ key: f.name, label: f.name })),
-              { key: 'actions', label: 'Actions', align: 'center', sticky: true }
-            ]"
-            :items="records"
-          >
-            <template v-for="field in filteredFields" :key="field.name" #[`cell(${field.name})`]="{ item }">
-              <span v-if="field.type === 'bool'" class="text-text">
-                {{ item.data?.[field.name] === 1 || item.data?.[field.name] === true ? 'true' : 'false' }}
-              </span>
-              <span v-else class="text-text">{{ item.data?.[field.name] ?? '-' }}</span>
-            </template>
-
-            <template #cell(actions)="{ item }">
-              <Popover align="right">
-                <template #trigger>
-                  <Button variant="ghost" size="xs">
-                    <MoreHorizontal class="w-4 h-4" />
-                  </Button>
-                </template>
-                <template #default="{ close }">
-                  <PopoverItem 
-                    :icon="Edit" 
-                    @click="close(); router.push(`/collections/${collectionName}/edit/${item.id}`)"
+          <div class="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              class="flex-1 sm:flex-none"
+              @click="router.push(`/collections/${collectionName}/settings`)"
+            >
+              <Settings class="w-4 h-4" />
+              <span class="hidden sm:inline">Settings</span>
+            </Button>
+            <Popover align="right">
+              <template #trigger>
+                <Button variant="secondary" class="flex-1 sm:flex-none">
+                  <Filter class="w-4 h-4" />
+                  <span class="hidden sm:inline">Filter</span>
+                </Button>
+              </template>
+              <template #default>
+                <div class="p-3 min-w-[200px]">
+                  <div
+                    class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 px-1"
                   >
-                    Edit
-                  </PopoverItem>
-                  <PopoverItem 
-                    :icon="Trash2" 
-                    variant="danger"
-                    @click="close(); confirmDelete(item.id)"
-                  >
-                    Delete
-                  </PopoverItem>
-                </template>
-              </Popover>
-            </template>
-
-            <template #empty>
-              <div class="py-12 text-center text-text-muted">
-                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p class="text-sm mb-4">No records found</p>
-                <Button @click="router.push(`/collections/${collectionName}/new`)" variant="link">Create your first record</Button>
-              </div>
-            </template>
-
-            <template #footer>
-              <div class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between">
-                <div class="text-xs text-text-muted">
-                  Showing <span class="font-medium text-text">{{ records.length }}</span> of <span class="font-medium text-text">{{ records.length }}</span> results
+                    Visible Fields
+                  </div>
+                  <div class="space-y-2">
+                    <Checkbox
+                      v-for="field in collection?.fields"
+                      :key="field.name"
+                      v-model="visibleFields[field.name]"
+                      :label="field.name"
+                    />
+                  </div>
                 </div>
-                <div class="flex gap-2">
-                  <Button variant="secondary" size="xs" disabled>Previous</Button>
-                  <Button variant="secondary" size="xs">Next</Button>
-                </div>
-              </div>
-            </template>
-          </Table>
+              </template>
+            </Popover>
+            <Button
+              class="flex-1 sm:flex-none"
+              @click="router.push(`/collections/${collectionName}/new`)"
+            >
+              <Plus class="w-4 h-4" />
+              <span class="whitespace-nowrap">New Record</span>
+            </Button>
+          </div>
         </div>
+
+        <!-- Data Table -->
+        <Table
+          :headers="[
+            ...filteredFields.map((f) => ({ key: f.name, label: f.name })),
+            { key: 'actions', label: 'Actions', align: 'center', sticky: true },
+          ]"
+          :items="records"
+        >
+          <template
+            v-for="field in filteredFields"
+            :key="field.name"
+            #[`cell(${field.name})`]="{ item }"
+          >
+            <span v-if="field.type === 'bool'" class="text-text">
+              {{
+                item.data?.[field.name] === 1 || item.data?.[field.name] === true ? 'true' : 'false'
+              }}
+            </span>
+            <span v-else class="text-text">{{ item.data?.[field.name] ?? '-' }}</span>
+          </template>
+
+          <template #cell(actions)="{ item }">
+            <Popover align="right">
+              <template #trigger>
+                <Button variant="ghost" size="xs">
+                  <MoreHorizontal class="w-4 h-4" />
+                </Button>
+              </template>
+              <template #default="{ close }">
+                <PopoverItem
+                  :icon="Edit"
+                  @click="
+                    close();
+                    router.push(`/collections/${collectionName}/edit/${item.id}`);
+                  "
+                >
+                  Edit
+                </PopoverItem>
+                <PopoverItem
+                  :icon="Trash2"
+                  variant="danger"
+                  @click="
+                    close();
+                    confirmDelete(item.id);
+                  "
+                >
+                  Delete
+                </PopoverItem>
+              </template>
+            </Popover>
+          </template>
+
+          <template #empty>
+            <div class="py-12 text-center text-text-muted">
+              <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p class="text-sm mb-4">No records found</p>
+              <Button variant="link" @click="router.push(`/collections/${collectionName}/new`)"
+                >Create your first record</Button
+              >
+            </div>
+          </template>
+
+          <template #footer>
+            <div
+              class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between"
+            >
+              <div class="text-xs text-text-muted">
+                Showing <span class="font-medium text-text">{{ records.length }}</span> of
+                <span class="font-medium text-text">{{ records.length }}</span> results
+              </div>
+              <div class="flex gap-2">
+                <Button variant="secondary" size="xs" disabled>Previous</Button>
+                <Button variant="secondary" size="xs">Next</Button>
+              </div>
+            </div>
+          </template>
+        </Table>
       </div>
-      </AppLayout>
+    </div>
+  </AppLayout>
 </template>
-
-

@@ -8,17 +8,13 @@ import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Dropdown from '../components/Dropdown.vue';
 import DropdownItem from '../components/DropdownItem.vue';
-import { 
-  FolderOpen, 
-  X,
-  Save
-} from 'lucide-vue-next';
+import { Save } from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();
-const collections = ref([]);
-const collection = ref(null);
-const formData = ref({});
+const collections = ref<Record<string, unknown>[]>([]);
+const collection = ref<Record<string, unknown> | null>(null);
+const formData = ref<Record<string, unknown>>({});
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -34,11 +30,13 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find((c: any) => c.name === collectionName.value);
+    const col = response.data.data.find(
+      (c: Record<string, unknown>) => c.name === collectionName.value
+    );
     collection.value = col;
     // Initialize form data with empty values
-    col?.fields?.forEach((field: any) => {
-      formData.value[field.name] = '';
+    col?.fields?.forEach((field: Record<string, unknown>) => {
+      formData.value[field.name as string] = '';
     });
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -54,11 +52,6 @@ const saveRecord = async () => {
   }
 };
 
-const handleLogout = () => {
-  auth.logout();
-  router.push({ name: 'Login' });
-};
-
 onMounted(() => {
   fetchCollections();
   fetchCollection();
@@ -67,16 +60,25 @@ onMounted(() => {
 
 <template>
   <AppLayout>
-    
     <!-- Header -->
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted overflow-hidden whitespace-nowrap">
-          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')">Vault</span>
+          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')"
+            >Vault</span
+          >
           <span class="mx-2 shrink-0">/</span>
-          <span class="hover:text-text cursor-pointer shrink-0 hidden sm:inline" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer shrink-0 hidden sm:inline"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="mx-2 shrink-0 hidden sm:inline">/</span>
-          <span class="hover:text-text cursor-pointer truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span
+            class="hover:text-text cursor-pointer truncate"
+            @click="router.push(`/collections/${collectionName}`)"
+            >{{ collectionName }}</span
+          >
           <span class="mx-2 shrink-0">/</span>
           <span class="font-medium text-text shrink-0">New</span>
         </div>
@@ -91,7 +93,7 @@ onMounted(() => {
           <p class="text-sm text-text-muted mt-1">Add a new record to {{ collectionName }}</p>
         </div>
 
-        <form @submit.prevent="saveRecord" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="saveRecord">
           <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
             <div class="space-y-6">
               <div v-for="field in collection?.fields" :key="field.name">
@@ -99,35 +101,47 @@ onMounted(() => {
                   {{ field.name }}
                   <span v-if="field.required" class="text-error">*</span>
                 </label>
-                
-                <Input 
+
+                <Input
                   v-if="field.type === 'text'"
                   v-model="formData[field.name]"
                   type="text"
                   :required="field.required"
                 />
-                
-                <Input 
+
+                <Input
                   v-else-if="field.type === 'number'"
                   v-model="formData[field.name]"
                   type="number"
                   :required="field.required"
                 />
-                
+
                 <Dropdown
                   v-else-if="field.type === 'bool'"
                   v-model="formData[field.name]"
                   align="left"
                 >
                   <template #trigger>
-                    {{ formData[field.name] === '' ? 'Select...' : formData[field.name] ? 'True' : 'False' }}
+                    {{
+                      formData[field.name] === ''
+                        ? 'Select...'
+                        : formData[field.name]
+                          ? 'True'
+                          : 'False'
+                    }}
                   </template>
-                  <DropdownItem value="" @select="formData[field.name] = ''">Select...</DropdownItem>
-                  <DropdownItem :value="true" @select="formData[field.name] = true">True</DropdownItem>
-                  <DropdownItem :value="false" @select="formData[field.name] = false">False</DropdownItem>
+                  <DropdownItem value="" @select="formData[field.name] = ''"
+                    >Select...</DropdownItem
+                  >
+                  <DropdownItem :value="true" @select="formData[field.name] = true"
+                    >True</DropdownItem
+                  >
+                  <DropdownItem :value="false" @select="formData[field.name] = false"
+                    >False</DropdownItem
+                  >
                 </Dropdown>
-                
-                <Input 
+
+                <Input
                   v-else-if="field.type === 'json'"
                   v-model="formData[field.name]"
                   type="textarea"
@@ -135,31 +149,28 @@ onMounted(() => {
                   placeholder='{"key": "value"}'
                   :rows="4"
                 />
-                
-                <Input 
+
+                <Input
                   v-else
                   v-model="formData[field.name]"
                   type="text"
                   :required="field.required"
                 />
-                
+
                 <p class="text-xs text-text-dim mt-1">{{ field.type }}</p>
               </div>
             </div>
           </div>
 
           <div class="flex items-center justify-end gap-3">
-            <Button 
-              @click="router.push(`/collections/${collectionName}`)" 
+            <Button
               variant="secondary"
               class="flex-1 sm:flex-none"
+              @click="router.push(`/collections/${collectionName}`)"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              class="flex-1 sm:flex-none"
-            >
+            <Button type="submit" class="flex-1 sm:flex-none">
               <Save class="w-4 h-4" />
               Create Record
             </Button>
@@ -167,7 +178,5 @@ onMounted(() => {
         </form>
       </div>
     </div>
-      </AppLayout>
+  </AppLayout>
 </template>
-
-

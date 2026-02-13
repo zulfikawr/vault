@@ -6,15 +6,7 @@ import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Table from '../components/Table.vue';
-import { 
-  FolderOpen,
-  Plus,
-  Terminal,
-  Settings,
-  Database,
-  TrendingUp,
-  Cloud
-} from 'lucide-vue-next';
+import { FolderOpen, Plus, Terminal, Settings, Database, TrendingUp, Cloud } from 'lucide-vue-next';
 
 const router = useRouter();
 const collections = ref([]);
@@ -52,7 +44,9 @@ onMounted(fetchCollections);
           <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
             <div class="flex justify-between items-start">
               <div>
-                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Collections</p>
+                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">
+                  Collections
+                </p>
                 <h3 class="mt-1 text-2xl font-bold text-text">{{ collections.length }}</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
@@ -64,7 +58,9 @@ onMounted(fetchCollections);
           <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
             <div class="flex justify-between items-start">
               <div>
-                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Total Records</p>
+                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">
+                  Total Records
+                </p>
                 <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
@@ -76,7 +72,9 @@ onMounted(fetchCollections);
           <div class="bg-surface-dark p-5 rounded-lg border border-border shadow-sm">
             <div class="flex justify-between items-start">
               <div>
-                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">API Requests</p>
+                <p class="text-xs font-medium text-text-muted uppercase tracking-wider">
+                  API Requests
+                </p>
                 <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
@@ -101,7 +99,11 @@ onMounted(fetchCollections);
         <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
           <h2 class="text-lg font-semibold text-text mb-4">Quick Actions</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button @click="router.push('/collections/new')" variant="secondary" class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto">
+            <Button
+              variant="secondary"
+              class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto"
+              @click="router.push('/collections/new')"
+            >
               <div class="p-3 rounded-lg bg-primary/10 text-primary">
                 <Plus class="w-6 h-6" />
               </div>
@@ -111,7 +113,10 @@ onMounted(fetchCollections);
               </div>
             </Button>
 
-            <Button variant="secondary" class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto">
+            <Button
+              variant="secondary"
+              class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto"
+            >
               <div class="p-3 rounded-lg bg-primary/10 text-primary">
                 <Terminal class="w-6 h-6" />
               </div>
@@ -121,7 +126,10 @@ onMounted(fetchCollections);
               </div>
             </Button>
 
-            <Button variant="secondary" class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto">
+            <Button
+              variant="secondary"
+              class="!flex !items-center !gap-4 !p-4 !justify-start !h-auto"
+            >
               <div class="p-3 rounded-lg bg-primary/10 text-primary">
                 <Settings class="w-6 h-6" />
               </div>
@@ -136,42 +144,48 @@ onMounted(fetchCollections);
         <div class="bg-surface-dark border border-border rounded-lg overflow-hidden">
           <div class="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between">
             <h2 class="text-lg font-semibold text-text">Recent Collections</h2>
-            <Button @click="router.push('/collections')" variant="link" class="text-xs sm:text-sm">View All</Button>
+            <Button variant="link" class="text-xs sm:text-sm" @click="router.push('/collections')"
+              >View All</Button
+            >
           </div>
-          
+
           <div class="[&>div]:!rounded-none [&>div]:!border-none">
             <Table
-            :headers="[
-              { key: 'name', label: 'Name' },
-              { key: 'type', label: 'Type' },
-              { key: 'fields', label: 'Fields', align: 'right' }
-            ]"
-            :items="collections.filter(c => !c.name.startsWith('_')).slice(0, 5)"
-            row-clickable
-            @row-click="(col) => router.push(`/collections/${col.name}`)"
-          >
-            <template #cell(name)="{ item }">
-              <div class="flex items-center gap-3">
-                <div class="p-2 rounded bg-primary/10 text-primary">
-                  <FolderOpen class="w-4 h-4" />
+              :headers="[
+                { key: 'name', label: 'Name' },
+                { key: 'type', label: 'Type' },
+                { key: 'fields', label: 'Fields', align: 'right' },
+              ]"
+              :items="collections.filter((c) => !c.name.startsWith('_')).slice(0, 5)"
+              row-clickable
+              @row-click="(col) => router.push(`/collections/${col.name}`)"
+            >
+              <template #cell(name)="{ item }">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded bg-primary/10 text-primary">
+                    <FolderOpen class="w-4 h-4" />
+                  </div>
+                  <span class="font-medium text-text">{{ item.name }}</span>
                 </div>
-                <span class="font-medium text-text">{{ item.name }}</span>
-              </div>
-            </template>
-            <template #cell(type)="{ item }">
-              <span class="text-text-muted truncate block max-w-[150px] sm:max-w-none">{{ item.type }} collection</span>
-            </template>
-            <template #cell(fields)="{ item }">
-              <span class="text-text-muted shrink-0">{{ item.fields?.length || 0 }} fields</span>
-            </template>
-            <template #empty>
-              <div class="py-6 text-center text-text-muted">
-                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p class="text-sm">No collections yet</p>
-                <Button @click="router.push('/collections/new')" variant="link" class="mt-4">Create your first collection</Button>
-              </div>
-            </template>
-          </Table>
+              </template>
+              <template #cell(type)="{ item }">
+                <span class="text-text-muted truncate block max-w-[150px] sm:max-w-none"
+                  >{{ item.type }} collection</span
+                >
+              </template>
+              <template #cell(fields)="{ item }">
+                <span class="text-text-muted shrink-0">{{ item.fields?.length || 0 }} fields</span>
+              </template>
+              <template #empty>
+                <div class="py-6 text-center text-text-muted">
+                  <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p class="text-sm">No collections yet</p>
+                  <Button variant="link" class="mt-4" @click="router.push('/collections/new')"
+                    >Create your first collection</Button
+                  >
+                </div>
+              </template>
+            </Table>
           </div>
         </div>
       </div>

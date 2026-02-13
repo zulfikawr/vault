@@ -17,18 +17,13 @@ const toggle = () => {
 <template>
   <label class="flex items-center gap-2 cursor-pointer group">
     <div class="relative">
-      <input
-        type="checkbox"
-        :checked="modelValue"
-        @change="toggle"
-        class="sr-only"
-      />
+      <input type="checkbox" :checked="modelValue" class="sr-only" @change="toggle" />
       <div
         :class="[
           'w-4 h-4 rounded border-2 transition-all',
           modelValue
             ? 'bg-primary border-primary'
-            : 'bg-surface-dark border-border group-hover:border-text-muted'
+            : 'bg-surface-dark border-border group-hover:border-text-muted',
         ]"
       >
         <svg

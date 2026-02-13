@@ -8,10 +8,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  align: 'left'
+  align: 'left',
+  modelValue: '',
 });
 
-const emit = defineEmits<{
+defineEmits<{
   'update:modelValue': [value: string | number];
 }>();
 
@@ -20,9 +21,9 @@ const triggerRef = ref<HTMLElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
 const coords = ref({ top: 0, left: 0, width: 0 });
 
-  const updatePosition = async () => {
+const updatePosition = async () => {
   if (!isOpen.value || !triggerRef.value) return;
-  
+
   await nextTick();
   if (!dropdownRef.value) return;
 
@@ -32,16 +33,14 @@ const coords = ref({ top: 0, left: 0, width: 0 });
   const viewportHeight = window.innerHeight;
 
   let top = triggerRect.bottom + 8;
-  let left = props.align === 'left' 
-    ? triggerRect.left 
-    : triggerRect.right - triggerRect.width;
+  let left = props.align === 'left' ? triggerRect.left : triggerRect.right - triggerRect.width;
   let width = triggerRect.width;
 
   // Vertical check: if it goes below viewport, show it above the trigger
   if (top + dropdownRect.height > viewportHeight - 12) {
     const spaceAbove = triggerRect.top;
     const spaceBelow = viewportHeight - triggerRect.bottom;
-    
+
     if (spaceAbove > spaceBelow) {
       top = triggerRect.top - dropdownRect.height - 8;
     }
@@ -106,17 +105,17 @@ defineExpose({ close });
   <div class="relative inline-block w-full">
     <button
       ref="triggerRef"
-      @click="toggle"
       type="button"
       class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all flex items-center justify-between"
+      @click="toggle"
     >
       <slot name="trigger" />
-      <ChevronDown 
+      <ChevronDown
         class="w-4 h-4 text-text-muted transition-transform duration-200"
         :style="{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }"
       />
     </button>
-    
+
     <Teleport to="body">
       <Transition name="dropdown">
         <div
@@ -127,10 +126,10 @@ defineExpose({ close });
             top: `${coords.top}px`,
             left: `${coords.left}px`,
             width: `${coords.width}px`,
-            visibility: coords.top === 0 ? 'hidden' : 'visible'
+            visibility: coords.top === 0 ? 'hidden' : 'visible',
           }"
         >
-          <slot :close="close" :modelValue="modelValue" />
+          <slot :close="close" :model-value="modelValue" />
         </div>
       </Transition>
     </Teleport>
@@ -140,7 +139,9 @@ defineExpose({ close });
 <style scoped>
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .dropdown-enter-from,

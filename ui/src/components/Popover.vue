@@ -6,7 +6,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  align: 'right'
+  align: 'right',
 });
 
 const isOpen = ref(false);
@@ -16,7 +16,7 @@ const coords = ref({ top: 0, left: 0 });
 
 const updatePosition = async () => {
   if (!isOpen.value || !triggerRef.value) return;
-  
+
   await nextTick();
   if (!popoverRef.value) return;
 
@@ -26,15 +26,13 @@ const updatePosition = async () => {
   const viewportHeight = window.innerHeight;
 
   let top = triggerRect.bottom + 8;
-  let left = props.align === 'left' 
-    ? triggerRect.left 
-    : triggerRect.right - popoverRect.width;
+  let left = props.align === 'left' ? triggerRect.left : triggerRect.right - popoverRect.width;
 
   // Vertical check: if it goes below viewport, show it above the trigger
   if (top + popoverRect.height > viewportHeight - 12) {
     const spaceAbove = triggerRect.top;
     const spaceBelow = viewportHeight - triggerRect.bottom;
-    
+
     if (spaceAbove > spaceBelow) {
       top = triggerRect.top - popoverRect.height - 8;
     }
@@ -100,7 +98,7 @@ defineExpose({ close });
     <div ref="triggerRef" @click="toggle">
       <slot name="trigger" />
     </div>
-    
+
     <Teleport to="body">
       <Transition name="popover">
         <div
@@ -110,7 +108,7 @@ defineExpose({ close });
           :style="{
             top: `${coords.top}px`,
             left: `${coords.left}px`,
-            visibility: coords.top === 0 ? 'hidden' : 'visible'
+            visibility: coords.top === 0 ? 'hidden' : 'visible',
           }"
         >
           <slot :close="close" />
@@ -123,7 +121,9 @@ defineExpose({ close });
 <style scoped>
 .popover-enter-active,
 .popover-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .popover-enter-from,

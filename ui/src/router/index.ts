@@ -5,47 +5,47 @@ import Login from '../views/Login.vue';
 const router = createRouter({
   history: createWebHistory('/'),
   routes: [
-    { 
-      path: '/', 
-      name: 'Dashboard', 
+    {
+      path: '/',
+      name: 'Dashboard',
       component: () => import('../views/Dashboard.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections', 
-      name: 'Collections', 
+    {
+      path: '/collections',
+      name: 'Collections',
       component: () => import('../views/Collections.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections/new', 
-      name: 'CollectionNew', 
+    {
+      path: '/collections/new',
+      name: 'CollectionNew',
       component: () => import('../views/CollectionNew.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections/:name', 
-      name: 'CollectionView', 
+    {
+      path: '/collections/:name',
+      name: 'CollectionView',
       component: () => import('../views/CollectionView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections/:name/settings', 
-      name: 'CollectionSettings', 
+    {
+      path: '/collections/:name/settings',
+      name: 'CollectionSettings',
       component: () => import('../views/CollectionSettings.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections/:name/new', 
-      name: 'RecordNew', 
+    {
+      path: '/collections/:name/new',
+      name: 'RecordNew',
       component: () => import('../views/RecordNew.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
-    { 
-      path: '/collections/:name/edit/:id', 
-      name: 'RecordEdit', 
+    {
+      path: '/collections/:name/edit/:id',
+      name: 'RecordEdit',
       component: () => import('../views/RecordEdit.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     { path: '/login', name: 'Login', component: Login },
   ],

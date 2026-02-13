@@ -11,10 +11,10 @@ interface Props {
   variant?: 'danger' | 'warning' | 'info';
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   confirmText: 'Confirm',
   cancelText: 'Cancel',
-  variant: 'info'
+  variant: 'info',
 });
 
 const emit = defineEmits<{
@@ -28,55 +28,44 @@ const emit = defineEmits<{
     <Transition name="modal">
       <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <!-- Backdrop -->
-        <div 
-          class="absolute inset-0 bg-black/70"
-          @click="emit('cancel')"
-        ></div>
-        
+        <div class="absolute inset-0 bg-black/70" @click="emit('cancel')"></div>
+
         <!-- Modal -->
         <div class="relative bg-surface border border-border rounded-lg shadow-2xl max-w-lg w-full">
           <!-- Header -->
           <div class="flex items-start justify-between p-6 border-b border-border">
             <div class="flex items-center gap-3">
-              <div 
+              <div
                 :class="[
                   'p-2 rounded-lg',
                   variant === 'danger' ? 'bg-error/10 text-error' : '',
                   variant === 'warning' ? 'bg-warning/10 text-warning' : '',
-                  variant === 'info' ? 'bg-primary/10 text-primary' : ''
+                  variant === 'info' ? 'bg-primary/10 text-primary' : '',
                 ]"
               >
                 <AlertTriangle class="w-5 h-5" />
               </div>
               <h3 class="text-lg font-semibold text-text">{{ title }}</h3>
             </div>
-            <Button 
-              @click="emit('cancel')"
-              variant="ghost"
-              size="xs"
-              class="!p-1"
-            >
+            <Button variant="ghost" size="xs" class="!p-1" @click="emit('cancel')">
               <X class="w-5 h-5" />
             </Button>
           </div>
-          
+
           <!-- Body -->
           <div class="p-6">
             <p class="text-text-muted">{{ message }}</p>
           </div>
-          
+
           <!-- Footer -->
           <div class="flex justify-end gap-3 p-6 border-t border-border bg-surface-dark/50">
-            <Button 
-              @click="emit('cancel')"
-              variant="secondary"
-            >
+            <Button variant="secondary" @click="emit('cancel')">
               {{ cancelText }}
             </Button>
-            <Button 
-              @click="emit('confirm')"
+            <Button
               :variant="variant === 'danger' ? 'primary' : 'primary'"
               :class="variant === 'danger' ? '!bg-error hover:!bg-error/90' : ''"
+              @click="emit('confirm')"
             >
               {{ confirmText }}
             </Button>
@@ -95,7 +84,9 @@ const emit = defineEmits<{
 
 .modal-enter-active .relative,
 .modal-leave-active .relative {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .modal-enter-from,

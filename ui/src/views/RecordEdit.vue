@@ -7,11 +7,7 @@ import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
-import { 
-  FolderOpen, 
-  X,
-  Save
-} from 'lucide-vue-next';
+import { X, Save } from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();
@@ -24,7 +20,9 @@ const recordId = computed(() => route.params.id as string);
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find((c: any) => c.name === collectionName.value);
+    const col = response.data.data.find(
+      (c: Record<string, unknown>) => c.name === collectionName.value
+    );
     collection.value = col;
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -33,7 +31,9 @@ const fetchCollection = async () => {
 
 const fetchRecord = async () => {
   try {
-    const response = await axios.get(`/api/collections/${collectionName.value}/records/${recordId.value}`);
+    const response = await axios.get(
+      `/api/collections/${collectionName.value}/records/${recordId.value}`
+    );
     // The actual record fields are in response.data.data.data
     formData.value = response.data.data?.data || {};
   } catch (error) {
@@ -43,7 +43,10 @@ const fetchRecord = async () => {
 
 const handleSubmit = async () => {
   try {
-    await axios.patch(`/api/collections/${collectionName.value}/records/${recordId.value}`, formData.value);
+    await axios.patch(
+      `/api/collections/${collectionName.value}/records/${recordId.value}`,
+      formData.value
+    );
     router.push(`/collections/${collectionName.value}`);
   } catch (error) {
     console.error('Update failed', error);
@@ -62,11 +65,21 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted overflow-hidden whitespace-nowrap">
-          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')">Vault</span>
+          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')"
+            >Vault</span
+          >
           <span class="mx-2 shrink-0">/</span>
-          <span class="hover:text-text cursor-pointer shrink-0 hidden sm:inline" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer shrink-0 hidden sm:inline"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="mx-2 shrink-0 hidden sm:inline">/</span>
-          <span class="hover:text-text cursor-pointer truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span
+            class="hover:text-text cursor-pointer truncate"
+            @click="router.push(`/collections/${collectionName}`)"
+            >{{ collectionName }}</span
+          >
           <span class="mx-2 shrink-0">/</span>
           <span class="font-medium text-text shrink-0">Edit</span>
         </div>
@@ -80,49 +93,50 @@ onMounted(() => {
           <p class="text-text-muted">Update record in {{ collectionName }} collection</p>
         </div>
 
-        <form v-if="collection" @submit.prevent="handleSubmit" class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6">
+        <form
+          v-if="collection"
+          class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6"
+          @submit.prevent="handleSubmit"
+        >
           <div class="space-y-4">
             <div v-for="field in collection.fields" :key="field.name">
               <label :for="field.name" class="block text-sm font-medium text-text mb-1.5">
                 {{ field.name }}
                 <span v-if="field.required" class="text-error">*</span>
               </label>
-              
+
               <Input
                 v-if="field.type === 'text'"
                 v-model="formData[field.name]"
                 type="text"
                 :required="field.required"
               />
-              
+
               <Input
                 v-else-if="field.type === 'number'"
                 v-model="formData[field.name]"
                 type="number"
                 :required="field.required"
               />
-              
+
               <Input
                 v-else-if="field.type === 'email'"
                 v-model="formData[field.name]"
                 type="email"
                 :required="field.required"
               />
-              
+
               <Input
                 v-else-if="field.type === 'date'"
                 v-model="formData[field.name]"
                 type="date"
                 :required="field.required"
               />
-              
+
               <div v-else-if="field.type === 'bool'" class="flex items-center">
-                <Checkbox
-                  v-model="formData[field.name]"
-                  label="Enable"
-                />
+                <Checkbox v-model="formData[field.name]" label="Enable" />
               </div>
-              
+
               <Input
                 v-else-if="field.type === 'json'"
                 v-model="formData[field.name]"
@@ -130,27 +144,17 @@ onMounted(() => {
                 :required="field.required"
                 :rows="4"
               />
-              
-              <Input
-                v-else
-                v-model="formData[field.name]"
-                type="text"
-                :required="field.required"
-              />
+
+              <Input v-else v-model="formData[field.name]" type="text" :required="field.required" />
             </div>
           </div>
 
           <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-border">
-            <Button 
-              @click="router.push(`/collections/${collectionName}`)"
-              variant="secondary"
-            >
+            <Button variant="secondary" @click="router.push(`/collections/${collectionName}`)">
               <X class="w-4 h-4" />
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-            >
+            <Button type="submit">
               <Save class="w-4 h-4" />
               Update Record
             </Button>
