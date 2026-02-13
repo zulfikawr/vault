@@ -41,10 +41,19 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 
 ## 🛠 CLI Usage
 
-- `vault serve`: Starts the HTTP server (supports `--port` and `--dir` flags).
-- `vault admin create`: Creates a new administrative user.
-- `vault migrate`: Manually triggers a schema sync.
-- `vault version`: Shows the current version.
+### Server
+- `vault serve [--port PORT] [--dir DIR]` - Starts the HTTP server
+
+### Admin Management
+- `vault admin create --email EMAIL --password PASSWORD --username USERNAME` - Create new admin user
+- `vault admin list` - List all admin users
+- `vault admin delete --email EMAIL [--force]` - Delete admin user (with confirmation)
+- `vault admin reset-password --email EMAIL --password PASSWORD` - Reset admin password
+
+### Backup & Restore
+- `vault backup create [--output FILE]` - Create backup (default: vault_backup_TIMESTAMP.zip)
+- `vault backup list` - List all backups
+- `vault backup restore --input FILE [--force]` - Restore from backup (with confirmation)
 
 ## 🏗 Project Structure
 
