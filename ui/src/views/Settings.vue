@@ -92,7 +92,7 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">Port</label>
-                <Input v-model.number="settings!.port" type="number" />
+                <Input :model-value="String(settings!.port)" @update:model-value="settings!.port = Number($event)" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">TLS Enabled</label>
@@ -162,7 +162,7 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">JWT Expiry (hours)</label>
-                <Input v-model.number="settings!.jwt_expiry" type="number" />
+                <Input :model-value="String(settings!.jwt_expiry)" @update:model-value="settings!.jwt_expiry = Number($event)" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Max File Upload (MB)</label>
@@ -170,7 +170,7 @@ onMounted(fetchSettings);
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Rate Limit (req/min)</label>
-                <Input v-model.number="settings!.rate_limit_per_min" type="number" />
+                <Input :model-value="String(settings!.rate_limit_per_min)" @update:model-value="settings!.rate_limit_per_min = Number($event)" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">CORS Origins</label>
