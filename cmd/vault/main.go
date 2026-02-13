@@ -16,10 +16,16 @@ const Version = "0.4.0"
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	command := os.Args[1]
+
+	// Handle global help flags
+	if command == "-h" || command == "--help" || command == "help" {
+		printUsage()
+		os.Exit(0)
+	}
 
 	switch command {
 	case "serve":
@@ -32,25 +38,31 @@ func main() {
 		runMigrate()
 	case "init":
 		runInit()
-	case "version":
+	case "version", "-v", "--version":
 		runVersion()
 	default:
-		fmt.Printf("Unknown command: %s\n", command)
+		fmt.Printf("Unknown command: %s\n\n", command)
 		printUsage()
 		os.Exit(1)
 	}
 }
 
 func printUsage() {
-	fmt.Println("Usage:")
-	fmt.Println("  vault init [options]")
-	fmt.Println("  vault serve [options]")
-	fmt.Println("  vault admin <subcommand> [options]")
-	fmt.Println("  vault backup <subcommand> [options]")
-	fmt.Println("  vault migrate <subcommand> [options]")
-	fmt.Println("  vault version")
+	fmt.Println("Vault - Self-contained Backend Framework")
 	fmt.Println()
-	fmt.Println("Init options:")
+	fmt.Println("Usage:")
+	fmt.Println("  vault <command> [options]")
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  init                        Initialize new Vault project")
+	fmt.Println("  serve                       Start the HTTP server")
+	fmt.Println("  admin <subcommand>          Manage admin users")
+	fmt.Println("  backup <subcommand>         Backup and restore operations")
+	fmt.Println("  migrate <subcommand>        Database migration operations")
+	fmt.Println("  version                     Display version information")
+	fmt.Println("  help, -h, --help            Show this help message")
+	fmt.Println()
+	fmt.Println("Init Options:")
 	fmt.Println("  --email EMAIL               Admin email address")
 	fmt.Println("  --username USERNAME         Admin username")
 	fmt.Println("  --password PASSWORD         Admin password")
@@ -58,7 +70,7 @@ func printUsage() {
 	fmt.Println("  --skip-admin                Skip admin creation")
 	fmt.Println("  --force                     Overwrite existing setup")
 	fmt.Println()
-	fmt.Println("Serve options:")
+	fmt.Println("Serve Options:")
 	fmt.Println("  --port PORT                 Server port (default: 8090)")
 	fmt.Println("  --dir DIR                   Data directory (default: ./vault_data)")
 	fmt.Println("  --db-path PATH              Database path")
@@ -71,6 +83,29 @@ func printUsage() {
 	fmt.Println("  --rate-limit NUM            Rate limit per minute")
 	fmt.Println("  --max-upload-size SIZE      Max upload size (e.g., 10MB, 1GB)")
 	fmt.Println("  --config FILE               Config file path")
+	fmt.Println()
+	fmt.Println("Admin Subcommands:")
+	fmt.Println("  create                      Create new admin user")
+	fmt.Println("  list                        List all admin users")
+	fmt.Println("  delete                      Delete admin user")
+	fmt.Println("  reset-password              Reset admin password")
+	fmt.Println()
+	fmt.Println("Backup Subcommands:")
+	fmt.Println("  create                      Create backup")
+	fmt.Println("  list                        List all backups")
+	fmt.Println("  restore                     Restore from backup")
+	fmt.Println()
+	fmt.Println("Migrate Subcommands:")
+	fmt.Println("  sync                        Synchronize database schema")
+	fmt.Println("  status                      Show migration status")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  vault init --email admin@example.com --username admin --password secret")
+	fmt.Println("  vault serve --port 8090")
+	fmt.Println("  vault admin create --email user@example.com --username user --password pass")
+	fmt.Println("  vault backup create --output backup.zip")
+	fmt.Println()
+	fmt.Println("For more information, visit: https://github.com/zulfikawr/vault")
 }
 
 func runServe() {
