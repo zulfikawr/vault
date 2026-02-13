@@ -109,7 +109,7 @@ func (h *StorageHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Walk entire storage to count files and size
-	filepath.WalkDir(h.basePath, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(h.basePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}

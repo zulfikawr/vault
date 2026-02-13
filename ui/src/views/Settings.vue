@@ -76,17 +76,15 @@ onMounted(fetchSettings);
             v-if="settings"
             variant="primary"
             size="sm"
-            @click="saveSettings"
             :disabled="saving"
+            @click="saveSettings"
           >
             <Save class="w-4 h-4" />
             Save
           </Button>
         </div>
 
-        <div v-if="loading" class="text-center text-text-muted">
-          Loading settings...
-        </div>
+        <div v-if="loading" class="text-center text-text-muted">Loading settings...</div>
 
         <div v-else-if="settings" class="space-y-6">
           <div class="bg-surface border border-border rounded-lg p-6">
@@ -94,19 +92,42 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">Port</label>
-                <Input :model-value="String(settings!.port)" @update:model-value="settings!.port = Number($event)" type="number" />
+                <Input
+                  :model-value="String(settings!.port)"
+                  type="number"
+                  @update:model-value="settings!.port = Number($event)"
+                />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">TLS Enabled</label>
-                <Dropdown :model-value="settings!.tls_enabled ? 'true' : 'false'" @update:model-value="settings!.tls_enabled = $event === 'true'">
+                <Dropdown
+                  :model-value="settings!.tls_enabled ? 'true' : 'false'"
+                  @update:model-value="settings!.tls_enabled = $event === 'true'"
+                >
                   <template #trigger>
                     {{ settings!.tls_enabled ? 'Yes' : 'No' }}
                   </template>
                   <template #default="{ close }">
-                    <DropdownItem value="true" @click="() => { settings!.tls_enabled = true; close(); }">
+                    <DropdownItem
+                      value="true"
+                      @click="
+                        () => {
+                          settings!.tls_enabled = true;
+                          close();
+                        }
+                      "
+                    >
                       Yes
                     </DropdownItem>
-                    <DropdownItem value="false" @click="() => { settings!.tls_enabled = false; close(); }">
+                    <DropdownItem
+                      value="false"
+                      @click="
+                        () => {
+                          settings!.tls_enabled = false;
+                          close();
+                        }
+                      "
+                    >
                       No
                     </DropdownItem>
                   </template>
@@ -125,16 +146,48 @@ onMounted(fetchSettings);
                     {{ settings!.log_level }}
                   </template>
                   <template #default="{ close }">
-                    <DropdownItem value="DEBUG" @click="() => { settings!.log_level = 'DEBUG'; close(); }">
+                    <DropdownItem
+                      value="DEBUG"
+                      @click="
+                        () => {
+                          settings!.log_level = 'DEBUG';
+                          close();
+                        }
+                      "
+                    >
                       DEBUG
                     </DropdownItem>
-                    <DropdownItem value="INFO" @click="() => { settings!.log_level = 'INFO'; close(); }">
+                    <DropdownItem
+                      value="INFO"
+                      @click="
+                        () => {
+                          settings!.log_level = 'INFO';
+                          close();
+                        }
+                      "
+                    >
                       INFO
                     </DropdownItem>
-                    <DropdownItem value="WARN" @click="() => { settings!.log_level = 'WARN'; close(); }">
+                    <DropdownItem
+                      value="WARN"
+                      @click="
+                        () => {
+                          settings!.log_level = 'WARN';
+                          close();
+                        }
+                      "
+                    >
                       WARN
                     </DropdownItem>
-                    <DropdownItem value="ERROR" @click="() => { settings!.log_level = 'ERROR'; close(); }">
+                    <DropdownItem
+                      value="ERROR"
+                      @click="
+                        () => {
+                          settings!.log_level = 'ERROR';
+                          close();
+                        }
+                      "
+                    >
                       ERROR
                     </DropdownItem>
                   </template>
@@ -147,10 +200,26 @@ onMounted(fetchSettings);
                     {{ settings!.log_format }}
                   </template>
                   <template #default="{ close }">
-                    <DropdownItem value="text" @click="() => { settings!.log_format = 'text'; close(); }">
+                    <DropdownItem
+                      value="text"
+                      @click="
+                        () => {
+                          settings!.log_format = 'text';
+                          close();
+                        }
+                      "
+                    >
                       text
                     </DropdownItem>
-                    <DropdownItem value="json" @click="() => { settings!.log_format = 'json'; close(); }">
+                    <DropdownItem
+                      value="json"
+                      @click="
+                        () => {
+                          settings!.log_format = 'json';
+                          close();
+                        }
+                      "
+                    >
                       json
                     </DropdownItem>
                   </template>
@@ -164,15 +233,29 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">JWT Expiry (hours)</label>
-                <Input :model-value="String(settings!.jwt_expiry)" @update:model-value="settings!.jwt_expiry = Number($event)" type="number" />
+                <Input
+                  :model-value="String(settings!.jwt_expiry)"
+                  type="number"
+                  @update:model-value="settings!.jwt_expiry = Number($event)"
+                />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Max File Upload (MB)</label>
-                <Input :model-value="String(settings!.max_file_upload_size / 1024 / 1024)" @update:model-value="settings!.max_file_upload_size = Number($event) * 1024 * 1024" type="number" />
+                <Input
+                  :model-value="String(settings!.max_file_upload_size / 1024 / 1024)"
+                  type="number"
+                  @update:model-value="
+                    settings!.max_file_upload_size = Number($event) * 1024 * 1024
+                  "
+                />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Rate Limit (req/min)</label>
-                <Input :model-value="String(settings!.rate_limit_per_min)" @update:model-value="settings!.rate_limit_per_min = Number($event)" type="number" />
+                <Input
+                  :model-value="String(settings!.rate_limit_per_min)"
+                  type="number"
+                  @update:model-value="settings!.rate_limit_per_min = Number($event)"
+                />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">CORS Origins</label>

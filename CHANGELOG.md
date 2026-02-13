@@ -5,6 +5,19 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-02-13
+
+### Fixed
+- Fixed storage stats API response parsing (now correctly reads nested data structure)
+- Fixed storage file list API response parsing
+- Removed duplicate Storage menu item from sidebar
+- Fixed linting errors in storage handler (errcheck)
+
+### Changed
+- Refactored Storage.vue to use shared Table component instead of custom table markup
+- Improved code reusability and consistency across admin UI
+- Cleaned up TypeScript type assertions in Storage view
+
 ## [0.4.0] - 2026-02-13
 
 ### Added
@@ -140,6 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.4.1]: https://github.com/zulfikawr/vault/releases/tag/v0.4.1
 [0.4.0]: https://github.com/zulfikawr/vault/releases/tag/v0.4.0
 [0.3.0]: https://github.com/zulfikawr/vault/releases/tag/v0.3.0
 [0.2.0]: https://github.com/zulfikawr/vault/releases/tag/v0.2.0

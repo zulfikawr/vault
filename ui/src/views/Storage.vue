@@ -46,20 +46,19 @@ const canUpload = computed(() => {
   return uploadForm.value.collection && uploadForm.value.recordID && uploadForm.value.file;
 });
 
-const tableData = computed(() => {
-  const items = [
-    ...folders.value.map(f => ({ ...f, type: 'folder' })),
-    ...files.value.map(f => ({ ...f, type: getFileType(f.mime_type || '') }))
+const tableItems = computed(() => {
+  return [
+    ...folders.value.map((f) => ({ ...f, type: 'folder', isFolder: true })),
+    ...files.value.map((f) => ({ ...f, type: getFileType(f.mime_type || ''), isFolder: false })),
   ];
-  return items;
 });
 
-const headers = [
-  { key: 'name', label: 'Name' },
-  { key: 'size', label: 'Size' },
-  { key: 'type', label: 'Type' },
-  { key: 'modified', label: 'Modified' },
-  { key: 'actions', label: 'Actions' },
+const tableHeaders = [
+  { key: 'name', label: 'Name', align: 'left' as const },
+  { key: 'size', label: 'Size', align: 'left' as const },
+  { key: 'type', label: 'Type', align: 'left' as const },
+  { key: 'modified', label: 'Modified', align: 'left' as const },
+  { key: 'actions', label: 'Actions', align: 'right' as const, sticky: true },
 ];
 
 onMounted(() => {
@@ -70,7 +69,7 @@ onMounted(() => {
 async function loadStats() {
   try {
     const response = await axios.get('/api/admin/storage/stats');
-    stats.value = response.data;
+    stats.value = response.data.data;
   } catch (err) {
     console.error('Failed to load stats:', err);
   }
@@ -81,8 +80,8 @@ async function loadFiles(path: string) {
   try {
     const url = `/api/admin/storage?path=${encodeURIComponent(path)}`;
     const response = await axios.get(url);
-    folders.value = response.data.folders || [];
-    files.value = response.data.files || [];
+    folders.value = response.data.data.folders || [];
+    files.value = response.data.data.files || [];
   } catch (err) {
     console.error('Failed to load files:', err);
   } finally {
@@ -93,6 +92,12 @@ async function loadFiles(path: string) {
 function navigateTo(path: string) {
   currentPath.value = path;
   loadFiles(path);
+}
+
+function handleRowClick(item: Record<string, unknown>) {
+  if (item.isFolder) {
+    navigateTo(item.path as string);
+  }
 }
 
 function handleFileSelect(event: Event) {
@@ -157,7 +162,7 @@ function formatSize(bytes: number): string {
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 function formatDate(timestamp: number): string {
@@ -171,15 +176,6 @@ function formatDate(timestamp: number): string {
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
   return date.toLocaleDateString();
-}
-
-function getFileIcon(mimeType: string): string {
-  if (mimeType.startsWith('image/')) return '🖼️';
-  if (mimeType.startsWith('video/')) return '🎥';
-  if (mimeType.startsWith('audio/')) return '🎵';
-  if (mimeType === 'application/pdf') return '📄';
-  if (mimeType.includes('zip')) return '📦';
-  return '📄';
 }
 
 function getFileType(mimeType: string): string {
@@ -213,10 +209,7 @@ function getFileType(mimeType: string): string {
       <div class="bg-surface rounded-lg w-full max-w-md border border-border">
         <div class="flex items-center justify-between p-6 border-b border-border">
           <h2 class="text-lg font-semibold text-text">Upload File</h2>
-          <button
-            @click="showUploadModal = false"
-            class="text-text-muted hover:text-text"
-          >
+          <button class="text-text-muted hover:text-text" @click="showUploadModal = false">
             ×
           </button>
         </div>
@@ -233,8 +226,8 @@ function getFileType(mimeType: string): string {
             <label class="block text-sm font-medium text-text-muted mb-2">File</label>
             <input
               type="file"
-              @change="handleFileSelect"
               class="w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              @change="handleFileSelect"
             />
           </div>
           <div v-if="uploadProgress > 0" class="h-1 bg-surface-hover rounded overflow-hidden">
@@ -272,9 +265,7 @@ function getFileType(mimeType: string): string {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-text tracking-tight">Storage Browser</h1>
-            <p class="mt-1 text-sm text-text-muted">
-              Manage uploaded files and media assets.
-            </p>
+            <p class="mt-1 text-sm text-text-muted">Manage uploaded files and media assets.</p>
           </div>
           <Button @click="showUploadModal = true">
             <template #leftIcon><Upload class="w-4 h-4" /></template>
@@ -300,12 +291,12 @@ function getFileType(mimeType: string): string {
 
         <!-- Breadcrumb -->
         <div class="flex items-center text-sm text-text-muted">
-          <span @click="navigateTo('')" class="hover:text-text cursor-pointer">Storage</span>
+          <span class="hover:text-text cursor-pointer" @click="navigateTo('')">Storage</span>
           <template v-for="(part, index) in pathParts" :key="index">
             <span class="mx-2">/</span>
             <span
-              @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
               class="hover:text-text cursor-pointer"
+              @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
             >
               {{ part }}
             </span>
@@ -313,104 +304,57 @@ function getFileType(mimeType: string): string {
         </div>
 
         <!-- File List -->
-        <div class="bg-surface border border-border rounded-lg overflow-hidden">
-          <div v-if="loading" class="p-12 text-center text-text-muted">
-            Loading...
-          </div>
+        <Table
+          :headers="tableHeaders"
+          :items="tableItems"
+          :loading="loading"
+          empty-text="No files or folders"
+          row-clickable
+          @row-click="handleRowClick"
+        >
+          <template #cell(name)="{ item }">
+            <div class="flex items-center">
+              <FolderOpen v-if="item.isFolder" class="w-5 h-5 text-primary mr-3" />
+              <File v-else class="w-5 h-5 text-text-muted mr-3" />
+              <span class="text-sm font-medium text-text">{{ item.name }}</span>
+            </div>
+          </template>
 
-          <div
-            v-else-if="folders.length === 0 && files.length === 0"
-            class="p-12 text-center text-text-muted"
-          >
-            <p>No files or folders</p>
-          </div>
+          <template #cell(size)="{ item }">
+            <span class="text-sm text-text-muted">
+              {{ item.isFolder ? '-' : formatSize(item.size as number) }}
+            </span>
+          </template>
 
-          <div v-else class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-surface-hover border-b border-border">
-                <tr>
-                  <th class="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th class="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th class="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th class="text-left px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                    Modified
-                  </th>
-                  <th class="text-right px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border">
-                <tr
-                  v-for="folder in folders"
-                  :key="folder.path"
-                  @click="navigateTo(folder.path)"
-                  class="hover:bg-surface-hover cursor-pointer"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <FolderOpen class="w-5 h-5 text-primary mr-3" />
-                      <span class="text-sm font-medium text-text">{{ folder.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">-</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">folder</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                    {{ formatDate(folder.modified) }}
-                  </td>
-                  <td></td>
-                </tr>
-                <tr
-                  v-for="file in files"
-                  :key="file.path"
-                  class="hover:bg-surface-hover"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <File class="w-5 h-5 text-text-muted mr-3" />
-                      <span class="text-sm font-medium text-text">{{ file.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                    {{ formatSize(file.size) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                    {{ getFileType(file.mime_type || '') }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
-                    {{ formatDate(file.modified) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <div class="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        @click="downloadFile(file)"
-                        title="Download"
-                      >
-                        <template #leftIcon><Download class="w-4 h-4" /></template>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        @click="confirmDelete(file)"
-                        title="Delete"
-                      >
-                        <template #leftIcon><Trash2 class="w-4 h-4 text-red-500" /></template>
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+          <template #cell(type)="{ item }">
+            <span class="text-sm text-text-muted">{{ item.type }}</span>
+          </template>
+
+          <template #cell(modified)="{ item }">
+            <span class="text-sm text-text-muted">{{ formatDate(item.modified as number) }}</span>
+          </template>
+
+          <template #cell(actions)="{ item }">
+            <div v-if="!item.isFolder" class="flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="xs"
+                title="Download"
+                @click.stop="downloadFile(item as unknown as FileInfo)"
+              >
+                <template #leftIcon><Download class="w-4 h-4" /></template>
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                title="Delete"
+                @click.stop="confirmDelete(item as unknown as FileInfo)"
+              >
+                <template #leftIcon><Trash2 class="w-4 h-4 text-red-500" /></template>
+              </Button>
+            </div>
+          </template>
+        </Table>
       </div>
     </div>
   </AppLayout>
