@@ -23,7 +23,7 @@ onMounted(checkSystemStatus);
 </script>
 
 <template>
-  <header class="h-16 flex items-center justify-between px-8 border-b border-border bg-surface z-10">
+  <header class="hidden sm:flex h-16 items-center justify-between px-4 sm:px-8 border-b border-border bg-surface z-10 shrink-0">
     <slot name="breadcrumb" />
     
     <div class="flex items-center gap-4">

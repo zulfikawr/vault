@@ -65,18 +65,18 @@ onMounted(() => {
     </AppHeader>
 
       <!-- Main Scrollable Area -->
-      <div class="flex-1 overflow-auto p-8">
-        <div class="max-w-7xl mx-auto space-y-8">
+      <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
+        <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
           <!-- Page Title -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-bold text-text tracking-tight">Data Collections</h1>
-              <p class="mt-1 text-sm text-text-muted">Manage your database schemas, content types, and API endpoints.</p>
+              <p class="mt-1 text-sm text-text-muted">Manage your database schemas and content types.</p>
             </div>
             <div class="flex items-center gap-3">
               <Popover align="right">
                 <template #trigger>
-                  <button class="px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center gap-2">
+                  <button class="flex-1 sm:flex-none px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center justify-center gap-2">
                     <Filter class="w-4 h-4" />
                     Filter
                   </button>
@@ -97,7 +97,7 @@ onMounted(() => {
                   </div>
                 </template>
               </Popover>
-              <button @click="router.push('/collections/new')" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center gap-2">
+              <button @click="router.push('/collections/new')" class="flex-1 sm:flex-none px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
                 <Plus class="w-4 h-4" />
                 New Collection
               </button>

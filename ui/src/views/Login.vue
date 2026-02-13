@@ -58,7 +58,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative">
+  <div class="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center bg-background p-6 relative">
     <!-- Background Pattern -->
     <div class="fixed inset-0 z-0 pointer-events-none opacity-10" style="background-image: radial-gradient(var(--color-border) 1px, transparent 1px); background-size: 24px 24px;"></div>
     

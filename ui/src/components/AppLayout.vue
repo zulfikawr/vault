@@ -12,13 +12,15 @@ import {
   Cloud, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Menu
 } from 'lucide-vue-next';
 
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
+const isMobileMenuOpen = ref(false);
 const collections = ref([]);
 const showLogoutModal = ref(false);
 
@@ -30,6 +32,10 @@ const isActive = (path: string) => {
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
   localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed.value));
+};
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
 const fetchCollections = async () => {
@@ -50,7 +56,7 @@ onMounted(fetchCollections);
 </script>
 
 <template>
-  <div class="flex h-screen bg-background text-text overflow-hidden">
+  <div class="flex h-screen h-[100dvh] bg-background text-text overflow-hidden relative">
     <ConfirmModal
       :show="showLogoutModal"
       title="Confirm Logout"
@@ -62,50 +68,66 @@ onMounted(fetchCollections);
       @cancel="showLogoutModal = false"
     />
     
+    <!-- Mobile Backdrop -->
+    <div 
+      v-if="isMobileMenuOpen" 
+      class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+      @click="isMobileMenuOpen = false"
+    ></div>
+
     <!-- Sidebar -->
-    <aside :class="sidebarCollapsed ? 'w-16' : 'w-64'" class="flex-shrink-0 border-r border-border bg-surface flex flex-col justify-between transition-all duration-300">
+    <aside 
+      :class="[
+        sidebarCollapsed ? 'lg:w-16' : 'lg:w-64',
+        isMobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'
+      ]" 
+      class="fixed lg:static inset-y-0 left-0 z-50 flex-shrink-0 border-r border-border bg-surface flex flex-col justify-between transition-all duration-300"
+    >
       <div>
         <!-- Brand -->
-        <div class="h-16 flex items-center border-b border-border" :class="sidebarCollapsed ? 'justify-center' : 'justify-between px-6'">
-          <span v-if="!sidebarCollapsed" class="font-bold text-lg tracking-tight text-primary">vault</span>
-          <button @click="toggleSidebar" class="p-1 hover:bg-surface-dark rounded transition-colors">
+        <div class="h-16 flex items-center border-b border-border" :class="sidebarCollapsed ? 'lg:justify-center px-6 lg:px-0' : 'justify-between px-6'">
+          <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="font-bold text-lg tracking-tight text-primary">vault</span>
+          <button @click="toggleSidebar" class="hidden lg:block p-1 hover:bg-surface-dark rounded transition-colors">
             <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
             <ChevronRight v-else class="w-5 h-5 text-text-muted" />
+          </button>
+          <button @click="isMobileMenuOpen = false" class="lg:hidden p-1 hover:bg-surface-dark rounded transition-colors">
+            <ChevronLeft class="w-5 h-5 text-text-muted" />
           </button>
         </div>
         
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
           <a href="/" :class="[
-            sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
+            sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
             isActive('/') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
           ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
             <LayoutDashboard class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!sidebarCollapsed">Dashboard</span>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Dashboard</span>
           </a>
           <a href="/collections" :class="[
-            sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
+            sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
             isActive('/collections') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
           ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
             <FolderOpen class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!sidebarCollapsed">Collections</span>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Collections</span>
           </a>
-          <a href="#" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Terminal class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!sidebarCollapsed">Logs</span>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Logs</span>
           </a>
-          <a href="#" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Settings class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!sidebarCollapsed">Settings</span>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Settings</span>
           </a>
-          <a href="#" :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Cloud class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!sidebarCollapsed">Storage</span>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Storage</span>
           </a>
         </nav>
         
         <!-- Collections Quick List -->
-        <div v-if="!sidebarCollapsed" class="px-4 mt-6">
+        <div v-if="!sidebarCollapsed || isMobileMenuOpen" class="px-4 mt-6">
           <div class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-2 px-3">Recent Collections</div>
           <ul class="space-y-1">
             <li v-for="col in collections.filter(c => !c.name.startsWith('_')).slice(0, 3)" :key="col.name">
@@ -122,7 +144,7 @@ onMounted(fetchCollections);
       
       <!-- User Profile -->
       <div class="p-4 border-t border-border">
-        <div v-if="!sidebarCollapsed" class="flex items-center gap-3 w-full p-2 rounded-lg mb-2">
+        <div v-if="!sidebarCollapsed || isMobileMenuOpen" class="flex items-center gap-3 w-full p-2 rounded-lg mb-2">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
             {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
@@ -138,17 +160,24 @@ onMounted(fetchCollections);
         </div>
         <button 
           @click="showLogoutModal = true" 
-          :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'"
+          :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'"
           class="w-full flex items-center py-2 rounded-lg text-xs font-bold text-error hover:bg-error/10 transition-colors"
         >
           <LogOut class="w-4 h-4 flex-shrink-0" />
-          <span v-if="!sidebarCollapsed">Sign Out</span>
+          <span v-if="!sidebarCollapsed || isMobileMenuOpen">Sign Out</span>
         </button>
       </div>
     </aside>
 
     <!-- Main Content Slot -->
-    <main class="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
+    <main class="flex-1 flex flex-col min-w-0 min-h-0 bg-background overflow-hidden">
+      <!-- Mobile Header Toggle (Visible only on mobile) -->
+      <div class="lg:hidden h-16 flex items-center px-4 border-b border-border bg-surface shrink-0">
+        <button @click="isMobileMenuOpen = true" class="p-2 -ml-2 hover:bg-surface-dark rounded-md">
+          <Menu class="h-6 w-6 text-text" />
+        </button>
+        <span class="ml-4 font-bold text-lg tracking-tight text-primary">vault</span>
+      </div>
       <slot />
     </main>
   </div>
