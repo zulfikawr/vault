@@ -5,6 +5,8 @@ import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
+import Dropdown from '../components/Dropdown.vue';
+import DropdownItem from '../components/DropdownItem.vue';
 import { Settings, Save } from 'lucide-vue-next';
 
 interface AppSettings {
@@ -72,15 +74,17 @@ onMounted(fetchSettings);
             v-if="settings"
             variant="primary"
             size="sm"
-            :disabled="saving"
             @click="saveSettings"
+            :disabled="saving"
           >
             <Save class="w-4 h-4" />
             Save
           </Button>
         </div>
 
-        <div v-if="loading" class="text-center text-text-muted">Loading settings...</div>
+        <div v-if="loading" class="text-center text-text-muted">
+          Loading settings...
+        </div>
 
         <div v-else-if="settings" class="space-y-6">
           <div class="bg-surface border border-border rounded-lg p-6">
@@ -88,17 +92,23 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">Port</label>
-                <Input v-model.number="settings.port" type="number" />
+                <Input v-model.number="settings!.port" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">TLS Enabled</label>
-                <select
-                  v-model="settings.tls_enabled"
-                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
-                >
-                  <option :value="false">No</option>
-                  <option :value="true">Yes</option>
-                </select>
+                <Dropdown :model-value="settings!.tls_enabled ? 'true' : 'false'" @update:model-value="settings!.tls_enabled = $event === 'true'">
+                  <template #trigger>
+                    {{ settings!.tls_enabled ? 'Yes' : 'No' }}
+                  </template>
+                  <template #default="{ close }">
+                    <DropdownItem value="true" @click="() => { settings!.tls_enabled = true; close(); }">
+                      Yes
+                    </DropdownItem>
+                    <DropdownItem value="false" @click="() => { settings!.tls_enabled = false; close(); }">
+                      No
+                    </DropdownItem>
+                  </template>
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -108,25 +118,41 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">Log Level</label>
-                <select
-                  v-model="settings.log_level"
-                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
-                >
-                  <option>DEBUG</option>
-                  <option>INFO</option>
-                  <option>WARN</option>
-                  <option>ERROR</option>
-                </select>
+                <Dropdown v-model="settings!.log_level">
+                  <template #trigger>
+                    {{ settings!.log_level }}
+                  </template>
+                  <template #default="{ close }">
+                    <DropdownItem value="DEBUG" @click="() => { settings!.log_level = 'DEBUG'; close(); }">
+                      DEBUG
+                    </DropdownItem>
+                    <DropdownItem value="INFO" @click="() => { settings!.log_level = 'INFO'; close(); }">
+                      INFO
+                    </DropdownItem>
+                    <DropdownItem value="WARN" @click="() => { settings!.log_level = 'WARN'; close(); }">
+                      WARN
+                    </DropdownItem>
+                    <DropdownItem value="ERROR" @click="() => { settings!.log_level = 'ERROR'; close(); }">
+                      ERROR
+                    </DropdownItem>
+                  </template>
+                </Dropdown>
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Log Format</label>
-                <select
-                  v-model="settings.log_format"
-                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
-                >
-                  <option>text</option>
-                  <option>json</option>
-                </select>
+                <Dropdown v-model="settings!.log_format">
+                  <template #trigger>
+                    {{ settings!.log_format }}
+                  </template>
+                  <template #default="{ close }">
+                    <DropdownItem value="text" @click="() => { settings!.log_format = 'text'; close(); }">
+                      text
+                    </DropdownItem>
+                    <DropdownItem value="json" @click="() => { settings!.log_format = 'json'; close(); }">
+                      json
+                    </DropdownItem>
+                  </template>
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -136,23 +162,19 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">JWT Expiry (hours)</label>
-                <Input v-model.number="settings.jwt_expiry" type="number" />
+                <Input v-model.number="settings!.jwt_expiry" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Max File Upload (MB)</label>
-                <Input
-                  :model-value="String(settings.max_file_upload_size / 1024 / 1024)"
-                  type="number"
-                  @update:model-value="settings.max_file_upload_size = Number($event) * 1024 * 1024"
-                />
+                <Input :model-value="String(settings!.max_file_upload_size / 1024 / 1024)" @update:model-value="settings!.max_file_upload_size = Number($event) * 1024 * 1024" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Rate Limit (req/min)</label>
-                <Input v-model.number="settings.rate_limit_per_min" type="number" />
+                <Input v-model.number="settings!.rate_limit_per_min" type="number" />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">CORS Origins</label>
-                <Input v-model="settings.cors_origins" type="text" />
+                <Input v-model="settings!.cors_origins" type="text" />
               </div>
             </div>
           </div>
