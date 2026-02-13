@@ -4,10 +4,12 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
 import { Trash2, RefreshCw } from 'lucide-vue-next';
 
 const logs = ref<string[]>([]);
 const loading = ref(false);
+const showClearModal = ref(false);
 
 const fetchLogs = async () => {
   loading.value = true;
@@ -21,12 +23,11 @@ const fetchLogs = async () => {
   }
 };
 
-const clearLogs = async () => {
-  if (!confirm('Are you sure you want to clear all logs?')) return;
-
+const handleClearLogs = async () => {
   try {
     await axios.delete('/api/admin/logs');
     logs.value = [];
+    showClearModal.value = false;
   } catch (error) {
     console.error('Failed to clear logs', error);
   }
@@ -37,6 +38,17 @@ onMounted(fetchLogs);
 
 <template>
   <AppLayout>
+    <ConfirmModal
+      :show="showClearModal"
+      title="Clear Logs"
+      message="Are you sure you want to clear all logs? This action cannot be undone."
+      confirm-text="Clear"
+      cancel-text="Cancel"
+      variant="warning"
+      @confirm="handleClearLogs"
+      @cancel="showClearModal = false"
+    />
+
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center gap-2">
@@ -62,7 +74,7 @@ onMounted(fetchLogs);
             <Button
               variant="outline"
               size="sm"
-              @click="clearLogs"
+              @click="showClearModal = true"
               class="!text-error"
             >
               <Trash2 class="w-4 h-4" />
