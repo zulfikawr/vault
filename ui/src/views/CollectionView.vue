@@ -12,11 +12,28 @@ import PopoverItem from '../components/PopoverItem.vue';
 import Checkbox from '../components/Checkbox.vue';
 import { FolderOpen, Filter, Plus, MoreHorizontal, Edit, Trash2, Settings } from 'lucide-vue-next';
 
+interface Field {
+  name: string;
+  type: string;
+}
+
+interface Collection {
+  name: string;
+  type: string;
+  fields: Field[];
+}
+
+interface RecordData {
+  id: string;
+  data: Record<string, any>;
+  [key: string]: any;
+}
+
 const router = useRouter();
 const route = useRoute();
-const collections = ref([]);
-const collection = ref(null);
-const records = ref([]);
+const collections = ref<Collection[]>([]);
+const collection = ref<Collection | null>(null);
+const records = ref<RecordData[]>([]);
 const showDeleteModal = ref(false);
 const recordToDelete = ref('');
 const visibleFields = ref<Record<string, boolean>>({});
@@ -36,14 +53,14 @@ const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
     const col = response.data.data.find(
-      (c: Record<string, unknown>) => c.name === collectionName.value
+      (c: Collection) => c.name === collectionName.value
     );
     collection.value = col;
 
     // Initialize all fields as visible
     if (col?.fields) {
       visibleFields.value = col.fields.reduce(
-        (acc: Record<string, boolean>, field: Record<string, unknown>) => {
+        (acc: Record<string, boolean>, field: Field) => {
           acc[field.name] = true;
           return acc;
         },
@@ -58,7 +75,7 @@ const fetchCollection = async () => {
 const filteredFields = computed(() => {
   if (!collection.value?.fields) return [];
   return collection.value.fields.filter(
-    (f: Record<string, unknown>) => visibleFields.value[f.name]
+    (f: Field) => visibleFields.value[f.name]
   );
 });
 
@@ -160,7 +177,8 @@ onMounted(() => {
                     <Checkbox
                       v-for="field in collection?.fields"
                       :key="field.name"
-                      v-model="visibleFields[field.name]"
+                      :model-value="visibleFields[field.name] || false"
+                      @update:model-value="visibleFields[field.name] = $event"
                       :label="field.name"
                     />
                   </div>
@@ -192,10 +210,10 @@ onMounted(() => {
           >
             <span v-if="field.type === 'bool'" class="text-text">
               {{
-                item.data?.[field.name] === 1 || item.data?.[field.name] === true ? 'true' : 'false'
+                (item.data as any)?.[field.name] === 1 || (item.data as any)?.[field.name] === true ? 'true' : 'false'
               }}
             </span>
-            <span v-else class="text-text">{{ item.data?.[field.name] ?? '-' }}</span>
+            <span v-else class="text-text">{{ (item.data as any)?.[field.name] ?? '-' }}</span>
           </template>
 
           <template #cell(actions)="{ item }">
@@ -210,7 +228,7 @@ onMounted(() => {
                   :icon="Edit"
                   @click="
                     close();
-                    router.push(`/collections/${collectionName}/edit/${item.id}`);
+                    router.push(`/collections/${collectionName}/edit/${item.id as string}`);
                   "
                 >
                   Edit
@@ -220,7 +238,7 @@ onMounted(() => {
                   variant="danger"
                   @click="
                     close();
-                    confirmDelete(item.id);
+                    confirmDelete(item.id as string);
                   "
                 >
                   Delete

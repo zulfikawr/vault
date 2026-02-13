@@ -9,10 +9,25 @@ import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
 import { X, Save } from 'lucide-vue-next';
 
+interface Field {
+  name: string;
+  type: string;
+  required: boolean;
+}
+
+interface Collection {
+  name: string;
+  fields: Field[];
+}
+
+interface Record {
+  [key: string]: any;
+}
+
 const router = useRouter();
 const route = useRoute();
-const collection = ref(null);
-const formData = ref({});
+const collection = ref<Collection | null>(null);
+const formData = ref<Record>({});
 
 const collectionName = computed(() => route.params.name as string);
 const recordId = computed(() => route.params.id as string);
@@ -21,7 +36,7 @@ const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
     const col = response.data.data.find(
-      (c: Record<string, unknown>) => c.name === collectionName.value
+      (c: Collection) => c.name === collectionName.value
     );
     collection.value = col;
   } catch (error) {

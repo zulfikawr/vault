@@ -11,8 +11,21 @@ import PopoverItem from '../components/PopoverItem.vue';
 import Checkbox from '../components/Checkbox.vue';
 import { FolderOpen, Filter, Plus, MoreHorizontal, Settings, Trash2 } from 'lucide-vue-next';
 
+interface Field {
+  name: string;
+  type: string;
+  required?: boolean;
+}
+
+interface Collection {
+  name: string;
+  type: 'base' | 'auth' | 'system';
+  fields: Field[];
+  created: string;
+}
+
 const router = useRouter();
-const collections = ref([]);
+const collections = ref<Collection[]>([]);
 const showSystemCollections = ref(true);
 const filterTypes = ref({
   base: true,
@@ -21,13 +34,13 @@ const filterTypes = ref({
 });
 
 const filteredCollections = computed(() => {
-  return collections.value.filter((col: Record<string, unknown>) => {
+  return collections.value.filter((col: Collection) => {
     // Filter by system collections
     if (!showSystemCollections.value && col.name.startsWith('_')) {
       return false;
     }
     // Filter by type
-    return filterTypes.value[col.type as keyof typeof filterTypes.value];
+    return filterTypes.value[col.type];
   });
 });
 
@@ -137,8 +150,8 @@ onMounted(() => {
           <template #cell(fields)="{ item }">
             <span
               class="text-text-muted cursor-pointer"
-              @click="router.push(`/collections/${item.name}`)"
-              >{{ item.fields?.length || 0 }} fields</span
+              @click="router.push(`/collections/${(item as unknown as Collection).name}`)"
+              >{{ (item as unknown as Collection).fields?.length ?? 0 }} fields</span
             >
           </template>
 
@@ -146,7 +159,7 @@ onMounted(() => {
             <span
               class="text-text-muted text-xs cursor-pointer"
               @click="router.push(`/collections/${item.name}`)"
-              >{{ item.created ? new Date(item.created).toLocaleDateString() : '-' }}</span
+              >{{ item.created ? new Date(item.created as string).toLocaleDateString() : '-' }}</span
             >
           </template>
 

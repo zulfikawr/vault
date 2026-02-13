@@ -6,15 +6,28 @@ import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
-import Dropdown from '../components/Dropdown.vue';
-import DropdownItem from '../components/DropdownItem.vue';
 import { Save } from 'lucide-vue-next';
+
+interface Field {
+  name: string;
+  type: string;
+  required: boolean;
+}
+
+interface Collection {
+  name: string;
+  fields: Field[];
+}
+
+interface Record {
+  [key: string]: string | number | boolean;
+}
 
 const router = useRouter();
 const route = useRoute();
-const collections = ref<Record<string, unknown>[]>([]);
-const collection = ref<Record<string, unknown> | null>(null);
-const formData = ref<Record<string, unknown>>({});
+const collections = ref<Collection[]>([]);
+const collection = ref<Collection | null>(null);
+const formData = ref<Record>({});
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -31,12 +44,18 @@ const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
     const col = response.data.data.find(
-      (c: Record<string, unknown>) => c.name === collectionName.value
+      (c: Collection) => c.name === collectionName.value
     );
     collection.value = col;
-    // Initialize form data with empty values
-    col?.fields?.forEach((field: Record<string, unknown>) => {
-      formData.value[field.name as string] = '';
+    // Initialize form data with appropriate default values
+    col?.fields?.forEach((field: Field) => {
+      if (field.type === 'bool') {
+        formData.value[field.name] = false;
+      } else if (field.type === 'number') {
+        formData.value[field.name] = 0;
+      } else {
+        formData.value[field.name] = '';
+      }
     });
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -104,46 +123,28 @@ onMounted(() => {
 
                 <Input
                   v-if="field.type === 'text'"
-                  v-model="formData[field.name]"
+                  v-model="formData[field.name] as string"
                   type="text"
                   :required="field.required"
                 />
 
                 <Input
                   v-else-if="field.type === 'number'"
-                  v-model="formData[field.name]"
+                  v-model="formData[field.name] as number"
                   type="number"
                   :required="field.required"
                 />
 
-                <Dropdown
+                <input
                   v-else-if="field.type === 'bool'"
                   v-model="formData[field.name]"
-                  align="left"
-                >
-                  <template #trigger>
-                    {{
-                      formData[field.name] === ''
-                        ? 'Select...'
-                        : formData[field.name]
-                          ? 'True'
-                          : 'False'
-                    }}
-                  </template>
-                  <DropdownItem value="" @select="formData[field.name] = ''"
-                    >Select...</DropdownItem
-                  >
-                  <DropdownItem :value="true" @select="formData[field.name] = true"
-                    >True</DropdownItem
-                  >
-                  <DropdownItem :value="false" @select="formData[field.name] = false"
-                    >False</DropdownItem
-                  >
-                </Dropdown>
+                  type="checkbox"
+                  class="w-4 h-4 bg-surface border border-border rounded focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                />
 
                 <Input
                   v-else-if="field.type === 'json'"
-                  v-model="formData[field.name]"
+                  v-model="formData[field.name] as string"
                   type="textarea"
                   :required="field.required"
                   placeholder='{"key": "value"}'
@@ -152,7 +153,7 @@ onMounted(() => {
 
                 <Input
                   v-else
-                  v-model="formData[field.name]"
+                  v-model="formData[field.name] as string"
                   type="text"
                   :required="field.required"
                 />

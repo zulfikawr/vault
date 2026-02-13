@@ -11,11 +11,23 @@ import Dropdown from '../components/Dropdown.vue';
 import DropdownItem from '../components/DropdownItem.vue';
 import { Plus, Trash2, Settings, Save } from 'lucide-vue-next';
 
+interface Field {
+  name: string;
+  type: string;
+  required: boolean;
+}
+
+interface Collection {
+  id: string;
+  name: string;
+  fields: Field[];
+}
+
 const router = useRouter();
 const route = useRoute();
-const collections = ref([]);
-const collection = ref(null);
-const fields = ref([]);
+const collections = ref<Collection[]>([]);
+const collection = ref<Collection | null>(null);
+const fields = ref<Field[]>([]);
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -32,9 +44,9 @@ const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
     const col = response.data.data.find(
-      (c: Record<string, unknown>) => c.name === collectionName.value
+      (c: Collection) => c.name === collectionName.value
     );
-    collection.value = col;
+    collection.value = col || null;
     fields.value = JSON.parse(JSON.stringify(col?.fields || []));
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -50,6 +62,8 @@ const removeField = (index: number) => {
 };
 
 const saveSettings = async () => {
+  if (!collection.value) return;
+  
   try {
     await axios.patch(`/api/admin/collections/${collection.value.id}`, {
       fields: fields.value,

@@ -17,12 +17,16 @@ import {
   Menu,
 } from 'lucide-vue-next';
 
+interface Collection {
+  name: string;
+}
+
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 const sidebarCollapsed = ref(localStorage.getItem('sidebarCollapsed') === 'true');
 const isMobileMenuOpen = ref(false);
-const collections = ref([]);
+const collections = ref<Collection[]>([]);
 const showLogoutModal = ref(false);
 
 const isActive = (path: string) => {
