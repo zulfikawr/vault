@@ -11,7 +11,7 @@ Vault is a self-contained, batteries-included backend framework written in Go. I
 - **Rule-Based Authorization**: Fine-grained, record-level security using simple string expressions (e.g., `id = @request.auth.id`).
 - **Real-time Subscriptions**: Instant event broadcasting using Server-Sent Events (SSE).
 - **File Storage**: Pluggable storage system with a built-in local filesystem driver and multipart upload support.
-- **Embedded Admin Dashboard**: A professional, Monokai-themed management interface built with Vue 3 and Vite, embedded directly into the binary.
+- **Embedded Admin Dashboard**: A professional, Gruvbox-themed management interface built with Vue 3 and Vite, embedded directly into the binary.
 - **Developer CLI**: Simple commands to serve the API, manage admins, and handle migrations.
 
 ## 🚀 Quick Start
