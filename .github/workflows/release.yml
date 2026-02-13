@@ -1,0 +1,81 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build UI
+        run: |
+          cd ui
+          bun install
+          bun x vite build
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION=${{ github.ref_name }}
+          LDFLAGS="-s -w -X 'main.Version=$VERSION'"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -trimpath -ldflags="$LDFLAGS" -o vault-${{ matrix.goos }}-${{ matrix.goarch }}.exe ./cmd/vault
+          else
+            go build -trimpath -ldflags="$LDFLAGS" -o vault-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/vault
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vault-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: vault-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes
+        run: |
+          awk "/^## \[${{ github.ref_name }}\]/{flag=1;next}/^## \[/{flag=0}flag" CHANGELOG.md > RELEASE_NOTES.md || echo "Release ${{ github.ref_name }}" > RELEASE_NOTES.md
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/vault-*
+          body_path: RELEASE_NOTES.md
