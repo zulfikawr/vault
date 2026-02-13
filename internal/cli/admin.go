@@ -227,7 +227,9 @@ func (ac *AdminCommand) Delete(args []string) error {
 	if !*force {
 		fmt.Printf("Are you sure you want to delete admin user '%s' (%s)? (yes/no): ", username, *email)
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			return fmt.Errorf("failed to read input: %w", err)
+		}
 		if strings.ToLower(response) != "yes" {
 			fmt.Println("Deletion cancelled")
 			return nil

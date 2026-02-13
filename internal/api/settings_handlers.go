@@ -55,7 +55,7 @@ func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request)
 
 	// Save to config.json
 	configData, _ := json.MarshalIndent(h.config, "", "  ")
-	os.WriteFile("config.json", configData, 0644)
+	_ = os.WriteFile("config.json", configData, 0644)
 
 	SendJSON(w, http.StatusOK, map[string]string{"message": "Settings updated"}, nil)
 }

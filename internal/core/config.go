@@ -13,9 +13,9 @@ type Config struct {
 	LogLevel          string `json:"log_level"`
 	LogFormat         string `json:"log_format"`
 	JWTSecret         string `json:"jwt_secret"`
-	JWTExpiry         int    `json:"jwt_expiry"` // in hours
+	JWTExpiry         int    `json:"jwt_expiry"`           // in hours
 	MaxFileUploadSize int64  `json:"max_file_upload_size"` // in bytes
-	CORSOrigins       string `json:"cors_origins"` // comma-separated
+	CORSOrigins       string `json:"cors_origins"`         // comma-separated
 	RateLimitPerMin   int    `json:"rate_limit_per_min"`
 	TLSEnabled        bool   `json:"tls_enabled"`
 	TLSCertPath       string `json:"tls_cert_path"`

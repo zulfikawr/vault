@@ -77,7 +77,10 @@ func runServe() {
 	maxUploadSize := serveCmd.String("max-upload-size", "", "Max upload size (e.g., 10MB, 1GB)")
 	configFile := serveCmd.String("config", "", "Config file path")
 
-	serveCmd.Parse(os.Args[2:])
+	if err := serveCmd.Parse(os.Args[2:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing flags: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Set environment variables for config loading
 	os.Setenv("VAULT_PORT", fmt.Sprintf("%d", *port))

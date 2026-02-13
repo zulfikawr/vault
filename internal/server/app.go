@@ -31,12 +31,12 @@ type App struct {
 
 func NewApp() *App {
 	cfg := core.LoadConfig()
-	
+
 	if err := core.InitLoggerWithFile(cfg.LogLevel, cfg.LogFormat, "./vault_data/vault.log"); err != nil {
 		core.InitLogger(cfg.LogLevel, cfg.LogFormat)
 		slog.Error("Failed to initialize file logger, using stdout", "error", err)
 	}
-	
+
 	if err := core.InitFileLogger("./vault_data"); err != nil {
 		slog.Error("Failed to initialize file logger", "error", err)
 	}

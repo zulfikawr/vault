@@ -129,7 +129,7 @@ func (bc *BackupCommand) List(args []string) error {
 
 	fmt.Printf("Total backups: %d\n\n", len(backups))
 	fmt.Printf("%-40s %-15s %-20s\n", "Filename", "Size", "Modified")
-	fmt.Println(fmt.Sprintf("%s", "-----------------------------------------------------------"))
+	fmt.Println("-----------------------------------------------------------")
 
 	for _, backup := range backups {
 		fmt.Printf("%-40s %-15s %-20s\n",
@@ -164,7 +164,9 @@ func (bc *BackupCommand) Restore(args []string) error {
 	if !*force {
 		fmt.Printf("This will overwrite your current database and storage. Continue? (yes/no): ")
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			return fmt.Errorf("failed to read input: %w", err)
+		}
 		if response != "yes" {
 			fmt.Println("Restore cancelled")
 			return nil
