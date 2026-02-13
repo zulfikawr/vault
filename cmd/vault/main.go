@@ -24,6 +24,8 @@ func main() {
 		runServe()
 	case "admin":
 		runAdmin()
+	case "backup":
+		runBackup()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -35,6 +37,7 @@ func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  vault serve [--port PORT] [--dir DIR]")
 	fmt.Println("  vault admin <subcommand> [options]")
+	fmt.Println("  vault backup <subcommand> [options]")
 }
 
 func runServe() {
@@ -76,4 +79,23 @@ func runServer() {
 	// Import server package
 	app := server.NewApp()
 	app.Run()
+}
+
+func runBackup() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault backup <subcommand> [options]")
+		fmt.Println("Subcommands:")
+		fmt.Println("  create [--output FILE]")
+		fmt.Println("  list")
+		fmt.Println("  restore --input FILE [--force]")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+
+	backupCmd := cli.NewBackupCommand(cfg.DataDir, cfg.DBPath)
+	if err := backupCmd.Run(os.Args[2:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }

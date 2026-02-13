@@ -12,6 +12,9 @@ vault_data/
 *.db-journal
 *.db-wal
 
+# Backups
+vault_backup_*.tar.gz
+
 # Dependency directories
 vendor/
 
@@ -24,3 +27,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Planning
+plan.md
