@@ -121,49 +121,59 @@ onMounted(() => {
               <Input
                 v-if="field.type === 'text'"
                 :model-value="String(formData[field.name] || '')"
-                @update:model-value="formData[field.name] = $event"
                 type="text"
                 :required="field.required"
+                @update:model-value="formData[field.name] = $event"
               />
 
               <Input
                 v-else-if="field.type === 'number'"
                 :model-value="String(formData[field.name] || '')"
-                @update:model-value="formData[field.name] = $event"
                 type="number"
                 :required="field.required"
+                @update:model-value="formData[field.name] = $event"
               />
 
               <Input
                 v-else-if="field.type === 'email'"
                 :model-value="String(formData[field.name] || '')"
-                @update:model-value="formData[field.name] = $event"
                 type="email"
                 :required="field.required"
+                @update:model-value="formData[field.name] = $event"
               />
 
               <Input
                 v-else-if="field.type === 'date'"
                 :model-value="String(formData[field.name] || '')"
-                @update:model-value="formData[field.name] = $event"
                 type="date"
                 :required="field.required"
+                @update:model-value="formData[field.name] = $event"
               />
 
               <div v-else-if="field.type === 'bool'" class="flex items-center">
-                <Checkbox :model-value="Boolean(formData[field.name])" @update:model-value="formData[field.name] = $event" label="Enable" />
+                <Checkbox
+                  :model-value="Boolean(formData[field.name])"
+                  label="Enable"
+                  @update:model-value="formData[field.name] = $event"
+                />
               </div>
 
               <Input
                 v-else-if="field.type === 'json'"
                 :model-value="String(formData[field.name] || '')"
-                @update:model-value="formData[field.name] = $event"
                 type="textarea"
                 :required="field.required"
                 :rows="4"
+                @update:model-value="formData[field.name] = $event"
               />
 
-              <Input v-else :model-value="String(formData[field.name] || '')" @update:model-value="formData[field.name] = $event" type="text" :required="field.required" />
+              <Input
+                v-else
+                :model-value="String(formData[field.name] || '')"
+                type="text"
+                :required="field.required"
+                @update:model-value="formData[field.name] = $event"
+              />
             </div>
           </div>
 

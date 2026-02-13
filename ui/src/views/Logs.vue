@@ -28,7 +28,7 @@ const parsedLogs = computed(() => {
     const entry: LogEntry = {
       time: timeMatch ? new Date(timeMatch[1]!).toLocaleString() : 'N/A',
       level: levelMatch ? levelMatch[1]! : 'N/A',
-      message: msgMatch ? (msgMatch[1]! || msgMatch[2]!) : 'N/A',
+      message: msgMatch ? msgMatch[1]! || msgMatch[2]! : 'N/A',
     };
 
     // Extract all key=value pairs

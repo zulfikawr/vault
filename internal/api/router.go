@@ -20,6 +20,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	realtimeHandler := NewRealtimeHandler(hub)
 	adminHandler := NewAdminHandler(executor, registry, migration)
 	logsHandler := NewLogsHandler()
+	settingsHandler := NewSettingsHandler(config)
 
 	// Base routes
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +61,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminRouter := http.NewServeMux()
 	adminRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
 	adminRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
-	adminRouter.HandleFunc("GET /settings", adminHandler.GetSettings)
+	adminRouter.HandleFunc("GET /settings", settingsHandler.GetSettings)
 	adminRouter.HandleFunc("POST /backups", adminHandler.CreateBackup)
 	adminRouter.HandleFunc("GET /logs", logsHandler.GetLogs)
 	adminRouter.HandleFunc("DELETE /logs", logsHandler.ClearLogs)
