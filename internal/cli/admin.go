@@ -126,8 +126,8 @@ func (ac *AdminCommand) Create(args []string) error {
 	// Insert user
 	userID := generateID()
 	_, err = ac.db.ExecContext(ctx,
-		"INSERT INTO users (id, username, email, password, verified, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-		userID, *username, *email, hashedPassword, true, time.Now(), time.Now(),
+		"INSERT INTO users (id, username, email, password, created, updated) VALUES (?, ?, ?, ?, ?, ?)",
+		userID, *username, *email, hashedPassword, time.Now(), time.Now(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create admin user: %w", err)
@@ -150,7 +150,7 @@ func (ac *AdminCommand) List(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	rows, err := ac.db.QueryContext(ctx, "SELECT id, username, email, verified, created FROM users ORDER BY created DESC")
+	rows, err := ac.db.QueryContext(ctx, "SELECT id, username, email, created FROM users ORDER BY created DESC")
 	if err != nil {
 		return fmt.Errorf("failed to query users: %w", err)
 	}
@@ -159,9 +159,8 @@ func (ac *AdminCommand) List(args []string) error {
 	var admins []map[string]interface{}
 	for rows.Next() {
 		var id, username, email, createdStr string
-		var verified bool
 
-		if err := rows.Scan(&id, &username, &email, &verified, &createdStr); err != nil {
+		if err := rows.Scan(&id, &username, &email, &createdStr); err != nil {
 			return fmt.Errorf("failed to scan user: %w", err)
 		}
 
@@ -169,7 +168,6 @@ func (ac *AdminCommand) List(args []string) error {
 			"id":       id,
 			"username": username,
 			"email":    email,
-			"verified": verified,
 			"created":  createdStr,
 		})
 	}
@@ -184,19 +182,14 @@ func (ac *AdminCommand) List(args []string) error {
 	}
 
 	fmt.Printf("Total admins: %d\n\n", len(admins))
-	fmt.Printf("%-20s %-20s %-30s %-10s %-25s\n", "ID", "Username", "Email", "Verified", "Created")
-	fmt.Println(strings.Repeat("-", 105))
+	fmt.Printf("%-20s %-20s %-30s %-25s\n", "ID", "Username", "Email", "Created")
+	fmt.Println(strings.Repeat("-", 95))
 
 	for _, admin := range admins {
-		verified := "✓"
-		if !admin["verified"].(bool) {
-			verified = "✗"
-		}
-		fmt.Printf("%-20s %-20s %-30s %-10s %-25s\n",
+		fmt.Printf("%-20s %-20s %-30s %-25s\n",
 			admin["id"].(string)[:20],
 			admin["username"].(string),
 			admin["email"].(string),
-			verified,
 			admin["created"].(string),
 		)
 	}

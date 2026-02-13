@@ -138,7 +138,6 @@ func (s *SchemaRegistry) BootstrapUsersCollection() error {
 			{Name: "username", Type: models.FieldTypeText, Required: true, Unique: true},
 			{Name: "email", Type: models.FieldTypeText, Required: true, Unique: true},
 			{Name: "password", Type: models.FieldTypeText, Required: true},
-			{Name: "verified", Type: models.FieldTypeBool},
 			{Name: "lastLogin", Type: models.FieldTypeDate},
 		},
 	}

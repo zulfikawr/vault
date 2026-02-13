@@ -18,14 +18,3 @@ func (u *User) Username() string {
 func (u *User) Email() string {
 	return u.GetString("email")
 }
-
-func (u *User) IsVerified() bool {
-	if val, ok := u.Data["verified"].(bool); ok {
-		return val
-	}
-	// SQLite might return 0/1 for bool
-	if val, ok := u.Data["verified"].(int64); ok {
-		return val == 1
-	}
-	return false
-}
