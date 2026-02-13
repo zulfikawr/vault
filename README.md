@@ -41,6 +41,12 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 
 ## 🛠 CLI Usage
 
+### Initialization
+- `vault init [--email EMAIL] [--username USERNAME] [--password PASSWORD]` - Initialize new Vault project
+  - `--dir DIR` - Custom data directory (default: ./vault_data)
+  - `--skip-admin` - Skip admin creation
+  - `--force` - Overwrite existing setup
+
 ### Server
 - `vault serve [--port PORT] [--dir DIR]` - Starts the HTTP server
 - `vault version` - Display current version
