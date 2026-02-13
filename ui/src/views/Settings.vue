@@ -3,7 +3,9 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
-import { Settings } from 'lucide-vue-next';
+import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
+import { Settings, Save } from 'lucide-vue-next';
 
 interface AppSettings {
   port: number;
@@ -18,6 +20,7 @@ interface AppSettings {
 
 const settings = ref<AppSettings | null>(null);
 const loading = ref(false);
+const saving = ref(false);
 
 const fetchSettings = async () => {
   loading.value = true;
@@ -28,6 +31,20 @@ const fetchSettings = async () => {
     console.error('Failed to fetch settings', error);
   } finally {
     loading.value = false;
+  }
+};
+
+const saveSettings = async () => {
+  if (!settings.value) return;
+  saving.value = true;
+  try {
+    await axios.patch('/api/admin/settings', settings.value);
+    alert('Settings saved successfully');
+  } catch (error) {
+    console.error('Failed to save settings', error);
+    alert('Failed to save settings');
+  } finally {
+    saving.value = false;
   }
 };
 
@@ -46,9 +63,21 @@ onMounted(fetchSettings);
 
     <main class="flex-1 overflow-auto">
       <div class="p-6 max-w-4xl mx-auto">
-        <div class="flex items-center gap-3 mb-6">
-          <Settings class="w-8 h-8 text-primary" />
-          <h1 class="text-2xl font-bold text-text">System Settings</h1>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <Settings class="w-8 h-8 text-primary" />
+            <h1 class="text-2xl font-bold text-text">System Settings</h1>
+          </div>
+          <Button
+            v-if="settings"
+            variant="primary"
+            size="sm"
+            :disabled="saving"
+            @click="saveSettings"
+          >
+            <Save class="w-4 h-4" />
+            Save
+          </Button>
         </div>
 
         <div v-if="loading" class="text-center text-text-muted">Loading settings...</div>
@@ -58,14 +87,18 @@ onMounted(fetchSettings);
             <h2 class="text-lg font-semibold text-text mb-4">Server Configuration</h2>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm text-text-muted">Port</p>
-                <p class="text-lg font-medium text-text">{{ settings.port }}</p>
+                <label class="block text-sm text-text-muted mb-2">Port</label>
+                <Input v-model.number="settings.port" type="number" />
               </div>
               <div>
-                <p class="text-sm text-text-muted">TLS Enabled</p>
-                <p class="text-lg font-medium text-text">
-                  {{ settings.tls_enabled ? 'Yes' : 'No' }}
-                </p>
+                <label class="block text-sm text-text-muted mb-2">TLS Enabled</label>
+                <select
+                  v-model="settings.tls_enabled"
+                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
+                >
+                  <option :value="false">No</option>
+                  <option :value="true">Yes</option>
+                </select>
               </div>
             </div>
           </div>
@@ -74,12 +107,26 @@ onMounted(fetchSettings);
             <h2 class="text-lg font-semibold text-text mb-4">Logging</h2>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm text-text-muted">Log Level</p>
-                <p class="text-lg font-medium text-text">{{ settings.log_level }}</p>
+                <label class="block text-sm text-text-muted mb-2">Log Level</label>
+                <select
+                  v-model="settings.log_level"
+                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
+                >
+                  <option>DEBUG</option>
+                  <option>INFO</option>
+                  <option>WARN</option>
+                  <option>ERROR</option>
+                </select>
               </div>
               <div>
-                <p class="text-sm text-text-muted">Log Format</p>
-                <p class="text-lg font-medium text-text">{{ settings.log_format }}</p>
+                <label class="block text-sm text-text-muted mb-2">Log Format</label>
+                <select
+                  v-model="settings.log_format"
+                  class="w-full bg-surface-dark border border-border rounded px-3 py-2 text-text"
+                >
+                  <option>text</option>
+                  <option>json</option>
+                </select>
               </div>
             </div>
           </div>
@@ -88,24 +135,24 @@ onMounted(fetchSettings);
             <h2 class="text-lg font-semibold text-text mb-4">Security & Limits</h2>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm text-text-muted">JWT Expiry (hours)</p>
-                <p class="text-lg font-medium text-text">{{ settings.jwt_expiry }}</p>
+                <label class="block text-sm text-text-muted mb-2">JWT Expiry (hours)</label>
+                <Input v-model.number="settings.jwt_expiry" type="number" />
               </div>
               <div>
-                <p class="text-sm text-text-muted">Max File Upload</p>
-                <p class="text-lg font-medium text-text">
-                  {{ (settings.max_file_upload_size / 1024 / 1024).toFixed(2) }} MB
-                </p>
+                <label class="block text-sm text-text-muted mb-2">Max File Upload (MB)</label>
+                <Input
+                  :model-value="String(settings.max_file_upload_size / 1024 / 1024)"
+                  type="number"
+                  @update:model-value="settings.max_file_upload_size = Number($event) * 1024 * 1024"
+                />
               </div>
               <div>
-                <p class="text-sm text-text-muted">Rate Limit</p>
-                <p class="text-lg font-medium text-text">
-                  {{ settings.rate_limit_per_min }} req/min
-                </p>
+                <label class="block text-sm text-text-muted mb-2">Rate Limit (req/min)</label>
+                <Input v-model.number="settings.rate_limit_per_min" type="number" />
               </div>
               <div>
-                <p class="text-sm text-text-muted">CORS Origins</p>
-                <p class="text-lg font-medium text-text">{{ settings.cors_origins }}</p>
+                <label class="block text-sm text-text-muted mb-2">CORS Origins</label>
+                <Input v-model="settings.cors_origins" type="text" />
               </div>
             </div>
           </div>

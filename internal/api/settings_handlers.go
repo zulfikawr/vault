@@ -1,7 +1,9 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/zulfikawr/vault/internal/core"
 )
@@ -27,4 +29,44 @@ func (h *SettingsHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendJSON(w, http.StatusOK, settings, nil)
+}
+
+func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	var updates map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		return
+	}
+
+	// Update config in memory
+	if port, ok := updates["port"].(float64); ok {
+		h.config.Port = int(port)
+	}
+	if logLevel, ok := updates["log_level"].(string); ok {
+		h.config.LogLevel = logLevel
+	}
+	if logFormat, ok := updates["log_format"].(string); ok {
+		h.config.LogFormat = logFormat
+	}
+	if jwtExpiry, ok := updates["jwt_expiry"].(float64); ok {
+		h.config.JWTExpiry = int(jwtExpiry)
+	}
+	if maxUpload, ok := updates["max_file_upload_size"].(float64); ok {
+		h.config.MaxFileUploadSize = int64(maxUpload)
+	}
+	if corsOrigins, ok := updates["cors_origins"].(string); ok {
+		h.config.CORSOrigins = corsOrigins
+	}
+	if rateLimit, ok := updates["rate_limit_per_min"].(float64); ok {
+		h.config.RateLimitPerMin = int(rateLimit)
+	}
+	if tlsEnabled, ok := updates["tls_enabled"].(bool); ok {
+		h.config.TLSEnabled = tlsEnabled
+	}
+
+	// Save to config.json
+	configData, _ := json.MarshalIndent(h.config, "", "  ")
+	os.WriteFile("config.json", configData, 0644)
+
+	SendJSON(w, http.StatusOK, map[string]string{"message": "Settings updated"}, nil)
 }

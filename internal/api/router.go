@@ -62,6 +62,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
 	adminRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
 	adminRouter.HandleFunc("GET /settings", settingsHandler.GetSettings)
+	adminRouter.HandleFunc("PATCH /settings", settingsHandler.UpdateSettings)
 	adminRouter.HandleFunc("POST /backups", adminHandler.CreateBackup)
 	adminRouter.HandleFunc("GET /logs", logsHandler.GetLogs)
 	adminRouter.HandleFunc("DELETE /logs", logsHandler.ClearLogs)
