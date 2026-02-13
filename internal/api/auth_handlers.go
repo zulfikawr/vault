@@ -10,6 +10,7 @@ import (
 	"github.com/zulfikawr/vault/internal/auth"
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type AuthHandler struct {
@@ -32,7 +33,7 @@ type LoginRequest struct {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
 		return
 	}
 
@@ -49,7 +50,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil || len(records) == 0 {
-		core.SendError(w, core.NewError(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid identity or password"))
+		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid identity or password"))
 		return
 	}
 
@@ -57,7 +58,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	hashedPassword := userRecord.GetString("password")
 
 	if !auth.ComparePasswords(hashedPassword, req.Password) {
-		core.SendError(w, core.NewError(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid identity or password"))
+		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid identity or password"))
 		return
 	}
 
@@ -77,7 +78,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := auth.GenerateToken(r.Context(), userRecord, h.config.JWTSecret, h.config.JWTExpiry)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -91,7 +92,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"expires": time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339),
 	})
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -107,14 +108,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
 		return
 	}
 
 	// Lookup refresh token
 	records, _, err := h.executor.ListRecords(r.Context(), "_refresh_tokens", db.QueryParams{Filter: "token = " + req.RefreshToken})
 	if err != nil || len(records) == 0 {
-		core.SendError(w, core.NewError(http.StatusUnauthorized, "INVALID_REFRESH_TOKEN", "Invalid or expired refresh token"))
+		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "INVALID_REFRESH_TOKEN", "Invalid or expired refresh token"))
 		return
 	}
 
@@ -124,13 +125,13 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	userID := refreshTokenRecord.GetString("user_id")
 	userRecord, err := h.executor.FindRecordByID(r.Context(), "users", userID)
 	if err != nil {
-		core.SendError(w, core.NewError(http.StatusUnauthorized, "USER_NOT_FOUND", "Associated user not found"))
+		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "USER_NOT_FOUND", "Associated user not found"))
 		return
 	}
 
 	newToken, err := auth.GenerateToken(r.Context(), userRecord, h.config.JWTSecret, h.config.JWTExpiry)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -146,7 +147,7 @@ func (h *AuthHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Reques
 		Email string `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
 		return
 	}
 
@@ -175,11 +176,11 @@ func (h *AuthHandler) ConfirmPasswordReset(w http.ResponseWriter, r *http.Reques
 		NewPassword string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
 		return
 	}
 
 	// In a real implementation, we'd verify the token from the DB.
 	// Since we don't have the table yet, we'll return an error for now to show logic is present.
-	core.SendError(w, core.NewError(http.StatusNotImplemented, "RESET_NOT_FULLY_IMPLEMENTED", "Token verification table not yet migrated"))
+	errors.SendError(w, errors.NewError(http.StatusNotImplemented, "RESET_NOT_FULLY_IMPLEMENTED", "Token verification table not yet migrated"))
 }

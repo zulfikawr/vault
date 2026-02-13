@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -36,7 +37,7 @@ func GenerateToken(ctx context.Context, record *models.Record, secret string, ex
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", core.NewError(http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to sign token").WithDetails(map[string]any{"error": err.Error()})
+		return "", errors.NewError(http.StatusInternalServerError, "TOKEN_GENERATION_FAILED", "Failed to sign token").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	return tokenString, nil
@@ -51,12 +52,12 @@ func ValidateToken(ctx context.Context, tokenStr string, secret string) (*Claims
 	})
 
 	if err != nil {
-		return nil, core.NewError(http.StatusUnauthorized, "INVALID_TOKEN", "Token validation failed").WithDetails(map[string]any{"error": err.Error()})
+		return nil, errors.NewError(http.StatusUnauthorized, "INVALID_TOKEN", "Token validation failed").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
 
-	return nil, core.NewError(http.StatusUnauthorized, "INVALID_TOKEN_CLAIMS", "Invalid token claims")
+	return nil, errors.NewError(http.StatusUnauthorized, "INVALID_TOKEN_CLAIMS", "Invalid token claims")
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/zulfikawr/vault/internal/auth"
 	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/rules"
 )
 
@@ -64,7 +65,7 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 					"stack", string(debug.Stack()),
 				)
 
-				core.SendError(w, core.NewError(
+				errors.SendError(w, errors.NewError(
 					http.StatusInternalServerError,
 					"INTERNAL_SERVER_ERROR",
 					"An unexpected error occurred",
@@ -103,7 +104,7 @@ func AuthMiddleware(secret string) Middleware {
 
 			claims, err := auth.ValidateToken(r.Context(), tokenStr, secret)
 			if err != nil {
-				core.SendError(w, err)
+				errors.SendError(w, err)
 				return
 			}
 
@@ -118,13 +119,13 @@ func AdminOnly(next http.Handler) http.Handler {
 		authClaims := core.GetAuth(r.Context())
 		claims, ok := authClaims.(*auth.Claims)
 		if !ok || claims == nil {
-			core.SendError(w, core.NewError(http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required"))
+			errors.SendError(w, errors.NewError(http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required"))
 			return
 		}
 
 		// Simple rule: any user in 'users' collection is admin for this prototype
 		if claims.Collection != "users" {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "Admin access required"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "Admin access required"))
 			return
 		}
 

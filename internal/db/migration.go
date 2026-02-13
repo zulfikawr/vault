@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -27,7 +28,7 @@ func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collecti
 	if err == sql.ErrNoRows {
 		return m.createTable(ctx, c)
 	} else if err != nil {
-		return core.NewError(http.StatusInternalServerError, "DB_SYNC_FAILED", "Failed to check table existence").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
+		return errors.NewError(http.StatusInternalServerError, "DB_SYNC_FAILED", "Failed to check table existence").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
 	}
 
 	return m.updateTable(ctx, c)
@@ -62,7 +63,7 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 	query := fmt.Sprintf("CREATE TABLE %s (%s)", c.Name, strings.Join(columns, ", "))
 	_, err := m.db.ExecContext(ctx, query)
 	if err != nil {
-		return core.NewError(http.StatusInternalServerError, "DB_CREATE_TABLE_FAILED", "Failed to create table").WithDetails(map[string]any{"error": err.Error(), "query": query})
+		return errors.NewError(http.StatusInternalServerError, "DB_CREATE_TABLE_FAILED", "Failed to create table").WithDetails(map[string]any{"error": err.Error(), "query": query})
 	}
 
 	slog.Info("Created table", "collection", c.Name, "request_id", core.GetRequestID(ctx))
@@ -72,9 +73,9 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection) error {
 	rows, err := m.db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info(%s)", c.Name))
 	if err != nil {
-		return core.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to get table info").WithDetails(map[string]any{"error": err.Error()})
+		return errors.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to get table info").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer func() { _ = rows.Close() }()
+	defer errors.Defer(ctx, rows.Close, "close rows")
 
 	existingCols := make(map[string]bool)
 	for rows.Next() {
@@ -85,7 +86,7 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 		var pk sql.NullInt64
 		if err := rows.Scan(&cid, &name, &dtype, &notnull, &dfltValue, &pk); err != nil {
 			slog.Error("PRAGMA scan failed", "error", err, "collection", c.Name)
-			return core.NewError(http.StatusInternalServerError, "DB_SCAN_FAILED", "Failed to scan table info").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
+			return errors.NewError(http.StatusInternalServerError, "DB_SCAN_FAILED", "Failed to scan table info").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
 		}
 		if name.Valid {
 			existingCols[name.String] = true
@@ -104,7 +105,7 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 
 			query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.Name, f.Name, sqlType)
 			if _, err := m.db.ExecContext(ctx, query); err != nil {
-				return core.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})
+				return errors.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})
 			}
 			slog.Info("Added column", "collection", c.Name, "field", f.Name, "request_id", core.GetRequestID(ctx))
 		}

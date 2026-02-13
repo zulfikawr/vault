@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -21,7 +21,7 @@ type QueryParams struct {
 func (e *Executor) ListRecords(ctx context.Context, collectionName string, params QueryParams) ([]*models.Record, int, error) {
 	col, ok := e.registry.GetCollection(collectionName)
 	if !ok {
-		return nil, 0, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
+		return nil, 0, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", fmt.Sprintf("Collection %s not found", collectionName))
 	}
 
 	if params.Page <= 0 {
@@ -50,7 +50,7 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	var total int
 	err := e.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", collectionName, whereQuery), whereValues...).Scan(&total)
 	if err != nil {
-		return nil, 0, core.NewError(http.StatusInternalServerError, "DB_COUNT_FAILED", "Failed to count records").WithDetails(map[string]any{"error": err.Error()})
+		return nil, 0, errors.NewError(http.StatusInternalServerError, "DB_COUNT_FAILED", "Failed to count records").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	columns := []string{"id", "created", "updated"}
@@ -68,9 +68,9 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 	allValues := append(whereValues, params.PerPage, offset)
 	rows, err := e.db.QueryContext(ctx, query, allValues...)
 	if err != nil {
-		return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_LIST_FAILED", "Failed to list records").WithDetails(map[string]any{"error": err.Error()})
+		return nil, 0, errors.NewError(http.StatusInternalServerError, "RECORD_LIST_FAILED", "Failed to list records").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer func() { _ = rows.Close() }()
+	defer errors.Defer(ctx, rows.Close, "close rows")
 
 	var records []*models.Record
 	for rows.Next() {
@@ -81,7 +81,7 @@ func (e *Executor) ListRecords(ctx context.Context, collectionName string, param
 		}
 
 		if err := rows.Scan(valPtrs...); err != nil {
-			return nil, 0, core.NewError(http.StatusInternalServerError, "RECORD_SCAN_FAILED", "Failed to scan record").WithDetails(map[string]any{"error": err.Error()})
+			return nil, 0, errors.NewError(http.StatusInternalServerError, "RECORD_SCAN_FAILED", "Failed to scan record").WithDetails(map[string]any{"error": err.Error()})
 		}
 
 		record := &models.Record{
@@ -134,7 +134,7 @@ func (e *Executor) parseSafeFilter(col *models.Collection, filter string) (strin
 			}
 
 			if !validField {
-				return "", nil, core.NewError(http.StatusBadRequest, "INVALID_FILTER", fmt.Sprintf("Unknown field in filter: %s", fieldName))
+				return "", nil, errors.NewError(http.StatusBadRequest, "INVALID_FILTER", fmt.Sprintf("Unknown field in filter: %s", fieldName))
 			}
 
 			// 2. Clean value (remove single quotes if present)
@@ -145,5 +145,5 @@ func (e *Executor) parseSafeFilter(col *models.Collection, filter string) (strin
 		}
 	}
 
-	return "", nil, core.NewError(http.StatusBadRequest, "UNSUPPORTED_FILTER", "Filter format not supported. Use 'field = value'")
+	return "", nil, errors.NewError(http.StatusBadRequest, "UNSUPPORTED_FILTER", "Filter format not supported. Use 'field = value'")
 }

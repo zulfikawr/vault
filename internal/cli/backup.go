@@ -2,12 +2,15 @@ package cli
 
 import (
 	"archive/zip"
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type BackupCommand struct {
@@ -67,11 +70,11 @@ func (bc *BackupCommand) Create(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create backup file: %w", err)
 	}
-	defer backupFile.Close()
+	defer errors.Defer(context.Background(), backupFile.Close, "close backup file", "path", *output)
 
 	// Create zip writer
 	zipWriter := zip.NewWriter(backupFile)
-	defer zipWriter.Close()
+	defer errors.Defer(context.Background(), zipWriter.Close, "close zip writer")
 
 	// Add database file
 	if err := bc.addFileToZip(zipWriter, bc.config.DBPath, "vault.db"); err != nil {
@@ -178,7 +181,7 @@ func (bc *BackupCommand) Restore(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open backup file: %w", err)
 	}
-	defer reader.Close()
+	defer errors.Defer(context.Background(), reader.Close, "close backup reader", "path", *input)
 
 	// Extract files
 	for _, file := range reader.File {
@@ -234,7 +237,7 @@ func (bc *BackupCommand) addFileToZip(zw *zip.Writer, filePath, zipPath string) 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer errors.Defer(context.Background(), file.Close, "close file for zip", "path", filePath)
 
 	info, err := file.Stat()
 	if err != nil {
@@ -277,7 +280,7 @@ func (bc *BackupCommand) addDirToZip(zw *zip.Writer, dirPath, zipPath string) er
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer errors.Defer(context.Background(), file.Close, "close file in dir walk", "path", path)
 
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {

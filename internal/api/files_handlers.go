@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/storage"
 )
 
@@ -31,10 +31,10 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	file, err := h.storage.Retrieve(r.Context(), path)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
-	defer func() { _ = file.Close() }()
+	defer errors.Defer(r.Context(), file.Close, "close file", "path", path)
 
 	// Simple content type detection
 	contentType := "application/octet-stream"
@@ -48,7 +48,9 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=31536000")
-	_, _ = io.Copy(w, file)
+	if _, err := io.Copy(w, file); err != nil {
+		errors.Log(r.Context(), err, "copy file to response", "collection", collection, "file", filename)
+	}
 }
 
 func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
@@ -56,21 +58,21 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	// Later we can integrate it directly into the Record Create/Update handlers.
 
 	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_MULTIPART", "Failed to parse multipart form"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_MULTIPART", "Failed to parse multipart form"))
 		return
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "FILE_REQUIRED", "No file provided"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "FILE_REQUIRED", "No file provided"))
 		return
 	}
-	defer func() { _ = file.Close() }()
+	defer errors.Defer(r.Context(), file.Close, "close uploaded file", "filename", header.Filename)
 
 	collection := r.FormValue("collection")
 	recordID := r.FormValue("recordID")
 	if collection == "" || recordID == "" {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "MISSING_PARAMS", "collection and recordID are required"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_PARAMS", "collection and recordID are required"))
 		return
 	}
 
@@ -80,7 +82,7 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(collection, recordID, safeName)
 
 	if err := h.storage.Save(r.Context(), path, file); err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 

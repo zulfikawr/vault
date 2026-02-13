@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type LogsHandler struct{}
@@ -23,13 +24,13 @@ func (h *LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 
 	fileLogger := core.GetFileLogger()
 	if fileLogger == nil {
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", "Logger not initialized"))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", "Logger not initialized"))
 		return
 	}
 
 	logs, err := fileLogger.ReadLogs(limit)
 	if err != nil {
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", err.Error()))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", err.Error()))
 		return
 	}
 
@@ -39,12 +40,12 @@ func (h *LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 func (h *LogsHandler) ClearLogs(w http.ResponseWriter, r *http.Request) {
 	fileLogger := core.GetFileLogger()
 	if fileLogger == nil {
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", "Logger not initialized"))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "INTERNAL_ERROR", "Logger not initialized"))
 		return
 	}
 
 	if err := fileLogger.Clear(); err != nil {
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "CLEAR_FAILED", err.Error()))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "CLEAR_FAILED", err.Error()))
 		return
 	}
 

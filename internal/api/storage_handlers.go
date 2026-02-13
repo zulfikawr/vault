@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type StorageHandler struct {
@@ -48,7 +48,7 @@ func (h *StorageHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	// Prevent directory traversal
 	if strings.Contains(path, "..") {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_PATH", "Invalid path"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_PATH", "Invalid path"))
 		return
 	}
 
@@ -60,7 +60,7 @@ func (h *StorageHandler) List(w http.ResponseWriter, r *http.Request) {
 			SendJSON(w, http.StatusOK, StorageListResponse{Files: []FileInfo{}, Folders: []FileInfo{}}, nil)
 			return
 		}
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "READ_DIR_FAILED", "Failed to read directory"))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "READ_DIR_FAILED", "Failed to read directory"))
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *StorageHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Walk entire storage to count files and size
-	_ = filepath.WalkDir(h.basePath, func(path string, d fs.DirEntry, err error) error {
+	if err := filepath.WalkDir(h.basePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
@@ -120,7 +120,9 @@ func (h *StorageHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		stats.TotalFiles++
 		stats.TotalSize += info.Size()
 		return nil
-	})
+	}); err != nil {
+		errors.Log(r.Context(), err, "walk storage directory", "path", h.basePath)
+	}
 
 	SendJSON(w, http.StatusOK, stats, nil)
 }
@@ -131,12 +133,12 @@ func (h *StorageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_JSON", "Invalid request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_JSON", "Invalid request body"))
 		return
 	}
 
 	if req.Path == "" || strings.Contains(req.Path, "..") {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_PATH", "Invalid path"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_PATH", "Invalid path"))
 		return
 	}
 
@@ -144,10 +146,10 @@ func (h *StorageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := os.Remove(fullPath); err != nil {
 		if os.IsNotExist(err) {
-			core.SendError(w, core.NewError(http.StatusNotFound, "FILE_NOT_FOUND", "File not found"))
+			errors.SendError(w, errors.NewError(http.StatusNotFound, "FILE_NOT_FOUND", "File not found"))
 			return
 		}
-		core.SendError(w, core.NewError(http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete file"))
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete file"))
 		return
 	}
 

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -60,7 +60,7 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = rows.Close() }()
+	defer errors.Defer(ctx, rows.Close, "close rows")
 
 	for rows.Next() {
 		var id, name, ctype, fieldsJSON, created, updated string
@@ -98,7 +98,7 @@ func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collectio
 
 	_, err := s.db.ExecContext(ctx, query, c.ID, c.Name, c.Type, string(fieldsJSON))
 	if err != nil {
-		return core.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
+		return errors.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	s.AddCollection(c)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/realtime"
 )
 
@@ -43,14 +44,22 @@ func (h *RealtimeHandler) Connect(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case <-ticker.C:
-			_, _ = fmt.Fprintf(w, ": ping\n\n")
+			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil {
+				return // Client disconnected
+			}
 			flusher.Flush()
 		case msg := <-client:
 			if msg == nil {
 				return
 			}
-			data, _ := json.Marshal(msg)
-			_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", msg.Action, string(data))
+			data, err := json.Marshal(msg)
+			if err != nil {
+				errors.Log(r.Context(), err, "marshal SSE message")
+				continue
+			}
+			if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", msg.Action, string(data)); err != nil {
+				return // Client disconnected
+			}
 			flusher.Flush()
 		}
 	}

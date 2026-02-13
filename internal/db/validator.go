@@ -3,7 +3,7 @@ package db
 import (
 	"net/http"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -36,7 +36,7 @@ func ValidateRecord(col *models.Collection, data map[string]any) error {
 	}
 
 	if len(details) > 0 {
-		return core.NewError(http.StatusBadRequest, "VALIDATION_FAILED", "Data validation failed").WithDetails(details)
+		return errors.NewError(http.StatusBadRequest, "VALIDATION_FAILED", "Data validation failed").WithDetails(details)
 	}
 
 	return nil

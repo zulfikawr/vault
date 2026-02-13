@@ -1,9 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"net/http"
+
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type Response struct {
@@ -20,6 +23,7 @@ type PaginatedResponse struct {
 }
 
 func SendJSON(w http.ResponseWriter, status int, data any, meta any) {
+	ctx := context.Background() // TODO: pass context from request
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -35,13 +39,15 @@ func SendJSON(w http.ResponseWriter, status int, data any, meta any) {
 				totalPages = int(math.Ceil(float64(totalItems) / float64(perPage)))
 			}
 
-			_ = json.NewEncoder(w).Encode(PaginatedResponse{
+			if err := json.NewEncoder(w).Encode(PaginatedResponse{
 				Page:       page,
 				PerPage:    perPage,
 				TotalItems: totalItems,
 				TotalPages: totalPages,
 				Items:      data,
-			})
+			}); err != nil {
+				errors.Log(ctx, err, "encode paginated response")
+			}
 			return
 		}
 	}
@@ -51,5 +57,7 @@ func SendJSON(w http.ResponseWriter, status int, data any, meta any) {
 		Meta: meta,
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		errors.Log(ctx, err, "encode json response")
+	}
 }

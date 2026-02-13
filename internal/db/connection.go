@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"net/http"
 
 	_ "modernc.org/sqlite"
@@ -16,12 +16,12 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 	// Ensure directory exists
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, core.NewError(http.StatusInternalServerError, "DB_DIR_CREATION_FAILED", "Failed to create data directory").WithDetails(map[string]any{"error": err.Error(), "path": dir})
+		return nil, errors.NewError(http.StatusInternalServerError, "DB_DIR_CREATION_FAILED", "Failed to create data directory").WithDetails(map[string]any{"error": err.Error(), "path": dir})
 	}
 
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		return nil, core.NewError(http.StatusInternalServerError, "DB_OPEN_FAILED", "Failed to open database").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return nil, errors.NewError(http.StatusInternalServerError, "DB_OPEN_FAILED", "Failed to open database").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
 
 	// Performance and stability settings
@@ -34,8 +34,8 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 
 	for _, pragma := range pragmas {
 		if _, err := db.ExecContext(ctx, pragma); err != nil {
-			_ = db.Close()
-			return nil, core.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to execute pragma").WithDetails(map[string]any{"error": err.Error(), "pragma": pragma})
+			errors.Log(ctx, db.Close(), "close database connection")
+			return nil, errors.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to execute pragma").WithDetails(map[string]any{"error": err.Error(), "pragma": pragma})
 		}
 	}
 
@@ -43,8 +43,8 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 	db.SetMaxOpenConns(1)
 
 	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
-		return nil, core.NewError(http.StatusInternalServerError, "DB_PING_FAILED", "Failed to ping database").WithDetails(map[string]any{"error": err.Error()})
+		errors.Log(ctx, db.Close(), "close database connection")
+		return nil, errors.NewError(http.StatusInternalServerError, "DB_PING_FAILED", "Failed to ping database").WithDetails(map[string]any{"error": err.Error()})
 	}
 
 	return db, nil

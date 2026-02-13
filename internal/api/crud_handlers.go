@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/rules"
 )
 
@@ -26,7 +26,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	collectionName := r.PathValue("collection")
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
-		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
@@ -37,7 +37,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 		evalCtx := GetEvaluationContext(r, nil)
 		allowed, err := rules.Evaluate(*col.ListRule, evalCtx)
 		if !allowed || err != nil {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to list this collection"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to list this collection"))
 			return
 		}
 	}
@@ -45,7 +45,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	params := h.parseQueryParams(r)
 	records, total, err := h.executor.ListRecords(r.Context(), collectionName, params)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -68,13 +68,13 @@ func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
 
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
-		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
 	record, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
 		evalCtx := GetEvaluationContext(r, record.Data)
 		allowed, err := rules.Evaluate(*col.ViewRule, evalCtx)
 		if !allowed || err != nil {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to view this record"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to view this record"))
 			return
 		}
 	}
@@ -100,13 +100,13 @@ func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
-		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
 	var data map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
 		return
 	}
 
@@ -116,19 +116,19 @@ func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		evalCtx.Data = data // Inject incoming data
 		allowed, err := rules.Evaluate(*col.CreateRule, evalCtx)
 		if !allowed || err != nil {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to create records in this collection"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to create records in this collection"))
 			return
 		}
 	}
 
 	if err := db.ValidateRecord(col, data); err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
 	record, err := h.executor.CreateRecord(r.Context(), collectionName, data)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -145,20 +145,20 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
-		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
 	var data map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
 		return
 	}
 
 	// Fetch current for rule evaluation
 	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -168,14 +168,14 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		evalCtx.Data = data
 		allowed, err := rules.Evaluate(*col.UpdateRule, evalCtx)
 		if !allowed || err != nil {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to update this record"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to update this record"))
 			return
 		}
 	}
 
 	record, err := h.executor.UpdateRecord(r.Context(), collectionName, id, data)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -192,14 +192,14 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	col, ok := h.registry.GetCollection(collectionName)
 	if !ok {
-		core.SendError(w, core.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
 	// Fetch current for rule evaluation
 	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
@@ -208,13 +208,13 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		evalCtx := GetEvaluationContext(r, existing.Data)
 		allowed, err := rules.Evaluate(*col.DeleteRule, evalCtx)
 		if !allowed || err != nil {
-			core.SendError(w, core.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to delete this record"))
+			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to delete this record"))
 			return
 		}
 	}
 
 	if err := h.executor.DeleteRecord(r.Context(), collectionName, id); err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
 )
 
@@ -27,19 +27,19 @@ func (h *AdminHandler) ListCollections(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) CreateCollection(w http.ResponseWriter, r *http.Request) {
 	var col models.Collection
 	if err := json.NewDecoder(r.Body).Decode(&col); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
 		return
 	}
 
 	// 1. Sync DB
 	if err := h.migration.SyncCollection(r.Context(), &col); err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 
 	// 2. Persist Definition
 	if err := h.registry.SaveCollection(r.Context(), &col); err != nil {
-		core.SendError(w, err)
+		errors.SendError(w, err)
 		return
 	}
 

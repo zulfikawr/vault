@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type SettingsHandler struct {
@@ -23,7 +24,7 @@ func (h *SettingsHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	var updates map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		core.SendError(w, core.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_REQUEST", "Failed to decode request body"))
 		return
 	}
 
@@ -54,8 +55,16 @@ func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Save to config.json
-	configData, _ := json.MarshalIndent(h.config, "", "  ")
-	_ = os.WriteFile("config.json", configData, 0644)
+	configData, err := json.MarshalIndent(h.config, "", "  ")
+	if err != nil {
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "CONFIG_MARSHAL_FAILED", "Failed to marshal config"))
+		return
+	}
+	if err := os.WriteFile("config.json", configData, 0644); err != nil {
+		errors.Log(r.Context(), err, "write config file")
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "CONFIG_WRITE_FAILED", "Failed to write config file"))
+		return
+	}
 
 	SendJSON(w, http.StatusOK, map[string]string{"message": "Settings updated"}, nil)
 }

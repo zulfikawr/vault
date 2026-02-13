@@ -4,14 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func HashPassword(ctx context.Context, password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", core.NewError(http.StatusInternalServerError, "AUTH_HASH_FAILED", "Failed to hash password").WithDetails(map[string]any{"error": err.Error()})
+		return "", errors.NewError(http.StatusInternalServerError, "AUTH_HASH_FAILED", "Failed to hash password").WithDetails(map[string]any{"error": err.Error()})
 	}
 	return string(bytes), nil
 }

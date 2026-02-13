@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"strconv"
 )
@@ -42,7 +43,10 @@ func LoadConfig() *Config {
 
 	// Load from config.json if exists
 	if data, err := os.ReadFile("config.json"); err == nil {
-		_ = json.Unmarshal(data, cfg)
+		if err := json.Unmarshal(data, cfg); err != nil {
+			// Log error but continue with defaults
+			slog.Warn("Failed to unmarshal config.json, using defaults", "error", err)
+		}
 	}
 
 	// Environment overrides

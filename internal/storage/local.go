@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zulfikawr/vault/internal/core"
+	"github.com/zulfikawr/vault/internal/errors"
 )
 
 type Local struct {
@@ -26,17 +26,17 @@ func (l *Local) Save(ctx context.Context, path string, data io.Reader) error {
 	fullPath := filepath.Join(l.basePath, path)
 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
-		return core.NewError(http.StatusInternalServerError, "STORAGE_DIR_CREATE_FAILED", "Failed to create directory").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_DIR_CREATE_FAILED", "Failed to create directory").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
 
 	file, err := os.Create(fullPath)
 	if err != nil {
-		return core.NewError(http.StatusInternalServerError, "STORAGE_CREATE_FAILED", "Failed to create file").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_CREATE_FAILED", "Failed to create file").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
-	defer func() { _ = file.Close() }()
+	defer errors.Defer(ctx, file.Close, "close storage file", "path", path)
 
 	if _, err := io.Copy(file, data); err != nil {
-		return core.NewError(http.StatusInternalServerError, "STORAGE_WRITE_FAILED", "Failed to write data").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_WRITE_FAILED", "Failed to write data").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
 
 	return nil
@@ -47,9 +47,9 @@ func (l *Local) Retrieve(ctx context.Context, path string) (io.ReadCloser, error
 	file, err := os.Open(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, core.NewError(http.StatusNotFound, "FILE_NOT_FOUND", "File not found")
+			return nil, errors.NewError(http.StatusNotFound, "FILE_NOT_FOUND", "File not found")
 		}
-		return nil, core.NewError(http.StatusInternalServerError, "STORAGE_READ_FAILED", "Failed to read file").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return nil, errors.NewError(http.StatusInternalServerError, "STORAGE_READ_FAILED", "Failed to read file").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
 	return file, nil
 }
@@ -60,7 +60,7 @@ func (l *Local) Delete(ctx context.Context, path string) error {
 		if os.IsNotExist(err) {
 			return nil // Already deleted
 		}
-		return core.NewError(http.StatusInternalServerError, "STORAGE_DELETE_FAILED", "Failed to delete file").WithDetails(map[string]any{"error": err.Error(), "path": path})
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_DELETE_FAILED", "Failed to delete file").WithDetails(map[string]any{"error": err.Error(), "path": path})
 	}
 	return nil
 }
@@ -74,5 +74,5 @@ func (l *Local) Exists(ctx context.Context, path string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, core.NewError(http.StatusInternalServerError, "STORAGE_STAT_FAILED", "Failed to stat file").WithDetails(map[string]any{"error": err.Error(), "path": path})
+	return false, errors.NewError(http.StatusInternalServerError, "STORAGE_STAT_FAILED", "Failed to stat file").WithDetails(map[string]any{"error": err.Error(), "path": path})
 }
