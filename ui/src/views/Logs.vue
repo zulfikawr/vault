@@ -31,7 +31,6 @@ const parsedLogs = computed(() => {
       message: msgMatch ? msgMatch[1]! || msgMatch[2]! : 'N/A',
     };
 
-    // Extract all key=value pairs
     const kvMatches = log.matchAll(/(\w+)=([^ ]+)/g);
     for (const match of kvMatches) {
       const key = match[1]!;
@@ -43,7 +42,6 @@ const parsedLogs = computed(() => {
     return entry;
   });
 
-  // Sort by time descending (latest first)
   return logs.reverse();
 });
 
@@ -54,7 +52,6 @@ const headers = computed(() => {
     { key: 'message', label: 'Message' },
   ];
 
-  // Get all unique keys from logs
   const allKeys = new Set<string>();
   parsedLogs.value.forEach((log) => {
     Object.keys(log).forEach((key) => {
@@ -64,7 +61,6 @@ const headers = computed(() => {
     });
   });
 
-  // Add dynamic columns
   Array.from(allKeys).forEach((key) => {
     baseHeaders.push({ key, label: key });
   });
@@ -112,16 +108,21 @@ onMounted(fetchLogs);
 
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-text-muted">Logs</span>
+        <div class="flex items-center text-sm text-text-muted">
+          <span class="hover:text-text cursor-pointer" @click="$router.push('/')">Vault</span>
+          <span class="mx-2">/</span>
+          <span class="font-medium text-text">Logs</span>
         </div>
       </template>
     </AppHeader>
 
-    <main class="flex-1 overflow-auto">
-      <div class="p-6 max-w-7xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold text-text">System Logs</h1>
+    <main class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">System Logs</h1>
+            <p class="mt-1 text-sm text-text-muted">View and manage application logs.</p>
+          </div>
           <div class="flex gap-2">
             <Button variant="secondary" size="sm" :disabled="loading" @click="fetchLogs">
               <RefreshCw class="w-4 h-4" />

@@ -17,18 +17,7 @@ func NewSettingsHandler(config *core.Config) *SettingsHandler {
 }
 
 func (h *SettingsHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
-	settings := map[string]interface{}{
-		"port":                   h.config.Port,
-		"log_level":              h.config.LogLevel,
-		"log_format":             h.config.LogFormat,
-		"jwt_expiry":             h.config.JWTExpiry,
-		"max_file_upload_size":   h.config.MaxFileUploadSize,
-		"cors_origins":           h.config.CORSOrigins,
-		"rate_limit_per_min":     h.config.RateLimitPerMin,
-		"tls_enabled":            h.config.TLSEnabled,
-	}
-
-	SendJSON(w, http.StatusOK, settings, nil)
+	SendJSON(w, http.StatusOK, h.config, nil)
 }
 
 func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {

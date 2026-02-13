@@ -7,7 +7,7 @@ import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Dropdown from '../components/Dropdown.vue';
 import DropdownItem from '../components/DropdownItem.vue';
-import { Settings, Save } from 'lucide-vue-next';
+import { Save } from 'lucide-vue-next';
 
 interface AppSettings {
   port: number;
@@ -28,7 +28,7 @@ const fetchSettings = async () => {
   loading.value = true;
   try {
     const response = await axios.get('/api/admin/settings');
-    settings.value = response.data;
+    settings.value = response.data.data || response.data;
   } catch (error) {
     console.error('Failed to fetch settings', error);
   } finally {
@@ -57,18 +57,20 @@ onMounted(fetchSettings);
   <AppLayout>
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-text-muted">Settings</span>
+        <div class="flex items-center text-sm text-text-muted">
+          <span class="hover:text-text cursor-pointer" @click="$router.push('/')">Vault</span>
+          <span class="mx-2">/</span>
+          <span class="font-medium text-text">Settings</span>
         </div>
       </template>
     </AppHeader>
 
-    <main class="flex-1 overflow-auto">
-      <div class="p-6 max-w-4xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center gap-3">
-            <Settings class="w-8 h-8 text-primary" />
-            <h1 class="text-2xl font-bold text-text">System Settings</h1>
+    <main class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">System Settings</h1>
+            <p class="mt-1 text-sm text-text-muted">Configure your Vault instance.</p>
           </div>
           <Button
             v-if="settings"
