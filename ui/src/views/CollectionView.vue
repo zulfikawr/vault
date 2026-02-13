@@ -25,8 +25,8 @@ interface Collection {
 
 interface RecordData {
   id: string;
-  data: Record<string, string | number | boolean>;
-  [key: string]: string | number | boolean;
+  data?: Record<string, string | number | boolean>;
+  [key: string]: string | number | boolean | Record<string, string | number | boolean> | undefined;
 }
 
 const router = useRouter();

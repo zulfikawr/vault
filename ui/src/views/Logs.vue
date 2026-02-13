@@ -26,17 +26,17 @@ const parsedLogs = computed(() => {
     const msgMatch = log.match(/msg="([^"]*)"|msg=([^ ]+)/);
 
     const entry: LogEntry = {
-      time: timeMatch ? new Date(timeMatch[1]).toLocaleString() : '',
-      level: levelMatch ? levelMatch[1] : '',
-      message: msgMatch ? msgMatch[1] || msgMatch[2] : '',
+      time: timeMatch ? new Date(timeMatch[1]!).toLocaleString() : 'N/A',
+      level: levelMatch ? levelMatch[1]! : 'N/A',
+      message: msgMatch ? (msgMatch[1]! || msgMatch[2]!) : 'N/A',
     };
 
     // Extract all key=value pairs
     const kvMatches = log.matchAll(/(\w+)=([^ ]+)/g);
     for (const match of kvMatches) {
-      const key = match[1];
+      const key = match[1]!;
       if (!['time', 'level', 'msg'].includes(key)) {
-        entry[key] = match[2];
+        entry[key] = match[2]!;
       }
     }
 
