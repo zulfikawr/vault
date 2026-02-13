@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import Button from '../components/Button.vue';
 import { Mail, KeyRound, AlertCircle, LockKeyhole } from 'lucide-vue-next';
 
 const identity = ref('');
@@ -134,12 +135,12 @@ onMounted(() => {
             </div>
 
             <!-- Submit Button -->
-            <button 
+            <Button 
               type="submit"
-              class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-surface transition-all transform active:scale-[0.98]"
+              class="w-full"
             >
               Authenticate Access
-            </button>
+            </Button>
           </form>
         </div>
 

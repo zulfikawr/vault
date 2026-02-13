@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal.vue';
+import Button from './Button.vue';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -87,13 +88,13 @@ onMounted(fetchCollections);
         <!-- Brand -->
         <div class="h-16 flex items-center border-b border-border" :class="sidebarCollapsed ? 'lg:justify-center px-6 lg:px-0' : 'justify-between px-6'">
           <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="font-bold text-lg tracking-tight text-primary">vault</span>
-          <button @click="toggleSidebar" class="hidden lg:block p-1 hover:bg-surface-dark rounded transition-colors">
+          <Button @click="toggleSidebar" variant="ghost" size="xs" class="hidden lg:flex">
             <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
             <ChevronRight v-else class="w-5 h-5 text-text-muted" />
-          </button>
-          <button @click="isMobileMenuOpen = false" class="lg:hidden p-1 hover:bg-surface-dark rounded transition-colors">
+          </Button>
+          <Button @click="isMobileMenuOpen = false" variant="ghost" size="xs" class="lg:hidden">
             <ChevronLeft class="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
         </div>
         
         <!-- Navigation -->
@@ -158,14 +159,15 @@ onMounted(fetchCollections);
             {{ auth.user?.data?.username?.charAt(0).toUpperCase() || 'A' }}
           </div>
         </div>
-        <button 
+        <Button 
           @click="showLogoutModal = true" 
-          :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'"
-          class="w-full flex items-center py-2 rounded-lg text-xs font-bold text-error hover:bg-error/10 transition-colors"
+          variant="ghost"
+          class="w-full !justify-start !text-error hover:!bg-error/10"
+          :class="sidebarCollapsed && !isMobileMenuOpen ? '!justify-center' : 'px-3'"
         >
           <LogOut class="w-4 h-4 flex-shrink-0" />
-          <span v-if="!sidebarCollapsed || isMobileMenuOpen">Sign Out</span>
-        </button>
+          <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="text-xs font-bold">Sign Out</span>
+        </Button>
       </div>
     </aside>
 
@@ -173,9 +175,9 @@ onMounted(fetchCollections);
     <main class="flex-1 flex flex-col min-w-0 min-h-0 bg-background overflow-hidden">
       <!-- Mobile Header Toggle (Visible only on mobile) -->
       <div class="lg:hidden h-16 flex items-center px-4 border-b border-border bg-surface shrink-0">
-        <button @click="isMobileMenuOpen = true" class="p-2 -ml-2 hover:bg-surface-dark rounded-md">
+        <Button @click="isMobileMenuOpen = true" variant="ghost" size="xs" class="-ml-2">
           <Menu class="h-6 w-6 text-text" />
-        </button>
+        </Button>
         <span class="ml-4 font-bold text-lg tracking-tight text-primary">vault</span>
       </div>
       <slot />

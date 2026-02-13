@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
+import Button from '../components/Button.vue';
 import { 
   Plus, 
   Trash2, 
@@ -105,15 +106,15 @@ const saveCollection = async () => {
                   <Plus class="w-5 h-5 text-primary" />
                   Fields Definition
                 </h2>
-                <button 
-                  type="button" 
+                <Button 
                   @click="addField" 
-                  class="px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors flex items-center gap-2"
+                  variant="secondary"
+                  size="sm"
                 >
                   <Plus class="w-4 h-4" />
                   <span class="hidden sm:inline">Add Field</span>
                   <span class="sm:hidden">Add</span>
-                </button>
+                </Button>
               </div>
 
               <div class="space-y-3">
@@ -153,14 +154,15 @@ const saveCollection = async () => {
                       Required
                     </label>
                     
-                    <button 
-                      type="button" 
+                    <Button 
                       @click="removeField(index)" 
-                      class="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
+                      variant="ghost"
+                      size="xs"
+                      class="!text-error hover:!bg-error/10"
                       :disabled="collectionFormData.fields.length === 1"
                     >
                       <Trash2 class="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -168,20 +170,20 @@ const saveCollection = async () => {
 
             <!-- Actions -->
             <div class="flex items-center justify-end gap-3">
-              <button 
-                type="button" 
+              <Button 
                 @click="router.push('/')" 
-                class="flex-1 sm:flex-none px-6 py-2.5 bg-surface border border-border text-text rounded-lg font-medium hover:bg-surface-dark transition-colors"
+                variant="secondary"
+                class="flex-1 sm:flex-none"
               >
                 Cancel
-              </button>
-              <button 
+              </Button>
+              <Button 
                 type="submit" 
-                class="flex-1 sm:flex-none px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                class="flex-1 sm:flex-none"
               >
                 <Save class="w-4 h-4" />
                 Create Collection
-              </button>
+              </Button>
             </div>
           </form>
         </div>

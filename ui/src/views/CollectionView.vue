@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
+import Button from '../components/Button.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
@@ -129,16 +130,16 @@ onMounted(() => {
               <p class="mt-1 text-sm text-text-muted">{{ collection?.type }} collection • {{ collection?.fields?.length || 0 }} fields</p>
             </div>
             <div class="flex items-center gap-3">
-              <button @click="router.push(`/collections/${collectionName}/settings`)" class="flex-1 sm:flex-none px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center justify-center gap-2">
+              <Button @click="router.push(`/collections/${collectionName}/settings`)" variant="secondary" class="flex-1 sm:flex-none">
                 <Settings class="w-4 h-4" />
                 <span class="hidden sm:inline">Settings</span>
-              </button>
+              </Button>
               <Popover align="right">
                 <template #trigger>
-                  <button class="flex-1 sm:flex-none px-4 py-2 bg-surface-dark border border-border rounded text-sm font-medium text-text hover:bg-surface transition-colors flex items-center justify-center gap-2">
+                  <Button variant="secondary" class="flex-1 sm:flex-none">
                     <Filter class="w-4 h-4" />
                     <span class="hidden sm:inline">Filter</span>
-                  </button>
+                  </Button>
                 </template>
                 <template #default>
                   <div class="p-3 min-w-[200px]">
@@ -156,10 +157,10 @@ onMounted(() => {
                   </div>
                 </template>
               </Popover>
-              <button @click="router.push(`/collections/${collectionName}/new`)" class="flex-1 sm:flex-none px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
+              <Button @click="router.push(`/collections/${collectionName}/new`)" class="flex-1 sm:flex-none">
                 <Plus class="w-4 h-4" />
                 <span class="whitespace-nowrap">New Record</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -187,9 +188,9 @@ onMounted(() => {
                       <div class="flex justify-center">
                         <Popover align="right">
                           <template #trigger>
-                            <button class="p-2 text-text-muted hover:text-text hover:bg-surface-dark rounded transition-colors">
+                            <Button variant="ghost" size="xs">
                               <MoreHorizontal class="w-4 h-4" />
-                            </button>
+                            </Button>
                           </template>
                           <template #default="{ close }">
                             <PopoverItem 
@@ -214,7 +215,7 @@ onMounted(() => {
                     <td :colspan="filteredFields.length + 1" class="px-6 py-12 text-center text-text-muted">
                       <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
                       <p class="text-sm mb-4">No records found</p>
-                      <button @click="router.push(`/collections/${collectionName}/new`)" class="text-sm text-primary hover:text-primary-hover">Create your first record</button>
+                      <Button @click="router.push(`/collections/${collectionName}/new`)" variant="link">Create your first record</Button>
                     </td>
                   </tr>
                 </tbody>
@@ -227,8 +228,8 @@ onMounted(() => {
                 Showing <span class="font-medium text-text">{{ records.length }}</span> of <span class="font-medium text-text">{{ records.length }}</span> results
               </div>
               <div class="flex gap-2">
-                <button class="px-3 py-1 text-xs font-medium rounded border border-border bg-surface-dark text-text hover:bg-surface transition-colors disabled:opacity-50" disabled>Previous</button>
-                <button class="px-3 py-1 text-xs font-medium rounded border border-border bg-surface-dark text-text hover:bg-surface transition-colors">Next</button>
+                <Button variant="secondary" size="xs" disabled>Previous</Button>
+                <Button variant="secondary" size="xs">Next</Button>
               </div>
             </div>
           </div>

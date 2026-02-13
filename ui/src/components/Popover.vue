@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 
 interface Props {
   align?: 'left' | 'right';
@@ -12,20 +12,48 @@ const props = withDefaults(defineProps<Props>(), {
 const isOpen = ref(false);
 const triggerRef = ref<HTMLElement | null>(null);
 const popoverRef = ref<HTMLElement | null>(null);
-const position = ref({ top: 0, left: 0, right: 0 });
+const coords = ref({ top: 0, left: 0 });
+
+const updatePosition = async () => {
+  if (!isOpen.value || !triggerRef.value) return;
+  
+  await nextTick();
+  if (!popoverRef.value) return;
+
+  const triggerRect = triggerRef.value.getBoundingClientRect();
+  const popoverRect = popoverRef.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let top = triggerRect.bottom + 8;
+  let left = props.align === 'left' 
+    ? triggerRect.left 
+    : triggerRect.right - popoverRect.width;
+
+  // Vertical check: if it goes below viewport, show it above the trigger
+  if (top + popoverRect.height > viewportHeight - 12) {
+    const spaceAbove = triggerRect.top;
+    const spaceBelow = viewportHeight - triggerRect.bottom;
+    
+    if (spaceAbove > spaceBelow) {
+      top = triggerRect.top - popoverRect.height - 8;
+    }
+  }
+
+  // Horizontal check: ensure it stays within viewport
+  if (left + popoverRect.width > viewportWidth - 12) {
+    left = viewportWidth - popoverRect.width - 12;
+  }
+  if (left < 12) {
+    left = 12;
+  }
+
+  coords.value = { top, left };
+};
 
 const toggle = (event: Event) => {
   event.stopPropagation();
   isOpen.value = !isOpen.value;
-  
-  if (isOpen.value && triggerRef.value) {
-    const rect = triggerRef.value.getBoundingClientRect();
-    position.value = {
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.left + window.scrollX,
-      right: window.innerWidth - rect.right - window.scrollX
-    };
-  }
 };
 
 const close = () => {
@@ -43,12 +71,25 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+watch(isOpen, (val) => {
+  if (val) {
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+  } else {
+    window.removeEventListener('scroll', updatePosition, true);
+    window.removeEventListener('resize', updatePosition);
+  }
+});
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', updatePosition, true);
+  window.removeEventListener('resize', updatePosition);
 });
 
 defineExpose({ close });
@@ -67,8 +108,9 @@ defineExpose({ close });
           ref="popoverRef"
           class="fixed z-[100] min-w-[180px] bg-surface border border-border rounded-lg shadow-xl overflow-hidden"
           :style="{
-            top: `${position.top}px`,
-            [align === 'right' ? 'right' : 'left']: align === 'right' ? `${position.right}px` : `${position.left}px`
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            visibility: coords.top === 0 ? 'hidden' : 'visible'
           }"
         >
           <slot :close="close" />

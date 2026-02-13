@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
+import Button from '../components/Button.vue';
 import { 
   FolderOpen, 
   X,
@@ -146,20 +147,20 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center justify-end gap-3">
-            <button 
-              type="button" 
+            <Button 
               @click="router.push(`/collections/${collectionName}`)" 
-              class="flex-1 sm:flex-none px-6 py-2.5 bg-surface border border-border text-text rounded-lg font-medium hover:bg-surface-dark transition-colors"
+              variant="secondary"
+              class="flex-1 sm:flex-none"
             >
               Cancel
-            </button>
-            <button 
+            </Button>
+            <Button 
               type="submit" 
-              class="flex-1 sm:flex-none px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              class="flex-1 sm:flex-none"
             >
               <Save class="w-4 h-4" />
               Create Record
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { X, AlertTriangle } from 'lucide-vue-next';
+import Button from './Button.vue';
 
 interface Props {
   show: boolean;
@@ -49,12 +50,14 @@ const emit = defineEmits<{
               </div>
               <h3 class="text-lg font-semibold text-text">{{ title }}</h3>
             </div>
-            <button 
+            <Button 
               @click="emit('cancel')"
-              class="p-1 text-text-muted hover:text-text hover:bg-surface-dark rounded transition-colors"
+              variant="ghost"
+              size="xs"
+              class="!p-1"
             >
               <X class="w-5 h-5" />
-            </button>
+            </Button>
           </div>
           
           <!-- Body -->
@@ -64,23 +67,19 @@ const emit = defineEmits<{
           
           <!-- Footer -->
           <div class="flex justify-end gap-3 p-6 border-t border-border bg-surface-dark/50">
-            <button 
+            <Button 
               @click="emit('cancel')"
-              class="px-5 py-2.5 bg-surface border border-border rounded-lg font-medium text-text hover:bg-surface-dark transition-colors"
+              variant="secondary"
             >
               {{ cancelText }}
-            </button>
-            <button 
+            </Button>
+            <Button 
               @click="emit('confirm')"
-              :class="[
-                'px-5 py-2.5 rounded-lg font-medium transition-colors',
-                variant === 'danger' ? 'bg-error hover:bg-error/90 text-white' : '',
-                variant === 'warning' ? 'bg-primary hover:bg-primary-hover text-white' : '',
-                variant === 'info' ? 'bg-primary hover:bg-primary-hover text-white' : ''
-              ]"
+              :variant="variant === 'danger' ? 'primary' : 'primary'"
+              :class="variant === 'danger' ? '!bg-error hover:!bg-error/90' : ''"
             >
               {{ confirmText }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
