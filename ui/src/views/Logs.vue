@@ -1,21 +1,48 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import { Trash2, RefreshCw } from 'lucide-vue-next';
 
-const logs = ref<string[]>([]);
+interface LogEntry {
+  time: string;
+  level: string;
+  message: string;
+}
+
+const rawLogs = ref<string[]>([]);
 const loading = ref(false);
 const showClearModal = ref(false);
+
+const parsedLogs = computed(() => {
+  return rawLogs.value.map((log) => {
+    const match = log.match(/time=([^ ]+) level=([^ ]+) msg="([^"]+)"/);
+    if (match) {
+      return {
+        time: new Date(match[1]).toLocaleString(),
+        level: match[2],
+        message: match[3],
+      };
+    }
+    return { time: '', level: '', message: log };
+  });
+});
+
+const headers = [
+  { key: 'time', label: 'Time' },
+  { key: 'level', label: 'Level' },
+  { key: 'message', label: 'Message' },
+];
 
 const fetchLogs = async () => {
   loading.value = true;
   try {
     const response = await axios.get('/api/admin/logs?limit=500');
-    logs.value = response.data.data || [];
+    rawLogs.value = response.data.data || [];
   } catch (error) {
     console.error('Failed to fetch logs', error);
   } finally {
@@ -26,7 +53,7 @@ const fetchLogs = async () => {
 const handleClearLogs = async () => {
   try {
     await axios.delete('/api/admin/logs');
-    logs.value = [];
+    rawLogs.value = [];
     showClearModal.value = false;
   } catch (error) {
     console.error('Failed to clear logs', error);
@@ -83,25 +110,12 @@ onMounted(fetchLogs);
           </div>
         </div>
 
-        <div class="bg-surface border border-border rounded-lg overflow-hidden">
-          <div
-            v-if="logs.length === 0"
-            class="p-8 text-center text-text-muted"
-          >
-            <p>No logs available</p>
-          </div>
-          <div v-else class="max-h-[600px] overflow-y-auto">
-            <div class="font-mono text-xs bg-surface-dark p-4 space-y-1">
-              <div
-                v-for="(log, index) in logs"
-                :key="index"
-                class="text-text-muted hover:text-text transition-colors"
-              >
-                {{ log }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <Table
+          :headers="headers"
+          :items="parsedLogs"
+          :loading="loading"
+          empty-text="No logs available"
+        />
       </div>
     </main>
   </AppLayout>
