@@ -28,6 +28,8 @@ func main() {
 		runAdmin()
 	case "backup":
 		runBackup()
+	case "migrate":
+		runMigrate()
 	case "version":
 		runVersion()
 	default:
@@ -42,6 +44,7 @@ func printUsage() {
 	fmt.Println("  vault serve [options]")
 	fmt.Println("  vault admin <subcommand> [options]")
 	fmt.Println("  vault backup <subcommand> [options]")
+	fmt.Println("  vault migrate <subcommand> [options]")
 	fmt.Println("  vault version")
 	fmt.Println()
 	fmt.Println("Serve options:")
@@ -163,6 +166,25 @@ func runBackup() {
 
 func runVersion() {
 	fmt.Printf("Vault version %s\n", Version)
+}
+
+func runMigrate() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault migrate <subcommand> [options]")
+		fmt.Println("Subcommands:")
+		fmt.Println("  sync [--collection NAME] [--verbose]")
+		fmt.Println("  status")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+
+	migrateCmd := cli.NewMigrateCommand(cfg)
+	if err := migrateCmd.Run(os.Args[2:]); err != nil {
+		slog.Error("Migrate command failed", "error", err)
+		os.Exit(1)
+	}
 }
 
 func parseSize(size string) int64 {
