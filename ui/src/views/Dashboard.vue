@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { useAuthStore } from '../stores/auth';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
@@ -21,7 +22,11 @@ interface Collection {
 }
 
 const router = useRouter();
+const auth = useAuthStore();
 const collections = ref<Collection[]>([]);
+const totalRecords = ref(0);
+const apiRequests = ref(0);
+const storage = ref('-');
 
 const fetchCollections = async () => {
   try {
@@ -32,7 +37,63 @@ const fetchCollections = async () => {
   }
 };
 
-onMounted(fetchCollections);
+const fetchDashboardStats = async () => {
+  try {
+    // Fetch total records count from all collections
+    let total = 0;
+    for (const col of collections.value) {
+      if (!col.name.startsWith('_')) {
+        try {
+          const response = await axios.get(`/api/collections/${col.name}/records?perPage=1`);
+          total += response.data.totalItems || 0;
+        } catch (error) {
+          console.error(`Failed to fetch records for ${col.name}:`, error);
+        }
+      }
+    }
+    totalRecords.value = total;
+
+    // Fetch storage stats
+    try {
+      const storageResponse = await axios.get('/api/admin/storage/stats');
+      const stats = storageResponse.data.data;
+      storage.value = formatBytes(stats.total_size || 0);
+    } catch (error) {
+      console.error('Failed to fetch storage stats:', error);
+      storage.value = '-';
+    }
+
+    // Fetch logs to count API requests (approximate)
+    try {
+      const logsResponse = await axios.get('/api/admin/logs?limit=1');
+      apiRequests.value = logsResponse.data.totalItems || 0;
+    } catch (error) {
+      console.error('Failed to fetch API request count:', error);
+      apiRequests.value = 0;
+    }
+  } catch (error) {
+    console.error('Failed to fetch dashboard stats', error);
+  }
+};
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+onMounted(async () => {
+  // Ensure user is authenticated
+  if (!auth.isAuthenticated) {
+    router.push('/login');
+    return;
+  }
+
+  await fetchCollections();
+  await fetchDashboardStats();
+});
 </script>
 
 <template>
@@ -73,7 +134,7 @@ onMounted(fetchCollections);
                 <p class="text-xs font-medium text-text-muted uppercase tracking-wider">
                   Total Records
                 </p>
-                <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
+                <h3 class="mt-1 text-2xl font-bold text-text">{{ totalRecords }}</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
                 <Database class="w-5 h-5" />
@@ -87,7 +148,7 @@ onMounted(fetchCollections);
                 <p class="text-xs font-medium text-text-muted uppercase tracking-wider">
                   API Requests
                 </p>
-                <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
+                <h3 class="mt-1 text-2xl font-bold text-text">{{ apiRequests }}</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
                 <TrendingUp class="w-5 h-5" />
@@ -99,7 +160,7 @@ onMounted(fetchCollections);
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-xs font-medium text-text-muted uppercase tracking-wider">Storage</p>
-                <h3 class="mt-1 text-2xl font-bold text-text">-</h3>
+                <h3 class="mt-1 text-2xl font-bold text-text">{{ storage }}</h3>
               </div>
               <span class="p-2 rounded bg-primary/10 text-primary">
                 <Cloud class="w-5 h-5" />
