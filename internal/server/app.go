@@ -95,11 +95,16 @@ func NewApp() *App {
 		os.Exit(1)
 	}
 
+	if err := registry.BootstrapAuditLogsCollection(); err != nil {
+		slog.Error("Failed to bootstrap audit logs collection", "error", err)
+		os.Exit(1)
+	}
+
 	// Sync system tables
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	systemCols := []string{"_collections", "_refresh_tokens", "users"}
+	systemCols := []string{"_collections", "_refresh_tokens", "_audit_logs", "users"}
 	for _, name := range systemCols {
 		col, ok := registry.GetCollection(name)
 		if !ok || col == nil {

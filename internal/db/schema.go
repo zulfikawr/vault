@@ -161,3 +161,23 @@ func (s *SchemaRegistry) BootstrapRefreshTokensCollection() error {
 	s.AddCollection(tokensTable)
 	return nil
 }
+
+func (s *SchemaRegistry) BootstrapAuditLogsCollection() error {
+	auditTable := &models.Collection{
+		ID:   "system_audit_logs",
+		Name: "_audit_logs",
+		Type: models.CollectionTypeSystem,
+		Fields: []models.Field{
+			{Name: "action", Type: models.FieldTypeText, Required: true},
+			{Name: "resource", Type: models.FieldTypeText, Required: true},
+			{Name: "admin_id", Type: models.FieldTypeText, Required: true},
+			{Name: "details", Type: models.FieldTypeJSON},
+			{Name: "timestamp", Type: models.FieldTypeDate, Required: true},
+		},
+		Created: time.Now().Format(time.RFC3339),
+		Updated: time.Now().Format(time.RFC3339),
+	}
+
+	s.AddCollection(auditTable)
+	return nil
+}

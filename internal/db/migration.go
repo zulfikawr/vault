@@ -22,19 +22,31 @@ func NewMigrationEngine(db *sql.DB) *MigrationEngine {
 }
 
 func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collection) error {
+	tx, err := m.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.NewError(http.StatusInternalServerError, "DB_TX_BEGIN_FAILED", "Failed to begin transaction").WithDetails(map[string]any{"error": err.Error()})
+	}
+	defer tx.Rollback()
+
 	var tableName string
-	err := m.db.QueryRowContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
+	err = tx.QueryRowContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
 
 	if err == sql.ErrNoRows {
-		return m.createTable(ctx, c)
+		if err := m.createTableTx(ctx, tx, c); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_SYNC_FAILED", "Failed to check table existence").WithDetails(map[string]any{"error": err.Error(), "collection": c.Name})
+	} else {
+		if err := m.updateTableTx(ctx, tx, c); err != nil {
+			return err
+		}
 	}
 
-	return m.updateTable(ctx, c)
+	return tx.Commit()
 }
 
-func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection) error {
+func (m *MigrationEngine) createTableTx(ctx context.Context, tx *sql.Tx, c *models.Collection) error {
 	columns := []string{
 		"id TEXT PRIMARY KEY",
 		"created TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
@@ -61,7 +73,7 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 	}
 
 	query := fmt.Sprintf("CREATE TABLE %s (%s)", c.Name, strings.Join(columns, ", "))
-	_, err := m.db.ExecContext(ctx, query)
+	_, err := tx.ExecContext(ctx, query)
 	if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_CREATE_TABLE_FAILED", "Failed to create table").WithDetails(map[string]any{"error": err.Error(), "query": query})
 	}
@@ -70,8 +82,8 @@ func (m *MigrationEngine) createTable(ctx context.Context, c *models.Collection)
 	return nil
 }
 
-func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection) error {
-	rows, err := m.db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info(%s)", c.Name))
+func (m *MigrationEngine) updateTableTx(ctx context.Context, tx *sql.Tx, c *models.Collection) error {
+	rows, err := tx.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info(%s)", c.Name))
 	if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_PRAGMA_FAILED", "Failed to get table info").WithDetails(map[string]any{"error": err.Error()})
 	}
@@ -104,7 +116,7 @@ func (m *MigrationEngine) updateTable(ctx context.Context, c *models.Collection)
 			}
 
 			query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.Name, f.Name, sqlType)
-			if _, err := m.db.ExecContext(ctx, query); err != nil {
+			if _, err := tx.ExecContext(ctx, query); err != nil {
 				return errors.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})
 			}
 			slog.Info("Added column", "collection", c.Name, "field", f.Name, "request_id", core.GetRequestID(ctx))

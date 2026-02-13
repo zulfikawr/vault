@@ -5,6 +5,41 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-13
+
+### Added
+- **Collection CLI Command** - Full CRUD operations for collections via CLI
+  - `vault collection create` - Create new collections with field definitions and constraints
+  - `vault collection list` - List all collections with field counts
+  - `vault collection get` - View full collection schema and metadata
+  - `vault collection delete` - Delete collections with confirmation (--force to skip)
+  - Admin authentication required for all collection operations
+  - Structured logging for all collection operations
+  - Transaction-based operations for data consistency
+
+- **Data Integrity Features**
+  - Transaction support for collection creation and deletion (atomic operations)
+  - Field constraints: `required` and `unique` modifiers in CLI
+  - Constraint enforcement in database schema (NOT NULL, UNIQUE)
+  - Rollback on operation failure
+
+- **Audit Logging System**
+  - New `_audit_logs` system collection for tracking all collection changes
+  - Logs collection creation and deletion with admin ID and timestamp
+  - Structured JSON details for each audit event
+  - Automatic audit log creation on collection operations
+
+- **Observability & Monitoring**
+  - New `/api/health/collections` endpoint for collection metrics
+  - Returns collection count and health status
+  - Structured logging with request IDs for all operations
+
+- **Security Enhancements**
+  - Rate limiting middleware for collection operations (10 requests/minute default)
+  - CSRF token validation middleware for state-changing operations
+  - Enhanced CORS middleware with origin validation
+  - Admin authentication required for all collection management
+
 ## [0.4.1] - 2026-02-13
 
 ### Fixed

@@ -185,8 +185,12 @@ func createSystemCollections(ctx context.Context, database *sql.DB) error {
 		return err
 	}
 
+	if err := registry.BootstrapAuditLogsCollection(); err != nil {
+		return err
+	}
+
 	// Sync tables
-	systemCols := []string{"_collections", "_refresh_tokens", "users"}
+	systemCols := []string{"_collections", "_refresh_tokens", "_audit_logs", "users"}
 	for _, name := range systemCols {
 		col, ok := registry.GetCollection(name)
 		if !ok || col == nil {

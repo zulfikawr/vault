@@ -90,8 +90,12 @@ func (ac *AdminCommand) Create(args []string) error {
 		return fmt.Errorf("failed to bootstrap users collection: %w", err)
 	}
 
+	if err := registry.BootstrapAuditLogsCollection(); err != nil {
+		return fmt.Errorf("failed to bootstrap audit logs collection: %w", err)
+	}
+
 	// Sync tables
-	systemCols := []string{"_collections", "_refresh_tokens", "users"}
+	systemCols := []string{"_collections", "_refresh_tokens", "_audit_logs", "users"}
 	for _, name := range systemCols {
 		col, ok := registry.GetCollection(name)
 		if !ok || col == nil {

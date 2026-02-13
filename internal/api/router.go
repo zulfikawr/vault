@@ -22,6 +22,9 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	settingsHandler := NewSettingsHandler(config)
 	storageHandler := NewStorageHandler(config.StoragePath())
 
+	// Rate limiter for collection operations (10 per minute default)
+	collectionLimiter := NewRateLimiter(10)
+
 	// Base routes
 	// Mount UI handler - serves at both / and /_/ for devtunnel compatibility
 	uiHandler := ui.Handler()
@@ -30,6 +33,14 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		SendJSON(w, http.StatusOK, map[string]string{"status": "ok"}, nil)
+	})
+
+	mux.HandleFunc("GET /api/health/collections", func(w http.ResponseWriter, r *http.Request) {
+		collections := registry.GetCollections()
+		SendJSON(w, http.StatusOK, map[string]any{
+			"collections": len(collections),
+			"status":      "healthy",
+		}, nil)
 	})
 
 	// Auth routes
@@ -65,8 +76,14 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminRouter.HandleFunc("GET /storage/stats", storageHandler.Stats)
 	adminRouter.HandleFunc("DELETE /storage", storageHandler.Delete)
 
+	// Apply rate limiting to collection operations
+	collectionRouter := http.NewServeMux()
+	collectionRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
+	collectionRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
+
 	// Mount admin router with middleware
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))
+	mux.Handle("/api/admin/collections", http.StripPrefix("/api/admin", AdminOnly(RateLimitMiddleware(collectionLimiter)(collectionRouter))))
 
 	return mux
 }

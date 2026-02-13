@@ -36,6 +36,8 @@ func main() {
 		runBackup()
 	case "migrate":
 		runMigrate()
+	case "collection":
+		runCollection()
 	case "init":
 		runInit()
 	case "version", "-v", "--version":
@@ -99,11 +101,18 @@ func printUsage() {
 	fmt.Println("  sync                        Synchronize database schema")
 	fmt.Println("  status                      Show migration status")
 	fmt.Println()
+	fmt.Println("Collection Subcommands:")
+	fmt.Println("  create                      Create new collection")
+	fmt.Println("  list                        List all collections")
+	fmt.Println("  get                         Get collection details")
+	fmt.Println("  delete                      Delete collection")
+	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  vault init --email admin@example.com --username admin --password secret")
 	fmt.Println("  vault serve --port 8090")
 	fmt.Println("  vault admin create --email user@example.com --username user --password pass")
 	fmt.Println("  vault backup create --output backup.zip")
+	fmt.Println("  vault collection create --name posts --fields \"title:text,body:text\" --email admin@example.com --password secret")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/zulfikawr/vault")
 }
@@ -239,6 +248,27 @@ func runMigrate() {
 func runInit() {
 	if err := cli.RunInit(os.Args[2:]); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func runCollection() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault collection <subcommand> [options]")
+		fmt.Println("Subcommands:")
+		fmt.Println("  create --name NAME --fields FIELDS --email EMAIL --password PASSWORD")
+		fmt.Println("  list --email EMAIL --password PASSWORD")
+		fmt.Println("  get --name NAME --email EMAIL --password PASSWORD")
+		fmt.Println("  delete --name NAME --email EMAIL --password PASSWORD [--force]")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+
+	collectionCmd := cli.NewCollectionCommand(cfg)
+	if err := collectionCmd.Run(os.Args[2:]); err != nil {
+		slog.Error("Collection command failed", "error", err)
 		os.Exit(1)
 	}
 }
