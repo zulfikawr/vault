@@ -23,6 +23,9 @@ func NewServer(port int, handler http.Handler) *Server {
 }
 
 func (s *Server) Start() error {
+	fmt.Printf("\n✓ Vault server started successfully\n")
+	fmt.Printf("  Web UI:  http://localhost:%d/_/\n", s.port)
+	fmt.Printf("  API:     http://localhost:%d/api\n\n", s.port)
 	slog.Info("Starting server", "port", s.port)
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
