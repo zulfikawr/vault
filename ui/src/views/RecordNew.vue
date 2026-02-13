@@ -43,9 +43,7 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find(
-      (c: Collection) => c.name === collectionName.value
-    );
+    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
     collection.value = col;
     // Initialize form data with appropriate default values
     col?.fields?.forEach((field: Field) => {

@@ -168,7 +168,12 @@ onMounted(fetchCollections);
                 { key: 'type', label: 'Type' },
                 { key: 'fields', label: 'Fields', align: 'right' },
               ]"
-              :items="collections.filter((c) => !c.name.startsWith('_')).slice(0, 5) as Record<string, unknown>[]"
+              :items="
+                collections.filter((c) => !c.name.startsWith('_')).slice(0, 5) as Record<
+                  string,
+                  unknown
+                >[]
+              "
               row-clickable
               @row-click="(col: Record<string, unknown>) => router.push(`/collections/${col.name}`)"
             >
@@ -186,7 +191,9 @@ onMounted(fetchCollections);
                 >
               </template>
               <template #cell(fields)="{ item }">
-                <span class="text-text-muted shrink-0">{{ (item as unknown as Collection).fields?.length || 0 }} fields</span>
+                <span class="text-text-muted shrink-0"
+                  >{{ (item as unknown as Collection).fields?.length || 0 }} fields</span
+                >
               </template>
               <template #empty>
                 <div class="py-6 text-center text-text-muted">

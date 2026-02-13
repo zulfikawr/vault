@@ -21,7 +21,7 @@ interface Collection {
 }
 
 interface Record {
-  [key: string]: any;
+  [key: string]: string | number | boolean;
 }
 
 const router = useRouter();
@@ -35,9 +35,7 @@ const recordId = computed(() => route.params.id as string);
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find(
-      (c: Collection) => c.name === collectionName.value
-    );
+    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
     collection.value = col;
   } catch (error) {
     console.error('Failed to fetch collection', error);

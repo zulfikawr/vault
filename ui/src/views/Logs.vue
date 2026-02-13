@@ -12,6 +12,7 @@ interface LogEntry {
   time: string;
   level: string;
   message: string;
+  [key: string]: string;
 }
 
 const rawLogs = ref<string[]>([]);
@@ -19,24 +20,57 @@ const loading = ref(false);
 const showClearModal = ref(false);
 
 const parsedLogs = computed(() => {
-  return rawLogs.value.map((log) => {
-    const match = log.match(/time=([^ ]+) level=([^ ]+) msg="([^"]+)"/);
-    if (match) {
-      return {
-        time: new Date(match[1]).toLocaleString(),
-        level: match[2],
-        message: match[3],
-      };
+  const logs = rawLogs.value.map((log) => {
+    const timeMatch = log.match(/time=([^ ]+)/);
+    const levelMatch = log.match(/level=([^ ]+)/);
+    const msgMatch = log.match(/msg="([^"]*)"|msg=([^ ]+)/);
+
+    const entry: LogEntry = {
+      time: timeMatch ? new Date(timeMatch[1]).toLocaleString() : '',
+      level: levelMatch ? levelMatch[1] : '',
+      message: msgMatch ? msgMatch[1] || msgMatch[2] : '',
+    };
+
+    // Extract all key=value pairs
+    const kvMatches = log.matchAll(/(\w+)=([^ ]+)/g);
+    for (const match of kvMatches) {
+      const key = match[1];
+      if (!['time', 'level', 'msg'].includes(key)) {
+        entry[key] = match[2];
+      }
     }
-    return { time: '', level: '', message: log };
+
+    return entry;
   });
+
+  // Sort by time descending (latest first)
+  return logs.reverse();
 });
 
-const headers = [
-  { key: 'time', label: 'Time' },
-  { key: 'level', label: 'Level' },
-  { key: 'message', label: 'Message' },
-];
+const headers = computed(() => {
+  const baseHeaders = [
+    { key: 'time', label: 'Time' },
+    { key: 'level', label: 'Level' },
+    { key: 'message', label: 'Message' },
+  ];
+
+  // Get all unique keys from logs
+  const allKeys = new Set<string>();
+  parsedLogs.value.forEach((log) => {
+    Object.keys(log).forEach((key) => {
+      if (!['time', 'level', 'message'].includes(key)) {
+        allKeys.add(key);
+      }
+    });
+  });
+
+  // Add dynamic columns
+  Array.from(allKeys).forEach((key) => {
+    baseHeaders.push({ key, label: key });
+  });
+
+  return baseHeaders;
+});
 
 const fetchLogs = async () => {
   loading.value = true;
@@ -89,21 +123,11 @@ onMounted(fetchLogs);
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-text">System Logs</h1>
           <div class="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              @click="fetchLogs"
-              :disabled="loading"
-            >
+            <Button variant="secondary" size="sm" :disabled="loading" @click="fetchLogs">
               <RefreshCw class="w-4 h-4" />
               Refresh
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              @click="showClearModal = true"
-              class="!text-error"
-            >
+            <Button variant="outline" size="sm" class="!text-error" @click="showClearModal = true">
               <Trash2 class="w-4 h-4" />
               Clear
             </Button>

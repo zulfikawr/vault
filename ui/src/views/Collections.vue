@@ -159,7 +159,9 @@ onMounted(() => {
             <span
               class="text-text-muted text-xs cursor-pointer"
               @click="router.push(`/collections/${item.name}`)"
-              >{{ item.created ? new Date(item.created as string).toLocaleDateString() : '-' }}</span
+              >{{
+                item.created ? new Date(item.created as string).toLocaleDateString() : '-'
+              }}</span
             >
           </template>
 

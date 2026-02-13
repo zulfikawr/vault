@@ -43,8 +43,10 @@ func (h *LogsHandler) ClearLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileLogger.Close()
-	core.InitFileLogger("vault_data")
+	if err := fileLogger.Clear(); err != nil {
+		core.SendError(w, core.NewError(http.StatusInternalServerError, "CLEAR_FAILED", err.Error()))
+		return
+	}
 
 	SendJSON(w, http.StatusOK, map[string]string{"message": "Logs cleared"}, nil)
 }

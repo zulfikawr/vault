@@ -25,8 +25,8 @@ interface Collection {
 
 interface RecordData {
   id: string;
-  data: Record<string, any>;
-  [key: string]: any;
+  data: Record<string, string | number | boolean>;
+  [key: string]: string | number | boolean;
 }
 
 const router = useRouter();
@@ -52,20 +52,15 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find(
-      (c: Collection) => c.name === collectionName.value
-    );
+    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
     collection.value = col;
 
     // Initialize all fields as visible
     if (col?.fields) {
-      visibleFields.value = col.fields.reduce(
-        (acc: Record<string, boolean>, field: Field) => {
-          acc[field.name] = true;
-          return acc;
-        },
-        {}
-      );
+      visibleFields.value = col.fields.reduce((acc: Record<string, boolean>, field: Field) => {
+        acc[field.name] = true;
+        return acc;
+      }, {});
     }
   } catch (error) {
     console.error('Failed to fetch collection', error);
@@ -74,9 +69,7 @@ const fetchCollection = async () => {
 
 const filteredFields = computed(() => {
   if (!collection.value?.fields) return [];
-  return collection.value.fields.filter(
-    (f: Field) => visibleFields.value[f.name]
-  );
+  return collection.value.fields.filter((f: Field) => visibleFields.value[f.name]);
 });
 
 const fetchRecords = async () => {
@@ -178,8 +171,8 @@ onMounted(() => {
                       v-for="field in collection?.fields"
                       :key="field.name"
                       :model-value="visibleFields[field.name] || false"
-                      @update:model-value="visibleFields[field.name] = $event"
                       :label="field.name"
+                      @update:model-value="visibleFields[field.name] = $event"
                     />
                   </div>
                 </div>
@@ -210,7 +203,9 @@ onMounted(() => {
           >
             <span v-if="field.type === 'bool'" class="text-text">
               {{
-                (item.data as any)?.[field.name] === 1 || (item.data as any)?.[field.name] === true ? 'true' : 'false'
+                (item.data as any)?.[field.name] === 1 || (item.data as any)?.[field.name] === true
+                  ? 'true'
+                  : 'false'
               }}
             </span>
             <span v-else class="text-text">{{ (item.data as any)?.[field.name] ?? '-' }}</span>

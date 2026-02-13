@@ -43,9 +43,7 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find(
-      (c: Collection) => c.name === collectionName.value
-    );
+    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
     collection.value = col || null;
     fields.value = JSON.parse(JSON.stringify(col?.fields || []));
   } catch (error) {
@@ -63,7 +61,7 @@ const removeField = (index: number) => {
 
 const saveSettings = async () => {
   if (!collection.value) return;
-  
+
   try {
     await axios.patch(`/api/admin/collections/${collection.value.id}`, {
       fields: fields.value,

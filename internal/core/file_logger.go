@@ -83,3 +83,24 @@ func (fl *FileLogger) ReadLogs(limit int) ([]string, error) {
 
 	return lines, scanner.Err()
 }
+
+func (fl *FileLogger) Clear() error {
+	fl.mu.Lock()
+	defer fl.mu.Unlock()
+
+	fl.writer.Flush()
+	fl.file.Close()
+
+	// Remove the file
+	os.Remove(fl.path)
+
+	// Recreate the file
+	file, err := os.OpenFile(fl.path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+
+	fl.file = file
+	fl.writer = bufio.NewWriter(file)
+	return nil
+}
