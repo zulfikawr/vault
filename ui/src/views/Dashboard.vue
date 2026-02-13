@@ -5,6 +5,7 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Table from '../components/Table.vue';
 import { 
   FolderOpen,
   Plus,
@@ -137,27 +138,39 @@ onMounted(fetchCollections);
             <h2 class="text-lg font-semibold text-text">Recent Collections</h2>
             <Button @click="router.push('/collections')" variant="link">View All</Button>
           </div>
-          <div class="divide-y divide-border">
-            <div v-for="col in collections.filter(c => !c.name.startsWith('_')).slice(0, 5)" :key="col.name" @click="router.push(`/collections/${col.name}`)" class="px-4 sm:px-6 py-4 hover:bg-surface transition-colors cursor-pointer">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="p-2 rounded bg-primary/10 text-primary">
-                    <FolderOpen class="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 class="font-medium text-text">{{ col.name }}</h3>
-                    <p class="text-xs text-text-muted truncate max-w-[150px] sm:max-w-none">{{ col.type }} collection</p>
-                  </div>
+          
+          <Table
+            :headers="[
+              { key: 'name', label: 'Name' },
+              { key: 'type', label: 'Type' },
+              { key: 'fields', label: 'Fields', align: 'right' }
+            ]"
+            :items="collections.filter(c => !c.name.startsWith('_')).slice(0, 5)"
+            row-clickable
+            @row-click="(col) => router.push(`/collections/${col.name}`)"
+          >
+            <template #cell(name)="{ item }">
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded bg-primary/10 text-primary">
+                  <FolderOpen class="w-4 h-4" />
                 </div>
-                <span class="text-xs text-text-muted shrink-0">{{ col.fields?.length || 0 }} fields</span>
+                <span class="font-medium text-text">{{ item.name }}</span>
               </div>
-            </div>
-            <div v-if="collections.filter(c => !c.name.startsWith('_')).length === 0" class="px-6 py-12 text-center text-text-muted">
-              <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p class="text-sm">No collections yet</p>
-              <Button @click="router.push('/collections/new')" variant="link" class="mt-4">Create your first collection</Button>
-            </div>
-          </div>
+            </template>
+            <template #cell(type)="{ item }">
+              <span class="text-text-muted truncate block max-w-[150px] sm:max-w-none">{{ item.type }} collection</span>
+            </template>
+            <template #cell(fields)="{ item }">
+              <span class="text-text-muted shrink-0">{{ item.fields?.length || 0 }} fields</span>
+            </template>
+            <template #empty>
+              <div class="py-6 text-center text-text-muted">
+                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p class="text-sm">No collections yet</p>
+                <Button @click="router.push('/collections/new')" variant="link" class="mt-4">Create your first collection</Button>
+              </div>
+            </template>
+          </Table>
         </div>
       </div>
     </div>

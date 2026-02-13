@@ -86,15 +86,14 @@ onMounted(fetchCollections);
     >
       <div>
         <!-- Brand -->
-        <div class="h-16 flex items-center border-b border-border" :class="sidebarCollapsed ? 'lg:justify-center px-6 lg:px-0' : 'justify-between px-6'">
+        <div class="h-16 flex items-center border-b border-border px-6" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-between'">
           <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="font-bold text-lg tracking-tight text-primary">vault</span>
-          <Button @click="toggleSidebar" variant="ghost" size="xs" class="hidden lg:flex">
-            <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
-            <ChevronRight v-else class="w-5 h-5 text-text-muted" />
-          </Button>
-          <Button @click="isMobileMenuOpen = false" variant="ghost" size="xs" class="lg:hidden">
-            <ChevronLeft class="w-5 h-5 text-text-muted" />
-          </Button>
+          <div class="hidden lg:block">
+            <Button @click="toggleSidebar" variant="ghost" size="xs">
+              <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
+              <ChevronRight v-else class="w-5 h-5 text-text-muted" />
+            </Button>
+          </div>
         </div>
         
         <!-- Navigation -->

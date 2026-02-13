@@ -5,6 +5,7 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Table from '../components/Table.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
 import Checkbox from '../components/Checkbox.vue';
@@ -106,92 +107,89 @@ onMounted(() => {
           </div>
 
           <!-- Data Table -->
-          <div class="bg-surface-dark rounded-lg border border-border shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm whitespace-nowrap">
-                <thead class="bg-surface border-b border-border">
-                  <tr>
-                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Fields</th>
-                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Created</th>
-                    <th class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Status</th>
-                    <th class="sticky right-0 bg-surface px-6 py-3 text-center text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
-                  <tr v-for="col in filteredCollections" :key="col.name" class="hover:bg-background/50 transition-colors group">
-                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
-                      <div class="flex items-center gap-3">
-                        <div class="p-1.5 rounded bg-primary/10 text-primary">
-                          <FolderOpen class="w-4 h-4" />
-                        </div>
-                        <span class="font-medium text-text">{{ col.name }}</span>
-                      </div>
-                    </td>
-                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
-                      <span class="text-text-muted">{{ col.type }}</span>
-                    </td>
-                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
-                      <span class="text-text-muted">{{ col.fields?.length || 0 }} fields</span>
-                    </td>
-                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
-                      <span class="text-text-muted text-xs">{{ col.created ? new Date(col.created).toLocaleDateString() : '-' }}</span>
-                    </td>
-                    <td @click="router.push(`/collections/${col.name}`)" class="px-6 py-4 cursor-pointer">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success">
-                        Active
-                      </span>
-                    </td>
-                    <td class="sticky right-0 bg-surface-dark px-6 py-4 group-hover:bg-background">
-                      <div class="flex justify-center">
-                      <Popover align="right">
-                        <template #trigger>
-                          <Button variant="ghost" size="xs">
-                            <MoreHorizontal class="w-4 h-4" />
-                          </Button>
-                        </template>
-                        <template #default="{ close }">
-                          <PopoverItem 
-                            :icon="Settings" 
-                            @click="close(); router.push(`/collections/${col.name}/settings`)"
-                          >
-                            Settings
-                          </PopoverItem>
-                          <PopoverItem 
-                            :icon="Trash2" 
-                            variant="danger"
-                            @click="close()"
-                          >
-                            Delete
-                          </PopoverItem>
-                        </template>
-                      </Popover>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="filteredCollections.length === 0">
-                    <td colspan="6" class="px-6 py-12 text-center text-text-muted">
-                      <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                      <p class="text-sm mb-4">No collections found</p>
-                      <Button @click="router.push('/collections/new')" variant="link">Create your first collection</Button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <Table
+            :headers="[
+              { key: 'name', label: 'Name' },
+              { key: 'type', label: 'Type' },
+              { key: 'fields', label: 'Fields' },
+              { key: 'created', label: 'Created' },
+              { key: 'status', label: 'Status' },
+              { key: 'actions', label: 'Actions', align: 'center', sticky: true }
+            ]"
+            :items="filteredCollections"
+          >
+            <template #cell(name)="{ item }">
+              <div @click="router.push(`/collections/${item.name}`)" class="flex items-center gap-3 cursor-pointer">
+                <div class="p-1.5 rounded bg-primary/10 text-primary">
+                  <FolderOpen class="w-4 h-4" />
+                </div>
+                <span class="font-medium text-text">{{ item.name }}</span>
+              </div>
+            </template>
             
-            <!-- Pagination -->
-            <div class="bg-surface px-6 py-3 border-t border-border flex items-center justify-between">
-              <div class="text-xs text-text-muted">
-                Showing <span class="font-medium text-text">{{ filteredCollections.length }}</span> of <span class="font-medium text-text">{{ collections.length }}</span> results
+            <template #cell(type)="{ item }">
+              <span @click="router.push(`/collections/${item.name}`)" class="text-text-muted cursor-pointer">{{ item.type }}</span>
+            </template>
+            
+            <template #cell(fields)="{ item }">
+              <span @click="router.push(`/collections/${item.name}`)" class="text-text-muted cursor-pointer">{{ item.fields?.length || 0 }} fields</span>
+            </template>
+            
+            <template #cell(created)="{ item }">
+              <span @click="router.push(`/collections/${item.name}`)" class="text-text-muted text-xs cursor-pointer">{{ item.created ? new Date(item.created).toLocaleDateString() : '-' }}</span>
+            </template>
+            
+            <template #cell(status)="{ item }">
+              <span @click="router.push(`/collections/${item.name}`)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success cursor-pointer">
+                Active
+              </span>
+            </template>
+            
+            <template #cell(actions)="{ item }">
+              <Popover align="right">
+                <template #trigger>
+                  <Button variant="ghost" size="xs">
+                    <MoreHorizontal class="w-4 h-4" />
+                  </Button>
+                </template>
+                <template #default="{ close }">
+                  <PopoverItem 
+                    :icon="Settings" 
+                    @click="close(); router.push(`/collections/${item.name}/settings`)"
+                  >
+                    Settings
+                  </PopoverItem>
+                  <PopoverItem 
+                    :icon="Trash2" 
+                    variant="danger"
+                    @click="close()"
+                  >
+                    Delete
+                  </PopoverItem>
+                </template>
+              </Popover>
+            </template>
+
+            <template #empty>
+              <div class="py-12 text-center text-text-muted">
+                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p class="text-sm mb-4">No collections found</p>
+                <Button @click="router.push('/collections/new')" variant="link">Create your first collection</Button>
               </div>
-              <div class="flex gap-2">
-                <Button variant="secondary" size="xs" disabled>Previous</Button>
-                <Button variant="secondary" size="xs">Next</Button>
+            </template>
+
+            <template #footer>
+              <div class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between">
+                <div class="text-xs text-text-muted">
+                  Showing <span class="font-medium text-text">{{ filteredCollections.length }}</span> of <span class="font-medium text-text">{{ collections.length }}</span> results
+                </div>
+                <div class="flex gap-2">
+                  <Button variant="secondary" size="xs" disabled>Previous</Button>
+                  <Button variant="secondary" size="xs">Next</Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </template>
+          </Table>
         </div>
       </div>
       </AppLayout>

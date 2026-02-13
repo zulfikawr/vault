@@ -5,6 +5,7 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
@@ -165,74 +166,65 @@ onMounted(() => {
           </div>
 
           <!-- Data Table -->
-          <div class="bg-surface-dark rounded-lg border border-border shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm whitespace-nowrap">
-                <thead class="bg-surface border-b border-border">
-                  <tr>
-                    <th v-for="field in filteredFields" :key="field.name" class="px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                      {{ field.name }}
-                    </th>
-                    <th class="sticky right-0 bg-surface px-6 py-3 text-center text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
-                  <tr v-for="record in records" :key="record.id" class="hover:bg-background/50 transition-colors group">
-                    <td v-for="field in filteredFields" :key="field.name" class="px-6 py-4">
-                      <span v-if="field.type === 'bool'" class="text-text">
-                        {{ record.data?.[field.name] === 1 || record.data?.[field.name] === true ? 'true' : 'false' }}
-                      </span>
-                      <span v-else class="text-text">{{ record.data?.[field.name] ?? '-' }}</span>
-                    </td>
-                    <td class="sticky right-0 bg-surface-dark px-6 py-4 group-hover:bg-background">
-                      <div class="flex justify-center">
-                        <Popover align="right">
-                          <template #trigger>
-                            <Button variant="ghost" size="xs">
-                              <MoreHorizontal class="w-4 h-4" />
-                            </Button>
-                          </template>
-                          <template #default="{ close }">
-                            <PopoverItem 
-                              :icon="Edit" 
-                              @click="close(); router.push(`/collections/${collectionName}/edit/${record.id}`)"
-                            >
-                              Edit
-                            </PopoverItem>
-                            <PopoverItem 
-                              :icon="Trash2" 
-                              variant="danger"
-                              @click="close(); confirmDelete(record.id)"
-                            >
-                              Delete
-                            </PopoverItem>
-                          </template>
-                        </Popover>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="records.length === 0">
-                    <td :colspan="filteredFields.length + 1" class="px-6 py-12 text-center text-text-muted">
-                      <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                      <p class="text-sm mb-4">No records found</p>
-                      <Button @click="router.push(`/collections/${collectionName}/new`)" variant="link">Create your first record</Button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <!-- Pagination -->
-            <div class="bg-surface px-6 py-3 border-t border-border flex items-center justify-between">
-              <div class="text-xs text-text-muted">
-                Showing <span class="font-medium text-text">{{ records.length }}</span> of <span class="font-medium text-text">{{ records.length }}</span> results
+          <Table
+            :headers="[
+              ...filteredFields.map(f => ({ key: f.name, label: f.name })),
+              { key: 'actions', label: 'Actions', align: 'center', sticky: true }
+            ]"
+            :items="records"
+          >
+            <template v-for="field in filteredFields" :key="field.name" #[`cell(${field.name})`]="{ item }">
+              <span v-if="field.type === 'bool'" class="text-text">
+                {{ item.data?.[field.name] === 1 || item.data?.[field.name] === true ? 'true' : 'false' }}
+              </span>
+              <span v-else class="text-text">{{ item.data?.[field.name] ?? '-' }}</span>
+            </template>
+
+            <template #cell(actions)="{ item }">
+              <Popover align="right">
+                <template #trigger>
+                  <Button variant="ghost" size="xs">
+                    <MoreHorizontal class="w-4 h-4" />
+                  </Button>
+                </template>
+                <template #default="{ close }">
+                  <PopoverItem 
+                    :icon="Edit" 
+                    @click="close(); router.push(`/collections/${collectionName}/edit/${item.id}`)"
+                  >
+                    Edit
+                  </PopoverItem>
+                  <PopoverItem 
+                    :icon="Trash2" 
+                    variant="danger"
+                    @click="close(); confirmDelete(item.id)"
+                  >
+                    Delete
+                  </PopoverItem>
+                </template>
+              </Popover>
+            </template>
+
+            <template #empty>
+              <div class="py-12 text-center text-text-muted">
+                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p class="text-sm mb-4">No records found</p>
+                <Button @click="router.push(`/collections/${collectionName}/new`)" variant="link">Create your first record</Button>
               </div>
-              <div class="flex gap-2">
-                <Button variant="secondary" size="xs" disabled>Previous</Button>
-                <Button variant="secondary" size="xs">Next</Button>
+            </template>
+
+            <template #footer>
+              <div class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between">
+                <div class="text-xs text-text-muted">
+                  Showing <span class="font-medium text-text">{{ records.length }}</span> of <span class="font-medium text-text">{{ records.length }}</span> results
+                </div>
+                <div class="flex gap-2">
+                  <Button variant="secondary" size="xs" disabled>Previous</Button>
+                  <Button variant="secondary" size="xs">Next</Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </template>
+          </Table>
         </div>
       </div>
       </AppLayout>
