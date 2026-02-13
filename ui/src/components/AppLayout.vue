@@ -171,6 +171,22 @@ onMounted(fetchCollections);
           </Button>
           <Button
             as="RouterLink"
+            to="/storage"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
+              isActive('/storage') ? '!bg-primary/10 !text-primary' : '',
+            ]"
+          >
+            <template #leftIcon>
+              <Cloud class="w-5 h-5 flex-shrink-0" />
+            </template>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Storage</span>
+          </Button>
+          <Button
+            as="RouterLink"
             to="#"
             variant="ghost"
             size="sm"

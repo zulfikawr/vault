@@ -21,6 +21,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminHandler := NewAdminHandler(executor, registry, migration)
 	logsHandler := NewLogsHandler()
 	settingsHandler := NewSettingsHandler(config)
+	storageHandler := NewStorageHandler(config.StoragePath())
 
 	// Base routes
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +67,9 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminRouter.HandleFunc("POST /backups", adminHandler.CreateBackup)
 	adminRouter.HandleFunc("GET /logs", logsHandler.GetLogs)
 	adminRouter.HandleFunc("DELETE /logs", logsHandler.ClearLogs)
+	adminRouter.HandleFunc("GET /storage", storageHandler.List)
+	adminRouter.HandleFunc("GET /storage/stats", storageHandler.Stats)
+	adminRouter.HandleFunc("DELETE /storage", storageHandler.Delete)
 
 	// Mount admin router with middleware
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))

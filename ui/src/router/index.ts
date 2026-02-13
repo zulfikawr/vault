@@ -59,6 +59,12 @@ const router = createRouter({
       component: () => import('../views/Settings.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/storage',
+      name: 'Storage',
+      component: () => import('../views/Storage.vue'),
+      meta: { requiresAuth: true },
+    },
     { path: '/login', name: 'Login', component: Login },
   ],
 });

@@ -96,3 +96,7 @@ func LoadConfig() *Config {
 
 	return cfg
 }
+
+func (c *Config) StoragePath() string {
+	return c.DataDir + "/storage"
+}
