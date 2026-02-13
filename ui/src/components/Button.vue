@@ -8,6 +8,8 @@ interface Props {
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   loading?: boolean;
+  as?: string;
+  to?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -15,7 +17,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'md',
   type: 'button',
   disabled: false,
-  loading: false
+  loading: false,
+  as: 'button'
 });
 
 const variantClasses = {
@@ -44,10 +47,16 @@ const classes = computed(() => {
 </script>
 
 <template>
-  <button :type="type" :class="classes" :disabled="disabled || loading">
+  <component
+    :is="as"
+    :type="as === 'button' ? type : undefined"
+    :to="to"
+    :class="classes"
+    :disabled="disabled || loading"
+  >
     <slot v-if="!loading" name="leftIcon" />
     <Loader2 v-if="loading" class="h-4 w-4 animate-spin shrink-0" />
     <slot />
     <slot v-if="!loading" name="rightIcon" />
-  </button>
+  </component>
 </template>

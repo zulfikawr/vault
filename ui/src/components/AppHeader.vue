@@ -51,7 +51,7 @@ onMounted(checkSystemStatus);
         <Input 
           type="text" 
           placeholder="Search (Ctrl+K)"
-          class="w-64 !bg-surface-dark"
+          class="w-64 !bg-surface-dark pl-9 h-9 text-sm"
         />
         <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 pointer-events-none" />
       </div>

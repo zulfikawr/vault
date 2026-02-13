@@ -98,32 +98,83 @@ onMounted(fetchCollections);
         
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
-          <RouterLink to="/" :class="[
-            sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
-            isActive('/') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
-          ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
-            <LayoutDashboard class="w-5 h-5 flex-shrink-0" />
+          <Button 
+            as="RouterLink"
+            to="/"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
+              isActive('/') ? '!bg-primary/10 !text-primary' : ''
+            ]"
+          >
+            <template #leftIcon>
+              <LayoutDashboard class="w-5 h-5 flex-shrink-0" />
+            </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Dashboard</span>
-          </RouterLink>
-          <RouterLink to="/collections" :class="[
-            sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
-            isActive('/collections') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
-          ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
-            <FolderOpen class="w-5 h-5 flex-shrink-0" />
+          </Button>
+          <Button 
+            as="RouterLink"
+            to="/collections"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
+              isActive('/collections') ? '!bg-primary/10 !text-primary' : ''
+            ]"
+          >
+            <template #leftIcon>
+              <FolderOpen class="w-5 h-5 flex-shrink-0" />
+            </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Collections</span>
-          </RouterLink>
-          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
-            <Terminal class="w-5 h-5 flex-shrink-0" />
+          </Button>
+          <Button 
+            as="RouterLink"
+            to="#"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+            ]"
+          >
+            <template #leftIcon>
+              <Terminal class="w-5 h-5 flex-shrink-0" />
+            </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Logs</span>
-          </RouterLink>
-          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
-            <Settings class="w-5 h-5 flex-shrink-0" />
+          </Button>
+          <Button 
+            as="RouterLink"
+            to="#"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+            ]"
+          >
+            <template #leftIcon>
+              <Settings class="w-5 h-5 flex-shrink-0" />
+            </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Settings</span>
-          </RouterLink>
-          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
-            <Cloud class="w-5 h-5 flex-shrink-0" />
+          </Button>
+          <Button 
+            as="RouterLink"
+            to="#"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'w-full !justify-start',
+              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'
+            ]"
+          >
+            <template #leftIcon>
+              <Cloud class="w-5 h-5 flex-shrink-0" />
+            </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Storage</span>
-          </RouterLink>
+          </Button>
         </nav>
         
         <!-- Collections Quick List -->
@@ -161,8 +212,8 @@ onMounted(fetchCollections);
         <Button 
           @click="showLogoutModal = true" 
           variant="ghost"
-          class="w-full !justify-start !text-error hover:!bg-error/10"
-          :class="sidebarCollapsed && !isMobileMenuOpen ? '!justify-center' : 'px-3'"
+          class="w-full !text-error hover:!bg-error/10"
+          :class="sidebarCollapsed && !isMobileMenuOpen ? '!justify-center' : '!justify-start px-3'"
         >
           <LogOut class="w-4 h-4 flex-shrink-0" />
           <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="text-xs font-bold">Sign Out</span>
