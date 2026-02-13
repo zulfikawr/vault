@@ -1,8 +1,7 @@
 package cli
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"archive/zip"
 	"flag"
 	"fmt"
 	"io"
@@ -52,7 +51,7 @@ func (bc *BackupCommand) Run(args []string) error {
 
 func (bc *BackupCommand) Create(args []string) error {
 	cmd := flag.NewFlagSet("backup create", flag.ContinueOnError)
-	output := cmd.String("output", "", "Output backup file path (default: vault_backup_TIMESTAMP.tar.gz)")
+	output := cmd.String("output", "", "Output backup file path (default: vault_backup_TIMESTAMP.zip)")
 
 	if err := cmd.Parse(args); err != nil {
 		return err
@@ -60,7 +59,7 @@ func (bc *BackupCommand) Create(args []string) error {
 
 	// Generate default filename if not provided
 	if *output == "" {
-		*output = fmt.Sprintf("vault_backup_%s.tar.gz", time.Now().Format("20060102_150405"))
+		*output = fmt.Sprintf("vault_backup_%s.zip", time.Now().Format("20060102_150405"))
 	}
 
 	// Create backup file
@@ -70,22 +69,18 @@ func (bc *BackupCommand) Create(args []string) error {
 	}
 	defer backupFile.Close()
 
-	// Create gzip writer
-	gzipWriter := gzip.NewWriter(backupFile)
-	defer gzipWriter.Close()
-
-	// Create tar writer
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
+	// Create zip writer
+	zipWriter := zip.NewWriter(backupFile)
+	defer zipWriter.Close()
 
 	// Add database file
-	if err := bc.addFileToTar(tarWriter, bc.config.DBPath, "vault.db"); err != nil {
+	if err := bc.addFileToZip(zipWriter, bc.config.DBPath, "vault.db"); err != nil {
 		return fmt.Errorf("failed to backup database: %w", err)
 	}
 
 	// Add config.json if exists
 	if _, err := os.Stat("config.json"); err == nil {
-		if err := bc.addFileToTar(tarWriter, "config.json", "config.json"); err != nil {
+		if err := bc.addFileToZip(zipWriter, "config.json", "config.json"); err != nil {
 			return fmt.Errorf("failed to backup config: %w", err)
 		}
 	}
@@ -93,7 +88,7 @@ func (bc *BackupCommand) Create(args []string) error {
 	// Add storage directory if exists
 	storageDir := filepath.Join(bc.config.DataDir, "storage")
 	if _, err := os.Stat(storageDir); err == nil {
-		if err := bc.addDirToTar(tarWriter, storageDir, "storage"); err != nil {
+		if err := bc.addDirToZip(zipWriter, storageDir, "storage"); err != nil {
 			return fmt.Errorf("failed to backup storage: %w", err)
 		}
 	}
@@ -119,7 +114,7 @@ func (bc *BackupCommand) List(args []string) error {
 
 	var backups []os.FileInfo
 	for _, entry := range entries {
-		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".gz" {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".zip" && filepath.Base(entry.Name())[:6] == "vault_" {
 			info, err := entry.Info()
 			if err == nil {
 				backups = append(backups, info)
@@ -177,42 +172,24 @@ func (bc *BackupCommand) Restore(args []string) error {
 	}
 
 	// Open backup file
-	backupFile, err := os.Open(*input)
+	reader, err := zip.OpenReader(*input)
 	if err != nil {
 		return fmt.Errorf("failed to open backup file: %w", err)
 	}
-	defer backupFile.Close()
-
-	// Create gzip reader
-	gzipReader, err := gzip.NewReader(backupFile)
-	if err != nil {
-		return fmt.Errorf("failed to read backup file: %w", err)
-	}
-	defer gzipReader.Close()
-
-	// Create tar reader
-	tarReader := tar.NewReader(gzipReader)
+	defer reader.Close()
 
 	// Extract files
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("failed to read tar: %w", err)
-		}
-
+	for _, file := range reader.File {
 		// Determine target path
 		var targetPath string
-		switch header.Name {
+		switch file.Name {
 		case "vault.db":
 			targetPath = bc.config.DBPath
 		case "config.json":
 			targetPath = "config.json"
 		default:
 			// Storage files
-			targetPath = filepath.Join(bc.config.DataDir, header.Name)
+			targetPath = filepath.Join(bc.config.DataDir, file.Name)
 		}
 
 		// Create directories if needed
@@ -221,16 +198,26 @@ func (bc *BackupCommand) Restore(args []string) error {
 		}
 
 		// Extract file
-		if header.Typeflag == tar.TypeReg {
-			file, err := os.Create(targetPath)
+		if !file.FileInfo().IsDir() {
+			srcFile, err := file.Open()
 			if err != nil {
+				return fmt.Errorf("failed to open file in backup: %w", err)
+			}
+
+			dstFile, err := os.Create(targetPath)
+			if err != nil {
+				srcFile.Close()
 				return fmt.Errorf("failed to create file: %w", err)
 			}
-			if _, err := io.Copy(file, tarReader); err != nil {
-				file.Close()
+
+			if _, err := io.Copy(dstFile, srcFile); err != nil {
+				srcFile.Close()
+				dstFile.Close()
 				return fmt.Errorf("failed to extract file: %w", err)
 			}
-			file.Close()
+
+			srcFile.Close()
+			dstFile.Close()
 		}
 	}
 
@@ -240,7 +227,7 @@ func (bc *BackupCommand) Restore(args []string) error {
 	return nil
 }
 
-func (bc *BackupCommand) addFileToTar(tw *tar.Writer, filePath, tarPath string) error {
+func (bc *BackupCommand) addFileToZip(zw *zip.Writer, filePath, zipPath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -252,21 +239,22 @@ func (bc *BackupCommand) addFileToTar(tw *tar.Writer, filePath, tarPath string) 
 		return err
 	}
 
-	header := &tar.Header{
-		Name: tarPath,
-		Size: info.Size(),
-		Mode: 0644,
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
 	}
+	header.Name = zipPath
 
-	if err := tw.WriteHeader(header); err != nil {
+	writer, err := zw.CreateHeader(header)
+	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(tw, file)
+	_, err = io.Copy(writer, file)
 	return err
 }
 
-func (bc *BackupCommand) addDirToTar(tw *tar.Writer, dirPath, tarPath string) error {
+func (bc *BackupCommand) addDirToZip(zw *zip.Writer, dirPath, zipPath string) error {
 	return filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -277,7 +265,7 @@ func (bc *BackupCommand) addDirToTar(tw *tar.Writer, dirPath, tarPath string) er
 			return err
 		}
 
-		tarFilePath := filepath.Join(tarPath, rel)
+		zipFilePath := filepath.Join(zipPath, rel)
 
 		if info.IsDir() {
 			return nil
@@ -289,17 +277,18 @@ func (bc *BackupCommand) addDirToTar(tw *tar.Writer, dirPath, tarPath string) er
 		}
 		defer file.Close()
 
-		header := &tar.Header{
-			Name: tarFilePath,
-			Size: info.Size(),
-			Mode: 0644,
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
 		}
+		header.Name = zipFilePath
 
-		if err := tw.WriteHeader(header); err != nil {
+		writer, err := zw.CreateHeader(header)
+		if err != nil {
 			return err
 		}
 
-		_, err = io.Copy(tw, file)
+		_, err = io.Copy(writer, file)
 		return err
 	})
 }

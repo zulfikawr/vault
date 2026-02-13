@@ -13,7 +13,7 @@ vault_data/
 *.db-wal
 
 # Backups
-vault_backup_*.tar.gz
+vault_backup_*.zip
 
 # Dependency directories
 vendor/
