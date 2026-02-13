@@ -30,6 +30,8 @@ func main() {
 		runBackup()
 	case "migrate":
 		runMigrate()
+	case "init":
+		runInit()
 	case "version":
 		runVersion()
 	default:
@@ -41,11 +43,20 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage:")
+	fmt.Println("  vault init [options]")
 	fmt.Println("  vault serve [options]")
 	fmt.Println("  vault admin <subcommand> [options]")
 	fmt.Println("  vault backup <subcommand> [options]")
 	fmt.Println("  vault migrate <subcommand> [options]")
 	fmt.Println("  vault version")
+	fmt.Println()
+	fmt.Println("Init options:")
+	fmt.Println("  --email EMAIL               Admin email address")
+	fmt.Println("  --username USERNAME         Admin username")
+	fmt.Println("  --password PASSWORD         Admin password")
+	fmt.Println("  --dir DIR                   Data directory (default: ./vault_data)")
+	fmt.Println("  --skip-admin                Skip admin creation")
+	fmt.Println("  --force                     Overwrite existing setup")
 	fmt.Println()
 	fmt.Println("Serve options:")
 	fmt.Println("  --port PORT                 Server port (default: 8090)")
@@ -186,6 +197,13 @@ func runMigrate() {
 	migrateCmd := cli.NewMigrateCommand(cfg)
 	if err := migrateCmd.Run(os.Args[2:]); err != nil {
 		slog.Error("Migrate command failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func runInit() {
+	if err := cli.RunInit(os.Args[2:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
