@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 import ConfirmModal from './ConfirmModal.vue';
@@ -98,32 +98,32 @@ onMounted(fetchCollections);
         
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
-          <a href="/" :class="[
+          <RouterLink to="/" :class="[
             sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
             isActive('/') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
           ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
             <LayoutDashboard class="w-5 h-5 flex-shrink-0" />
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Dashboard</span>
-          </a>
-          <a href="/collections" :class="[
+          </RouterLink>
+          <RouterLink to="/collections" :class="[
             sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3 px-3',
             isActive('/collections') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-dark hover:text-text'
           ]" class="flex items-center py-2 text-sm font-medium rounded-lg transition-colors">
             <FolderOpen class="w-5 h-5 flex-shrink-0" />
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Collections</span>
-          </a>
-          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          </RouterLink>
+          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Terminal class="w-5 h-5 flex-shrink-0" />
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Logs</span>
-          </a>
-          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          </RouterLink>
+          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Settings class="w-5 h-5 flex-shrink-0" />
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Settings</span>
-          </a>
-          <a href="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
+          </RouterLink>
+          <RouterLink to="#" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3'" class="flex items-center py-2 text-sm font-medium rounded-lg text-text-muted hover:bg-surface-dark hover:text-text transition-colors">
             <Cloud class="w-5 h-5 flex-shrink-0" />
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Storage</span>
-          </a>
+          </RouterLink>
         </nav>
         
         <!-- Collections Quick List -->
@@ -131,12 +131,12 @@ onMounted(fetchCollections);
           <div class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-2 px-3">Recent Collections</div>
           <ul class="space-y-1">
             <li v-for="col in collections.filter(c => !c.name.startsWith('_')).slice(0, 3)" :key="col.name">
-              <a :href="`/collections/${col.name}`" :class="[
+              <RouterLink :to="`/collections/${col.name}`" :class="[
                 route.params.name === col.name ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
               ]" class="flex items-center justify-between px-3 py-1.5 text-sm group transition-colors">
                 <span class="text-xs">{{ col.name }}</span>
                 <span class="w-1.5 h-1.5 rounded-full bg-success group-hover:scale-110 transition-transform"></span>
-              </a>
+              </RouterLink>
             </li>
           </ul>
         </div>
