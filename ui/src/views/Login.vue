@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Button from '../components/Button.vue';
+import Checkbox from '../components/Checkbox.vue';
 import { Mail, KeyRound, AlertCircle, LockKeyhole } from 'lucide-vue-next';
 
 const identity = ref('');
@@ -59,7 +60,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center bg-background p-6 relative">
+  <div class="h-[100dvh] flex flex-col items-center justify-center bg-background p-4 sm:p-6 relative">
     <!-- Background Pattern -->
     <div class="fixed inset-0 z-0 pointer-events-none opacity-10" style="background-image: radial-gradient(var(--color-border) 1px, transparent 1px); background-size: 24px 24px;"></div>
     
@@ -116,17 +117,7 @@ onMounted(() => {
             </div>
 
             <!-- Remember Me -->
-            <div class="flex items-center">
-              <input 
-                v-model="rememberMe"
-                id="remember-me"
-                type="checkbox"
-                class="h-4 w-4 text-primary focus:ring-primary border-border bg-surface-dark rounded cursor-pointer"
-              />
-              <label for="remember-me" class="ml-2 block text-sm text-text-muted select-none cursor-pointer">
-                Keep me signed in for 7 days
-              </label>
-            </div>
+            <Checkbox v-model="rememberMe" label="Keep me signed in for 7 days" />
 
             <!-- Error Message -->
             <div v-if="error" class="flex items-center space-x-2 bg-error/10 border border-error/20 text-error p-3 rounded-lg text-sm">

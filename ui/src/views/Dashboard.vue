@@ -136,10 +136,11 @@ onMounted(fetchCollections);
         <div class="bg-surface-dark border border-border rounded-lg overflow-hidden">
           <div class="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between">
             <h2 class="text-lg font-semibold text-text">Recent Collections</h2>
-            <Button @click="router.push('/collections')" variant="link">View All</Button>
+            <Button @click="router.push('/collections')" variant="link" class="text-xs sm:text-sm">View All</Button>
           </div>
           
-          <Table
+          <div class="[&>div]:!rounded-none [&>div]:!border-none">
+            <Table
             :headers="[
               { key: 'name', label: 'Name' },
               { key: 'type', label: 'Type' },
@@ -171,6 +172,7 @@ onMounted(fetchCollections);
               </div>
             </template>
           </Table>
+          </div>
         </div>
       </div>
     </div>
