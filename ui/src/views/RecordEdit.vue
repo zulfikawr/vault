@@ -5,6 +5,8 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
+import Checkbox from '../components/Checkbox.vue';
 import { 
   FolderOpen, 
   X,
@@ -15,7 +17,6 @@ const router = useRouter();
 const route = useRoute();
 const collection = ref(null);
 const formData = ref({});
-const loading = ref(true);
 
 const collectionName = computed(() => route.params.name as string);
 const recordId = computed(() => route.params.id as string);
@@ -33,11 +34,10 @@ const fetchCollection = async () => {
 const fetchRecord = async () => {
   try {
     const response = await axios.get(`/api/collections/${collectionName.value}/records/${recordId.value}`);
-    formData.value = response.data.data || {};
-    loading.value = false;
+    // The actual record fields are in response.data.data.data
+    formData.value = response.data.data?.data || {};
   } catch (error) {
     console.error('Failed to fetch record', error);
-    loading.value = false;
   }
 };
 
@@ -80,7 +80,7 @@ onMounted(() => {
           <p class="text-text-muted">Update record in {{ collectionName }} collection</p>
         </div>
 
-        <form v-if="!loading && collection" @submit.prevent="handleSubmit" class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6">
+        <form v-if="collection" @submit.prevent="handleSubmit" class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6">
           <div class="space-y-4">
             <div v-for="field in collection.fields" :key="field.name">
               <label :for="field.name" class="block text-sm font-medium text-text mb-1.5">
@@ -88,68 +88,54 @@ onMounted(() => {
                 <span v-if="field.required" class="text-error">*</span>
               </label>
               
-              <input
+              <Input
                 v-if="field.type === 'text'"
-                :id="field.name"
                 v-model="formData[field.name]"
                 type="text"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary"
               />
               
-              <input
+              <Input
                 v-else-if="field.type === 'number'"
-                :id="field.name"
-                v-model.number="formData[field.name]"
+                v-model="formData[field.name]"
                 type="number"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary"
               />
               
-              <input
+              <Input
                 v-else-if="field.type === 'email'"
-                :id="field.name"
                 v-model="formData[field.name]"
                 type="email"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary"
               />
               
-              <input
+              <Input
                 v-else-if="field.type === 'date'"
-                :id="field.name"
                 v-model="formData[field.name]"
                 type="date"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary"
               />
               
               <div v-else-if="field.type === 'bool'" class="flex items-center">
-                <input
-                  :id="field.name"
+                <Checkbox
                   v-model="formData[field.name]"
-                  type="checkbox"
-                  class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary focus:ring-2"
+                  label="Enable"
                 />
-                <label :for="field.name" class="ml-2 text-sm text-text-muted">Enable</label>
               </div>
               
-              <textarea
+              <Input
                 v-else-if="field.type === 'json'"
-                :id="field.name"
                 v-model="formData[field.name]"
-                rows="4"
+                type="textarea"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm"
-              ></textarea>
+                :rows="4"
+              />
               
-              <input
+              <Input
                 v-else
-                :id="field.name"
                 v-model="formData[field.name]"
                 type="text"
                 :required="field.required"
-                class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text placeholder-text-muted focus:ring-1 focus:ring-primary focus:border-primary"
               />
             </div>
           </div>
@@ -170,10 +156,6 @@ onMounted(() => {
             </Button>
           </div>
         </form>
-
-        <div v-else class="bg-surface-dark rounded-lg border border-border p-12 text-center">
-          <p class="text-text-muted">Loading...</p>
-        </div>
       </div>
     </div>
   </AppLayout>

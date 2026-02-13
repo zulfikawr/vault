@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
 import { Mail, KeyRound, AlertCircle, LockKeyhole } from 'lucide-vue-next';
 
@@ -85,14 +86,14 @@ onMounted(() => {
             <div class="space-y-2">
               <label for="email" class="block text-sm font-medium text-text">Email Address</label>
               <div class="relative group">
-                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
-                <input 
+                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors pointer-events-none" />
+                <Input 
                   v-model="identity"
                   id="email"
                   type="text"
                   required
                   placeholder="admin@company.com"
-                  class="block w-full pl-10 pr-3 py-2.5 border border-border rounded-lg bg-surface-dark text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm transition-all shadow-sm"
+                  class="!pl-10"
                 />
               </div>
             </div>
@@ -104,14 +105,14 @@ onMounted(() => {
                 <a href="#" class="text-xs font-medium text-primary hover:text-primary-hover hover:underline transition-colors">Forgot password?</a>
               </div>
               <div class="relative group">
-                <KeyRound class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
-                <input 
+                <KeyRound class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors pointer-events-none" />
+                <Input 
                   v-model="password"
                   id="password"
                   type="password"
                   required
                   placeholder="••••••••"
-                  class="block w-full pl-10 pr-3 py-2.5 border border-border rounded-lg bg-surface-dark text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm transition-all shadow-sm"
+                  class="!pl-10"
                 />
               </div>
             </div>

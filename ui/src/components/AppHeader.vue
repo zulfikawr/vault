@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import Input from './Input.vue';
 import { Search } from 'lucide-vue-next';
 
 const systemStatus = ref<'checking' | 'online' | 'offline'>('checking');
@@ -47,12 +48,12 @@ onMounted(checkSystemStatus);
       </span>
       
       <div class="relative hidden sm:block group">
-        <input 
+        <Input 
           type="text" 
-          placeholder="Search (Ctrl+K)" 
-          class="w-64 bg-surface-dark border-border rounded-md py-1.5 pl-9 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none text-text placeholder-text-muted transition-all"
+          placeholder="Search (Ctrl+K)"
+          class="w-64 !bg-surface-dark"
         />
-        <Search class="absolute left-2.5 top-2 text-text-muted w-4 h-4" />
+        <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 pointer-events-none" />
       </div>
     </div>
   </header>

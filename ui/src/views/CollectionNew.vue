@@ -5,6 +5,10 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
+import Checkbox from '../components/Checkbox.vue';
+import Dropdown from '../components/Dropdown.vue';
+import DropdownItem from '../components/DropdownItem.vue';
 import { 
   Plus, 
   Trash2, 
@@ -75,25 +79,24 @@ const saveCollection = async () => {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label class="block text-sm font-medium text-text mb-2">Collection Name</label>
-                  <input 
+                  <Input 
                     v-model="collectionFormData.name" 
                     type="text" 
                     required 
                     placeholder="e.g. products, users, posts"
-                    class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   />
                   <p class="text-xs text-text-dim mt-1">Lowercase, no spaces (use underscores)</p>
                 </div>
                 
                 <div>
                   <label class="block text-sm font-medium text-text mb-2">Collection Type</label>
-                  <select 
-                    v-model="collectionFormData.type" 
-                    class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                  >
-                    <option value="base">Base (Generic Data)</option>
-                    <option value="auth">Auth (User Records)</option>
-                  </select>
+                  <Dropdown v-model="collectionFormData.type" align="left">
+                    <template #trigger>
+                      {{ collectionFormData.type === 'base' ? 'Base (Generic Data)' : 'Auth (User Records)' }}
+                    </template>
+                    <DropdownItem value="base" @select="collectionFormData.type = 'base'">Base (Generic Data)</DropdownItem>
+                    <DropdownItem value="auth" @select="collectionFormData.type = 'auth'">Auth (User Records)</DropdownItem>
+                  </Dropdown>
                   <p class="text-xs text-text-dim mt-1">Choose the collection purpose</p>
                 </div>
               </div>
@@ -124,35 +127,28 @@ const saveCollection = async () => {
                   class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
                 >
                   <div class="w-full sm:flex-1">
-                    <input 
+                    <Input 
                       v-model="field.name" 
-                      placeholder="field_name" 
-                      class="w-full bg-surface-dark border border-border rounded-lg px-3 py-2 text-sm text-text placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
+                      placeholder="field_name"
+                      type="text"
                     />
                   </div>
                   
                   <div class="w-full sm:w-40">
-                    <select 
-                      v-model="field.type" 
-                      class="w-full bg-surface-dark border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
-                    >
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="bool">Boolean</option>
-                      <option value="json">JSON</option>
-                      <option value="file">File</option>
-                    </select>
+                    <Dropdown v-model="field.type" align="left">
+                      <template #trigger>
+                        {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
+                      </template>
+                      <DropdownItem value="text" @select="field.type = 'text'">Text</DropdownItem>
+                      <DropdownItem value="number" @select="field.type = 'number'">Number</DropdownItem>
+                      <DropdownItem value="bool" @select="field.type = 'bool'">Boolean</DropdownItem>
+                      <DropdownItem value="json" @select="field.type = 'json'">JSON</DropdownItem>
+                      <DropdownItem value="file" @select="field.type = 'file'">File</DropdownItem>
+                    </Dropdown>
                   </div>
 
                   <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-                    <label class="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-                      <input 
-                        v-model="field.required" 
-                        type="checkbox" 
-                        class="w-4 h-4 text-primary bg-surface-dark border-border rounded focus:ring-primary"
-                      />
-                      Required
-                    </label>
+                    <Checkbox v-model="field.required" label="Required" />
                     
                     <Button 
                       @click="removeField(index)" 

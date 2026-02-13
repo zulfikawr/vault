@@ -5,6 +5,9 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
+import Dropdown from '../components/Dropdown.vue';
+import DropdownItem from '../components/DropdownItem.vue';
 import { 
   FolderOpen, 
   X,
@@ -97,48 +100,47 @@ onMounted(() => {
                   <span v-if="field.required" class="text-error">*</span>
                 </label>
                 
-                <input 
+                <Input 
                   v-if="field.type === 'text'"
                   v-model="formData[field.name]"
                   type="text"
                   :required="field.required"
-                  class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
                 
-                <input 
+                <Input 
                   v-else-if="field.type === 'number'"
                   v-model="formData[field.name]"
                   type="number"
                   :required="field.required"
-                  class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
                 
-                <select 
+                <Dropdown
                   v-else-if="field.type === 'bool'"
                   v-model="formData[field.name]"
-                  :required="field.required"
-                  class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  align="left"
                 >
-                  <option value="">Select...</option>
-                  <option :value="true">True</option>
-                  <option :value="false">False</option>
-                </select>
+                  <template #trigger>
+                    {{ formData[field.name] === '' ? 'Select...' : formData[field.name] ? 'True' : 'False' }}
+                  </template>
+                  <DropdownItem value="" @select="formData[field.name] = ''">Select...</DropdownItem>
+                  <DropdownItem :value="true" @select="formData[field.name] = true">True</DropdownItem>
+                  <DropdownItem :value="false" @select="formData[field.name] = false">False</DropdownItem>
+                </Dropdown>
                 
-                <textarea 
+                <Input 
                   v-else-if="field.type === 'json'"
                   v-model="formData[field.name]"
+                  type="textarea"
                   :required="field.required"
-                  rows="4"
                   placeholder='{"key": "value"}'
-                  class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all font-mono text-sm"
-                ></textarea>
+                  :rows="4"
+                />
                 
-                <input 
+                <Input 
                   v-else
                   v-model="formData[field.name]"
                   type="text"
                   :required="field.required"
-                  class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
                 
                 <p class="text-xs text-text-dim mt-1">{{ field.type }}</p>

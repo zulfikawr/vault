@@ -5,6 +5,10 @@ import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
+import Input from '../components/Input.vue';
+import Checkbox from '../components/Checkbox.vue';
+import Dropdown from '../components/Dropdown.vue';
+import DropdownItem from '../components/DropdownItem.vue';
 import { 
   FolderOpen, 
   Plus,
@@ -117,35 +121,28 @@ onMounted(() => {
                   class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
                 >
                   <div class="w-full sm:flex-1">
-                    <input 
+                    <Input 
                       v-model="field.name" 
-                      placeholder="field_name" 
-                      class="w-full bg-surface-dark border border-border rounded-lg px-3 py-2 text-sm text-text placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
+                      placeholder="field_name"
+                      type="text"
                     />
                   </div>
                   
                   <div class="w-full sm:w-40">
-                    <select 
-                      v-model="field.type" 
-                      class="w-full bg-surface-dark border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
-                    >
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="bool">Boolean</option>
-                      <option value="json">JSON</option>
-                      <option value="file">File</option>
-                    </select>
+                    <Dropdown v-model="field.type" align="left">
+                      <template #trigger>
+                        {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
+                      </template>
+                      <DropdownItem value="text" @select="field.type = 'text'">Text</DropdownItem>
+                      <DropdownItem value="number" @select="field.type = 'number'">Number</DropdownItem>
+                      <DropdownItem value="bool" @select="field.type = 'bool'">Boolean</DropdownItem>
+                      <DropdownItem value="json" @select="field.type = 'json'">JSON</DropdownItem>
+                      <DropdownItem value="file" @select="field.type = 'file'">File</DropdownItem>
+                    </Dropdown>
                   </div>
 
                   <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-                    <label class="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-                      <input 
-                        v-model="field.required" 
-                        type="checkbox" 
-                        class="w-4 h-4 text-primary bg-surface-dark border-border rounded focus:ring-primary"
-                      />
-                      Required
-                    </label>
+                    <Checkbox v-model="field.required" label="Required" />
                     
                     <Button 
                       @click="removeField(index)" 
