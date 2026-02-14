@@ -57,6 +57,18 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 - `vault admin delete --email EMAIL [--force]` - Delete admin user (with confirmation)
 - `vault admin reset-password --email EMAIL --password PASSWORD` - Reset admin password
 
+### Collections
+- `vault collection create --name NAME --fields FIELDS --email EMAIL --password PASSWORD` - Create new collection
+- `vault collection list --email EMAIL --password PASSWORD` - List all collections
+- `vault collection get --name NAME --email EMAIL --password PASSWORD` - Get collection details
+- `vault collection delete --name NAME --email EMAIL --password PASSWORD [--force]` - Delete collection
+
+### Storage Management
+- `vault storage list [--path PATH] [--recursive] --email EMAIL --password PASSWORD` - List files and folders
+- `vault storage create --path PATH --file FILE --email EMAIL --password PASSWORD` - Upload file to storage
+- `vault storage get --path PATH --output FILE --email EMAIL --password PASSWORD [--force]` - Download file from storage
+- `vault storage delete --path PATH [--recursive] [--force] --email EMAIL --password PASSWORD` - Delete file or folder
+
 ### Backup & Restore
 - `vault backup create [--output FILE]` - Create backup (default: vault_backup_TIMESTAMP.zip)
 - `vault backup list` - List all backups
