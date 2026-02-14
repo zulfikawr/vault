@@ -200,9 +200,14 @@ async function deleteFile() {
   if (!fileToDelete.value) return;
 
   try {
-    await axios.delete('/api/admin/storage', {
-      data: { path: fileToDelete.value.path },
-    });
+    const data: any = { path: fileToDelete.value.path };
+    
+    // If it's a directory, add recursive flag
+    if (fileToDelete.value.isFolder) {
+      data.recursive = true;
+    }
+    
+    await axios.delete('/api/admin/storage', { data });
     showDeleteModal.value = false;
     fileToDelete.value = null;
     loadStats();
@@ -247,8 +252,10 @@ function getFileType(mimeType: string): string {
   <AppLayout>
     <ConfirmModal
       :show="showDeleteModal"
-      title="Delete File"
-      :message="`Are you sure you want to delete ${fileToDelete?.name}? This action cannot be undone.`"
+      :title="fileToDelete?.isFolder ? 'Delete Folder' : 'Delete File'"
+      :message="fileToDelete?.isFolder 
+        ? `Are you sure you want to delete the folder '${fileToDelete?.name}' and all its contents? This action cannot be undone.`
+        : `Are you sure you want to delete '${fileToDelete?.name}'? This action cannot be undone.`"
       confirm-text="Delete"
       cancel-text="Cancel"
       variant="danger"
@@ -435,8 +442,18 @@ function getFileType(mimeType: string): string {
                     ">
                     Delete
                   </PopoverItem>
+                  <PopoverItem
+                    v-if="item.isFolder"
+                    :icon="Trash2"
+                    variant="danger"
+                    @click="
+                      close();
+                      confirmDelete(item as unknown as FileInfo);
+                    ">
+                    Delete
+                  </PopoverItem>
                 </template>
-              </Popover>>
+              </Popover>
             </div>
           </template>
         </Table>

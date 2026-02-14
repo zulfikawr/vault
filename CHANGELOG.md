@@ -5,6 +5,21 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-14
+
+### Added
+- **Storage CLI Command** - New `vault storage` command for managing files from the command line
+  - `vault storage list [--path PATH] [--recursive]` - List files and folders in storage with formatted table output
+  - `vault storage create --path PATH --file FILE` - Upload files to storage with automatic directory creation
+  - `vault storage get --path PATH --output FILE` - Download files from storage with overwrite protection
+  - `vault storage delete --path PATH [--recursive] [--force]` - Delete files or directories with confirmation prompts
+  - All storage commands require admin authentication with `--email` and `--password` flags
+  - Includes path validation to prevent directory traversal attacks
+  - Human-readable file sizes (B, KB, MB, GB) and relative timestamps in output
+  - Intelligent table truncation for long filenames (max 40 characters with "..." suffix)
+  - Recursive directory listing and deletion with file/folder counting
+  - Confirmation prompts for destructive operations (can be skipped with `--force`)
+
 ## [0.5.2] - 2026-02-14
 
 ### Fixed

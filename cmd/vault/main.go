@@ -11,7 +11,7 @@ import (
 	"github.com/zulfikawr/vault/internal/server"
 )
 
-const Version = "0.5.2"
+const Version = "0.6.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -38,6 +38,8 @@ func main() {
 		runMigrate()
 	case "collection":
 		runCollection()
+	case "storage":
+		runStorage()
 	case "init":
 		runInit()
 	case "version", "-v", "--version":
@@ -59,6 +61,8 @@ func printUsage() {
 	fmt.Println("  init                        Initialize new Vault project")
 	fmt.Println("  serve                       Start the HTTP server")
 	fmt.Println("  admin <subcommand>          Manage admin users")
+	fmt.Println("  collection <subcommand>     Manage collections")
+	fmt.Println("  storage <subcommand>        Manage storage")
 	fmt.Println("  backup <subcommand>         Backup and restore operations")
 	fmt.Println("  migrate <subcommand>        Database migration operations")
 	fmt.Println("  version                     Display version information")
@@ -228,6 +232,27 @@ func runCollection() {
 	collectionCmd := cli.NewCollectionCommand(cfg)
 	if err := collectionCmd.Run(os.Args[2:]); err != nil {
 		slog.Error("Collection command failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func runStorage() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault storage <subcommand> [options]")
+		fmt.Println("Subcommands:")
+		fmt.Println("  create --path PATH --file FILE")
+		fmt.Println("  list [--path PATH] [--recursive]")
+		fmt.Println("  get --path PATH --output FILE")
+		fmt.Println("  delete --path PATH [--recursive] [--force]")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+
+	storageCmd := cli.NewStorageCommand(cfg)
+	if err := storageCmd.Run(os.Args[2:]); err != nil {
+		slog.Error("Storage command failed", "error", err)
 		os.Exit(1)
 	}
 }
