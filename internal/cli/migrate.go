@@ -29,6 +29,12 @@ func (mc *MigrateCommand) Run(args []string) error {
 
 	subcommand := args[0]
 
+	// Check for help flags before processing subcommands
+	if subcommand == "-h" || subcommand == "--help" {
+		mc.printUsage()
+		return nil
+	}
+
 	switch subcommand {
 	case "sync":
 		return mc.Sync(args[1:])

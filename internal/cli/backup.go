@@ -39,6 +39,12 @@ func (bc *BackupCommand) Run(args []string) error {
 
 	subcommand := args[0]
 
+	// Check for help flags before processing subcommands
+	if subcommand == "-h" || subcommand == "--help" {
+		bc.printUsage()
+		return nil
+	}
+
 	switch subcommand {
 	case "create":
 		return bc.Create(args[1:])

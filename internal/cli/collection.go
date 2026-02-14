@@ -32,6 +32,12 @@ func (cc *CollectionCommand) Run(args []string) error {
 
 	subcommand := args[0]
 
+	// Check for help flags before processing subcommands
+	if subcommand == "-h" || subcommand == "--help" {
+		cc.printUsage()
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

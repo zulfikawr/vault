@@ -30,6 +30,12 @@ func (ac *AdminCommand) Run(args []string) error {
 
 	subcommand := args[0]
 
+	// Check for help flags before processing subcommands
+	if subcommand == "-h" || subcommand == "--help" {
+		ac.printUsage()
+		return nil
+	}
+
 	// Connect to database
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
