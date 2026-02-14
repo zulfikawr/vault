@@ -67,6 +67,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	adminRouter := http.NewServeMux()
 	adminRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
 	adminRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
+	adminRouter.HandleFunc("DELETE /collections/{name}", adminHandler.DeleteCollection)
 	adminRouter.HandleFunc("GET /settings", settingsHandler.GetSettings)
 	adminRouter.HandleFunc("PATCH /settings", settingsHandler.UpdateSettings)
 	adminRouter.HandleFunc("POST /backups", adminHandler.CreateBackup)
@@ -80,6 +81,7 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	collectionRouter := http.NewServeMux()
 	collectionRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
 	collectionRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
+	collectionRouter.HandleFunc("DELETE /{name}", adminHandler.DeleteCollection)
 
 	// Mount admin router with middleware
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))

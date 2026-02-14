@@ -125,3 +125,32 @@ func (m *MigrationEngine) updateTableTx(ctx context.Context, tx *sql.Tx, c *mode
 
 	return nil
 }
+
+func (m *MigrationEngine) DropCollection(ctx context.Context, name string) error {
+	tx, err := m.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.NewError(http.StatusInternalServerError, "DB_TX_BEGIN_FAILED", "Failed to begin transaction").WithDetails(map[string]any{"error": err.Error()})
+	}
+	defer tx.Rollback()
+
+	// Drop the table
+	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", name)
+	_, err = tx.ExecContext(ctx, query)
+	if err != nil {
+		return errors.NewError(http.StatusInternalServerError, "DB_DROP_TABLE_FAILED", "Failed to drop table").WithDetails(map[string]any{"error": err.Error(), "query": query})
+	}
+
+	// Remove from _collections table
+	_, err = tx.ExecContext(ctx, "DELETE FROM _collections WHERE name = ?", name)
+	if err != nil {
+		return errors.NewError(http.StatusInternalServerError, "DB_DELETE_DEFINITION_FAILED", "Failed to delete collection definition").WithDetails(map[string]any{"error": err.Error()})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.NewError(http.StatusInternalServerError, "DB_COMMIT_FAILED", "Failed to commit transaction").WithDetails(map[string]any{"error": err.Error()})
+	}
+
+	slog.Info("Dropped collection", "collection", name, "request_id", core.GetRequestID(ctx))
+	return nil
+}

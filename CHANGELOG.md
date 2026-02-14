@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added professional error messages when the port is already in use by another process.
   - Previously, the CLI would misleadingly claim the server started successfully even if it failed to bind to the port.
 
+- **Collection Delete Functionality** - Fixed delete button in collections table not triggering modal
+  - Added missing DELETE endpoint `/api/admin/collections/{name}` for removing collections
+  - Implemented proper routing for collection deletion with rate limiting
+  - Added DeleteCollection method to AdminHandler with proper error handling
+  - Added RemoveCollection method to SchemaRegistry to remove collections from memory
+  - Added DropCollection method to MigrationEngine to properly remove tables and definitions
+  - Updated UI to properly trigger confirmation modal when delete button is clicked
+  - Added proper transaction handling to ensure data consistency during deletion
+
 ### Changed
 - **Collection Sorting** - Collections in the sidebar now display in chronological order
   - The `/api/admin/collections` endpoint now returns collections sorted by creation date (most recent first)

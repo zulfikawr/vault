@@ -9,6 +9,7 @@ import Table from '../components/Table.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
 import Checkbox from '../components/Checkbox.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
 import { FolderOpen, Filter, Plus, MoreHorizontal, Settings, Trash2 } from 'lucide-vue-next';
 
 interface Field {
@@ -32,6 +33,8 @@ const filterTypes = ref({
   auth: true,
   system: true,
 });
+const showDeleteModal = ref(false);
+const collectionToDelete = ref<Collection | null>(null);
 
 const filteredCollections = computed(() => {
   return collections.value.filter((col: Collection) => {
@@ -50,6 +53,26 @@ const fetchCollections = async () => {
     collections.value = response.data.data;
   } catch (error) {
     console.error('Failed to fetch collections', error);
+  }
+};
+
+const handleDeleteClick = (collection: Collection) => {
+  collectionToDelete.value = collection;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!collectionToDelete.value) return;
+  
+  try {
+    await axios.delete(`/api/admin/collections/${collectionToDelete.value.name}`);
+    // Refresh the collections list
+    await fetchCollections();
+    showDeleteModal.value = false;
+    collectionToDelete.value = null;
+  } catch (error) {
+    console.error('Failed to delete collection', error);
+    // Optionally show an error message to the user
   }
 };
 
@@ -191,7 +214,15 @@ onMounted(() => {
                 >
                   Settings
                 </PopoverItem>
-                <PopoverItem :icon="Trash2" variant="danger" @click="close()"> Delete </PopoverItem>
+                <PopoverItem 
+                  :icon="Trash2" 
+                  variant="danger" 
+                  @click="
+                    close();
+                    handleDeleteClick(item);
+                  "> 
+                  Delete 
+                </PopoverItem>
               </template>
             </Popover>
           </template>
@@ -224,5 +255,17 @@ onMounted(() => {
         </Table>
       </div>
     </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <ConfirmModal
+      :show="showDeleteModal"
+      title="Confirm Delete Collection"
+      :message="`Are you sure you want to delete the collection '${collectionToDelete?.name}'? This action cannot be undone and will permanently remove all data in this collection.`"
+      confirm-text="Delete"
+      cancel-text="Cancel"
+      variant="danger"
+      @confirm="confirmDelete"
+      @cancel="showDeleteModal = false"
+    />
   </AppLayout>
 </template>

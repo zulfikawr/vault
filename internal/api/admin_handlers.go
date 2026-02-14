@@ -56,3 +56,29 @@ func (h *AdminHandler) CreateBackup(w http.ResponseWriter, r *http.Request) {
 	// In production, we'd use SQLite's backup API
 	SendJSON(w, http.StatusAccepted, map[string]string{"message": "Backup triggered"}, nil)
 }
+
+func (h *AdminHandler) DeleteCollection(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	if name == "" {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_NAME", "Collection name is required"))
+		return
+	}
+
+	// Check if collection exists
+	if _, exists := h.registry.GetCollection(name); !exists {
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		return
+	}
+
+	// Remove from registry
+	h.registry.RemoveCollection(name)
+
+	// Remove from database
+	ctx := r.Context()
+	if err := h.migration.DropCollection(ctx, name); err != nil {
+		errors.SendError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, map[string]string{"message": "Collection deleted successfully"}, nil)
+}

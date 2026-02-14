@@ -66,6 +66,12 @@ func (s *SchemaRegistry) AddCollection(c *models.Collection) {
 	s.collections[c.Name] = c
 }
 
+func (s *SchemaRegistry) RemoveCollection(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.collections, name)
+}
+
 func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 	// First, ensure all existing records have IDs (migration for old data)
 	_, err := s.db.ExecContext(ctx, `UPDATE _collections SET id = 'col_' || name WHERE id IS NULL`)
