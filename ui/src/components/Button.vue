@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Loader2 } from 'lucide-vue-next';
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
+  variant?: 'primary' | 'secondary' | 'outline' | 'destructive' | 'ghost' | 'link';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
@@ -26,6 +26,7 @@ const variantClasses = {
   primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm',
   secondary: 'bg-surface border border-border text-text hover:bg-surface-dark shadow-sm',
   outline: 'bg-transparent border border-primary text-primary hover:bg-primary/10',
+  destructive: 'bg-error border border-error text-white hover:bg-error/90 shadow-sm',
   ghost: 'bg-transparent text-text-muted hover:bg-surface-dark hover:text-text',
   link: 'bg-transparent text-primary hover:underline !p-0 !h-auto',
 };

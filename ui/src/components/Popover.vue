@@ -18,6 +18,7 @@ const updatePosition = async () => {
   if (!isOpen.value || !triggerRef.value) return;
 
   await nextTick();
+  await new Promise(resolve => setTimeout(resolve, 0));
   if (!popoverRef.value) return;
 
   const triggerRect = triggerRef.value.getBoundingClientRect();
@@ -25,16 +26,19 @@ const updatePosition = async () => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
+  // Use scrollHeight as fallback if getBoundingClientRect gives wrong height
+  const popoverHeight = popoverRect.height > 0 ? popoverRect.height : popoverRef.value.scrollHeight;
+
   let top = triggerRect.bottom + 8;
   let left = props.align === 'left' ? triggerRect.left : triggerRect.right - popoverRect.width;
 
   // Vertical check: if it goes below viewport, show it above the trigger
-  if (top + popoverRect.height > viewportHeight - 12) {
+  if (top + popoverHeight > viewportHeight - 12) {
     const spaceAbove = triggerRect.top;
     const spaceBelow = viewportHeight - triggerRect.bottom;
 
     if (spaceAbove > spaceBelow) {
-      top = triggerRect.top - popoverRect.height - 8;
+      top = triggerRect.top - popoverHeight - 8;
     }
   }
 
@@ -104,7 +108,7 @@ defineExpose({ close });
         <div
           v-if="isOpen"
           ref="popoverRef"
-          class="fixed z-[100] min-w-[180px] bg-surface border border-border rounded-lg shadow-xl overflow-hidden"
+          class="fixed z-[9999] min-w-[180px] bg-surface border border-border rounded-lg shadow-xl overflow-hidden"
           :style="{
             top: `${coords.top}px`,
             left: `${coords.left}px`,

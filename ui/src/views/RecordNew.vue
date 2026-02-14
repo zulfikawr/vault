@@ -80,24 +80,12 @@ onMounted(() => {
     <!-- Header -->
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center text-sm text-text-muted overflow-hidden whitespace-nowrap">
-          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')"
-            >Vault</span
-          >
-          <span class="mx-2 shrink-0">/</span>
-          <span
-            class="hover:text-text cursor-pointer shrink-0 hidden sm:inline"
-            @click="router.push('/collections')"
-            >Collections</span
-          >
-          <span class="mx-2 shrink-0 hidden sm:inline">/</span>
-          <span
-            class="hover:text-text cursor-pointer truncate"
-            @click="router.push(`/collections/${collectionName}`)"
-            >{{ collectionName }}</span
-          >
-          <span class="mx-2 shrink-0">/</span>
-          <span class="font-medium text-text shrink-0">New</span>
+        <div class="flex items-center text-sm text-text-muted truncate gap-2">
+          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span class="text-text-muted flex-shrink-0">/</span>
+          <span class="hover:text-text cursor-pointer text-text truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span class="text-text-muted flex-shrink-0">/</span>
+          <span class="font-medium text-text flex-shrink-0">New</span>
         </div>
       </template>
     </AppHeader>

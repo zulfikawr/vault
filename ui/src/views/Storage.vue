@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
@@ -8,9 +7,9 @@ import Button from '../components/Button.vue';
 import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import Input from '../components/Input.vue';
-import { Upload, Download, Trash2, FolderOpen, File } from 'lucide-vue-next';
-
-const router = useRouter();
+import Popover from '../components/Popover.vue';
+import PopoverItem from '../components/PopoverItem.vue';
+import { Upload, Download, Trash2, FolderOpen, File, MoreHorizontal, Settings } from 'lucide-vue-next';
 
 interface FileInfo {
   name: string;
@@ -30,6 +29,9 @@ interface StorageStats {
 const currentPath = ref('');
 const folders = ref<FileInfo[]>([]);
 const files = ref<FileInfo[]>([]);
+// Sorting state
+const sortKey = ref('name');
+const sortOrder = ref<'asc' | 'desc'>('asc');
 const stats = ref<StorageStats>({ total_files: 0, total_size: 0, total_collections: 0 });
 const loading = ref(false);
 const showUploadModal = ref(false);
@@ -47,18 +49,72 @@ const canUpload = computed(() => {
 });
 
 const tableItems = computed(() => {
-  return [
+  let items = [
     ...folders.value.map((f) => ({ ...f, type: 'folder', isFolder: true })),
     ...files.value.map((f) => ({ ...f, type: getFileType(f.mime_type || ''), isFolder: false })),
   ];
+
+  // Apply sorting
+  if (sortKey.value) {
+    items.sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortKey.value === 'size') {
+        // Special handling for size
+        aValue = a.size || 0;
+        bValue = b.size || 0;
+      } else if (sortKey.value === 'modified') {
+        // Special handling for modified date
+        aValue = a.modified || 0;
+        bValue = b.modified || 0;
+      } else if (sortKey.value === 'name') {
+        // Special handling for name
+        aValue = a.name || '';
+        bValue = b.name || '';
+      } else if (sortKey.value === 'type') {
+        // Special handling for type
+        aValue = a.type || '';
+        bValue = b.type || '';
+      } else {
+        aValue = a[sortKey.value as keyof typeof a];
+        bValue = b[sortKey.value as keyof typeof b];
+      }
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortOrder.value === 'asc' ? 1 : -1;
+      if (bValue == null) return sortOrder.value === 'asc' ? -1 : 1;
+
+      // Handle numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortOrder.value === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // Handle strings
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder.value === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      // Fallback comparison
+      const strA = String(aValue);
+      const strB = String(bValue);
+      return sortOrder.value === 'asc' 
+        ? strA.localeCompare(strB) 
+        : strB.localeCompare(strA);
+    });
+  }
+
+  return items;
 });
 
 const tableHeaders = [
-  { key: 'name', label: 'Name', align: 'left' as const },
-  { key: 'size', label: 'Size', align: 'left' as const },
-  { key: 'type', label: 'Type', align: 'left' as const },
-  { key: 'modified', label: 'Modified', align: 'left' as const },
-  { key: 'actions', label: 'Actions', align: 'right' as const, sticky: true },
+  { key: 'name', label: 'Name', align: 'left' as const, sortable: true },
+  { key: 'size', label: 'Size', align: 'left' as const, sortable: true },
+  { key: 'type', label: 'Type', align: 'left' as const, sortable: true },
+  { key: 'modified', label: 'Modified', align: 'left' as const, sortable: true },
+  { key: 'actions', label: 'Actions', align: 'center' as const, sticky: true },
 ];
 
 onMounted(() => {
@@ -250,10 +306,17 @@ function getFileType(mimeType: string): string {
     <!-- Header -->
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center text-sm text-text-muted">
-          <span class="hover:text-text cursor-pointer" @click="router.push('/')">Vault</span>
-          <span class="mx-2">/</span>
-          <span class="font-medium text-text">Storage</span>
+        <div class="flex items-center text-sm text-text-muted truncate gap-2">
+          <span class="hover:text-text cursor-pointer font-medium text-text" @click="navigateTo('')">Storage</span>
+          <template v-for="(part, index) in pathParts" :key="index">
+            <span class="text-text-muted flex-shrink-0">/</span>
+            <span 
+              class="text-text truncate hover:text-text cursor-pointer" 
+              @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
+            >
+              {{ part }}
+            </span>
+          </template>
         </div>
       </template>
     </AppHeader>
@@ -264,10 +327,10 @@ function getFileType(mimeType: string): string {
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Storage Browser</h1>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Storage Bucket</h1>
             <p class="mt-1 text-sm text-text-muted">Manage uploaded files and media assets.</p>
           </div>
-          <Button @click="showUploadModal = true">
+          <Button @click="showUploadModal = true" size="sm">
             <template #leftIcon><Upload class="w-4 h-4" /></template>
             Upload File
           </Button>
@@ -289,33 +352,31 @@ function getFileType(mimeType: string): string {
           </div>
         </div>
 
-        <!-- Breadcrumb -->
-        <div class="flex items-center text-sm text-text-muted">
-          <span class="hover:text-text cursor-pointer" @click="navigateTo('')">Storage</span>
-          <template v-for="(part, index) in pathParts" :key="index">
-            <span class="mx-2">/</span>
-            <span
-              class="hover:text-text cursor-pointer"
-              @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
-            >
-              {{ part }}
-            </span>
-          </template>
-        </div>
-
         <!-- File List -->
         <Table
           :headers="tableHeaders"
           :items="tableItems"
           :loading="loading"
           empty-text="No files or folders"
-          row-clickable
-          @row-click="handleRowClick"
           :enable-pagination="true"
           :default-page-size="15"
+          :sort-key="sortKey"
+          :sort-order="sortOrder"
+          @sort-change="(key, order) => { sortKey = key; sortOrder = order; }"
+          row-clickable
+          @row-click="(item, event) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('.actions-cell')) {
+              handleRowClick(item as Record<string, unknown>);
+            }
+          }"
         >
           <template #cell(name)="{ item }">
-            <div class="flex items-center">
+            <div 
+              class="flex items-center"
+              :class="item.isFolder ? 'cursor-pointer hover:text-primary' : ''"
+              @click="item.isFolder && navigateTo(item.path as string)"
+            >
               <FolderOpen v-if="item.isFolder" class="w-5 h-5 text-primary mr-3" />
               <File v-else class="w-5 h-5 text-text-muted mr-3" />
               <span class="text-sm font-medium text-text">{{ item.name }}</span>
@@ -337,23 +398,45 @@ function getFileType(mimeType: string): string {
           </template>
 
           <template #cell(actions)="{ item }">
-            <div v-if="!item.isFolder" class="flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="xs"
-                title="Download"
-                @click.stop="downloadFile(item as unknown as FileInfo)"
-              >
-                <template #leftIcon><Download class="w-4 h-4" /></template>
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                title="Delete"
-                @click.stop="confirmDelete(item as unknown as FileInfo)"
-              >
-                <template #leftIcon><Trash2 class="w-4 h-4 text-red-500" /></template>
-              </Button>
+            <div class="actions-cell">
+              <Popover align="right">
+                <template #trigger>
+                  <Button variant="ghost" size="xs">
+                    <MoreHorizontal class="w-4 h-4" />
+                  </Button>
+                </template>
+                <template #default="{ close }">
+                  <PopoverItem
+                    v-if="!item.isFolder"
+                    :icon="Download"
+                    @click="
+                      close();
+                      downloadFile(item as unknown as FileInfo);
+                    "
+                  >
+                    Download
+                  </PopoverItem>
+                  <PopoverItem
+                    v-if="item.isFolder"
+                    :icon="Settings"
+                    @click="
+                      close();
+                    "
+                  >
+                    Settings
+                  </PopoverItem>
+                  <PopoverItem
+                    v-if="!item.isFolder"
+                    :icon="Trash2"
+                    variant="danger"
+                    @click="
+                      close();
+                      confirmDelete(item as unknown as FileInfo);
+                    ">
+                    Delete
+                  </PopoverItem>
+                </template>
+              </Popover>>
             </div>
           </template>
         </Table>

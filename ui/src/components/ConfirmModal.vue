@@ -31,7 +31,7 @@ const emit = defineEmits<{
         <div class="absolute inset-0 bg-black/70" @click="emit('cancel')"></div>
 
         <!-- Modal -->
-        <div class="relative bg-surface border border-border rounded-lg shadow-2xl max-w-lg w-full">
+        <div class="relative bg-surface border border-border rounded-lg shadow-2xl max-w-2xl w-full">
           <!-- Header -->
           <div class="flex items-start justify-between p-6 border-b border-border">
             <div class="flex items-center gap-3">
@@ -63,8 +63,7 @@ const emit = defineEmits<{
               {{ cancelText }}
             </Button>
             <Button
-              :variant="variant === 'danger' ? 'primary' : 'primary'"
-              :class="variant === 'danger' ? '!bg-error hover:!bg-error/90' : ''"
+              :variant="variant === 'danger' ? 'destructive' : 'primary'"
               @click="emit('confirm')"
             >
               {{ confirmText }}

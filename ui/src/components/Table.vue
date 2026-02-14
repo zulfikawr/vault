@@ -2,13 +2,14 @@
 import { ref, computed } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DropdownItem from './DropdownItem.vue';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-vue-next';
 
 interface Header {
   key: string;
   label: string;
   align?: 'left' | 'center' | 'right';
   sticky?: boolean;
+  sortable?: boolean;
 }
 
 interface Props {
@@ -19,6 +20,8 @@ interface Props {
   rowClickable?: boolean;
   enablePagination?: boolean;
   defaultPageSize?: number;
+  sortKey?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,25 +30,89 @@ const props = withDefaults(defineProps<Props>(), {
   rowClickable: false,
   enablePagination: false,
   defaultPageSize: 20,
+  sortKey: undefined,
+  sortOrder: 'asc',
 });
 
 const emit = defineEmits<{
-  rowClick: [item: Record<string, unknown>];
+  rowClick: [item: Record<string, unknown>, event: Event];
+  sortChange: [sortKey: string, sortOrder: 'asc' | 'desc'];
 }>();
+
+const handleSort = (headerKey: string) => {
+  if (!props.headers.find(h => h.key === headerKey)?.sortable) {
+    return;
+  }
+  
+  let newSortOrder: 'asc' | 'desc' = 'asc';
+  if (props.sortKey === headerKey) {
+    // Toggle order if clicking the same column
+    newSortOrder = props.sortOrder === 'asc' ? 'desc' : 'asc';
+  }
+  
+  emit('sortChange', headerKey, newSortOrder);
+};
 
 const currentPage = ref(1);
 const pageSize = ref(props.defaultPageSize);
 
-const totalPages = computed(() => Math.ceil(props.items.length / pageSize.value));
-
-const paginatedItems = computed(() => {
-  if (!props.enablePagination) {
+// Sort items based on sortKey and sortOrder
+const sortedItems = computed(() => {
+  if (!props.sortKey) {
     return props.items;
   }
   
+  return [...props.items].sort((a, b) => {
+    // Check if sortKey is defined before accessing
+    if (!props.sortKey) return 0;
+    
+    const aValue = a[props.sortKey as keyof typeof a];
+    const bValue = b[props.sortKey as keyof typeof b];
+    
+    // Handle null/undefined values
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return props.sortOrder === 'asc' ? 1 : -1;
+    if (bValue == null) return props.sortOrder === 'asc' ? -1 : 1;
+    
+    // Handle dates
+    if (typeof aValue === 'string' && !isNaN(Date.parse(aValue)) && 
+        typeof bValue === 'string' && !isNaN(Date.parse(bValue))) {
+      const dateA = new Date(aValue).getTime();
+      const dateB = new Date(bValue).getTime();
+      return props.sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    }
+    
+    // Handle numbers
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return props.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+    
+    // Handle strings
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return props.sortOrder === 'asc' 
+        ? aValue.localeCompare(bValue) 
+        : bValue.localeCompare(aValue);
+    }
+    
+    // Fallback comparison
+    const strA = String(aValue);
+    const strB = String(bValue);
+    return props.sortOrder === 'asc' 
+      ? strA.localeCompare(strB) 
+      : strB.localeCompare(strA);
+  });
+});
+
+const totalPages = computed(() => Math.ceil(sortedItems.value.length / pageSize.value));
+
+const paginatedItems = computed(() => {
+  if (!props.enablePagination) {
+    return sortedItems.value;
+  }
+
   const startIndex = (currentPage.value - 1) * pageSize.value;
   const endIndex = startIndex + pageSize.value;
-  return props.items.slice(startIndex, endIndex);
+  return sortedItems.value.slice(startIndex, endIndex);
 });
 
 const nextPage = () => {
@@ -73,6 +140,12 @@ const getAlignClass = (align?: string) => {
   if (align === 'right') return 'text-right';
   return 'text-left';
 };
+
+const getFlexAlignClass = (align?: string) => {
+  if (align === 'center') return 'justify-center';
+  if (align === 'right') return 'justify-end';
+  return 'justify-start';
+};
 </script>
 
 <template>
@@ -88,9 +161,27 @@ const getAlignClass = (align?: string) => {
                 'px-4 sm:px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider',
                 getAlignClass(header.align),
                 header.sticky ? 'sticky right-0 bg-surface z-10' : '',
+                header.sortable ? 'cursor-pointer select-none hover:text-text' : ''
               ]"
+              @click="header.sortable ? handleSort(header.key) : null"
             >
-              {{ header.label }}
+              <div class="flex items-center gap-1" :class="getFlexAlignClass(header.align)">
+                <span>{{ header.label }}</span>
+                <div v-if="header.sortable" class="flex flex-col">
+                  <ArrowUp 
+                    :class="[
+                      'w-2 h-2',
+                      sortKey === header.key && sortOrder === 'asc' ? 'text-text' : 'text-text-muted'
+                    ]" 
+                  />
+                  <ArrowDown 
+                    :class="[
+                      'w-2 h-2',
+                      sortKey === header.key && sortOrder === 'desc' ? 'text-text' : 'text-text-muted'
+                    ]" 
+                  />
+                </div>
+              </div>
             </th>
           </tr>
         </thead>
@@ -102,7 +193,7 @@ const getAlignClass = (align?: string) => {
               'hover:bg-background/50 transition-colors group',
               rowClickable ? 'cursor-pointer' : '',
             ]"
-            @click="rowClickable ? emit('rowClick', item) : null"
+            @click="rowClickable ? emit('rowClick', item, $event) : null"
           >
             <td
               v-for="header in headers"

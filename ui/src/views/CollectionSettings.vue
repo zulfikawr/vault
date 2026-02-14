@@ -7,6 +7,7 @@ import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
 import Dropdown from '../components/Dropdown.vue';
 import DropdownItem from '../components/DropdownItem.vue';
 import { Plus, Trash2, Settings, Save } from 'lucide-vue-next';
@@ -28,6 +29,7 @@ const route = useRoute();
 const collections = ref<Collection[]>([]);
 const collection = ref<Collection | null>(null);
 const fields = ref<Field[]>([]);
+const showDeleteModal = ref(false);
 
 const collectionName = computed(() => route.params.name as string);
 
@@ -72,6 +74,18 @@ const saveSettings = async () => {
   }
 };
 
+const deleteCollection = async () => {
+  if (!collection.value) return;
+
+  try {
+    await axios.delete(`/api/admin/collections/${collection.value.id}`);
+    router.push('/collections'); // Redirect to collections list after deletion
+  } catch (error) {
+    console.error('Failed to delete collection', error);
+    // TODO: Show error notification to user
+  }
+};
+
 onMounted(() => {
   fetchCollections();
   fetchCollection();
@@ -83,106 +97,119 @@ onMounted(() => {
     <!-- Header -->
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center text-sm text-text-muted overflow-hidden whitespace-nowrap">
-          <span class="hover:text-text cursor-pointer shrink-0" @click="router.push('/')"
-            >Vault</span
-          >
-          <span class="mx-2 shrink-0">/</span>
-          <span
-            class="hover:text-text cursor-pointer shrink-0 hidden sm:inline"
-            @click="router.push('/collections')"
-            >Collections</span
-          >
-          <span class="mx-2 shrink-0 hidden sm:inline">/</span>
-          <span
-            class="hover:text-text cursor-pointer truncate"
-            @click="router.push(`/collections/${collectionName}`)"
-            >{{ collectionName }}</span
-          >
-          <span class="mx-2 shrink-0">/</span>
-          <span class="font-medium text-text shrink-0">Settings</span>
+        <div class="flex items-center text-sm text-text-muted truncate gap-2">
+          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span class="text-text-muted flex-shrink-0">/</span>
+          <span class="hover:text-text cursor-pointer text-text truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span class="text-text-muted flex-shrink-0">/</span>
+          <span class="font-medium text-text flex-shrink-0">Settings</span>
         </div>
       </template>
     </AppHeader>
 
     <!-- Form Content -->
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 class="text-2xl font-bold text-text">Collection Settings</h1>
-          <p class="text-sm text-text-muted mt-1">Manage fields for {{ collectionName }}</p>
-        </div>
-
-        <form class="space-y-6" @submit.prevent="saveSettings">
-          <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-text flex items-center gap-2">
-                <Settings class="w-5 h-5 text-primary" />
-                Fields Definition
-              </h2>
-              <Button variant="secondary" size="sm" @click="addField">
-                <Plus class="w-4 h-4" />
-                <span class="hidden sm:inline">Add Field</span>
-                <span class="sm:hidden">Add</span>
-              </Button>
-            </div>
-
-            <div class="space-y-3">
-              <div
-                v-for="(field, index) in fields"
-                :key="index"
-                class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
-              >
-                <div class="w-full sm:flex-1">
-                  <Input v-model="field.name" placeholder="field_name" type="text" />
-                </div>
-
-                <div class="w-full sm:w-40">
-                  <Dropdown v-model="field.type" align="left">
-                    <template #trigger>
-                      {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
-                    </template>
-                    <DropdownItem value="text" @select="field.type = 'text'">Text</DropdownItem>
-                    <DropdownItem value="number" @select="field.type = 'number'"
-                      >Number</DropdownItem
-                    >
-                    <DropdownItem value="bool" @select="field.type = 'bool'">Boolean</DropdownItem>
-                    <DropdownItem value="json" @select="field.type = 'json'">JSON</DropdownItem>
-                    <DropdownItem value="file" @select="field.type = 'file'">File</DropdownItem>
-                  </Dropdown>
-                </div>
-
-                <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-                  <Checkbox v-model="field.required" label="Required" />
-
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    class="!text-error hover:!bg-error/10"
-                    :disabled="fields.length === 1"
-                    @click="removeField(index)"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <!-- Page Title and Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Collection Settings</h1>
+            <p class="mt-1 text-sm text-text-muted">Manage fields for {{ collectionName }}</p>
           </div>
-
-          <div class="flex items-center justify-end gap-3">
+          <div class="flex items-center gap-3">
             <Button
               variant="secondary"
+              size="sm"
               class="flex-1 sm:flex-none"
               @click="router.push(`/collections/${collectionName}`)"
             >
               Cancel
             </Button>
-            <Button type="submit" class="flex-1 sm:flex-none">
+            <Button
+              variant="destructive"
+              size="sm"
+              class="flex-1 sm:flex-none"
+              @click="showDeleteModal = true"
+            >
+              <Trash2 class="w-4 h-4" />
+              Delete Collection
+            </Button>
+            <Button 
+              size="sm"
+              type="submit" 
+              class="flex-1 sm:flex-none">
               <Save class="w-4 h-4" />
               Save Changes
             </Button>
           </div>
+        </div>
+
+        <form class="space-y-6" @submit.prevent="saveSettings">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-text flex items-center gap-2">
+              <Settings class="w-5 h-5 text-primary" />
+              Fields Definition
+            </h2>
+            <Button variant="secondary" size="sm" @click="addField">
+              <Plus class="w-4 h-4" />
+              <span class="hidden sm:inline">Add Field</span>
+              <span class="sm:hidden">Add</span>
+            </Button>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              v-for="(field, index) in fields"
+              :key="index"
+              class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
+            >
+              <div class="w-full sm:flex-1">
+                <Input v-model="field.name" placeholder="field_name" type="text" />
+              </div>
+
+              <div class="w-full sm:w-40">
+                <Dropdown v-model="field.type" align="left">
+                  <template #trigger>
+                    {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
+                  </template>
+                  <DropdownItem value="text" @select="field.type = 'text'">Text</DropdownItem>
+                  <DropdownItem value="number" @select="field.type = 'number'"
+                    >Number</DropdownItem
+                  >
+                  <DropdownItem value="bool" @select="field.type = 'bool'">Boolean</DropdownItem>
+                  <DropdownItem value="json" @select="field.type = 'json'">JSON</DropdownItem>
+                  <DropdownItem value="file" @select="field.type = 'file'">File</DropdownItem>
+                </Dropdown>
+              </div>
+
+              <div class="flex items-center justify-between w-full sm:w-auto gap-4">
+                <Checkbox v-model="field.required" label="Required" />
+
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  class="!text-error hover:!bg-error/10"
+                  :disabled="fields.length === 1"
+                  @click="removeField(index)"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </form>
+        
+        <!-- Delete Confirmation Modal -->
+        <ConfirmModal
+          :show="showDeleteModal"
+          title="Confirm Delete Collection"
+          :message="`Are you sure you want to delete the collection '${collectionName}'? This action cannot be undone and will permanently remove all data in this collection.`"
+          confirm-text="Delete"
+          cancel-text="Cancel"
+          variant="danger"
+          @confirm="deleteCollection"
+          @cancel="showDeleteModal = false"
+        />
       </div>
     </div>
   </AppLayout>

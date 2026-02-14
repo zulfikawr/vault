@@ -23,11 +23,13 @@ interface Collection {
   type: 'base' | 'auth' | 'system';
   fields: Field[];
   created: string;
+  recordCount?: number;
 }
 
 const router = useRouter();
 const collections = ref<Collection[]>([]);
-const showSystemCollections = ref(true);
+const recordCounts = ref<Record<string, number>>({});
+const showSystemCollections = ref(false);
 const filterTypes = ref({
   base: true,
   auth: true,
@@ -36,8 +38,12 @@ const filterTypes = ref({
 const showDeleteModal = ref(false);
 const collectionToDelete = ref<Collection | null>(null);
 
+// Sorting state
+const sortKey = ref('name');
+const sortOrder = ref<'asc' | 'desc'>('asc');
+
 const filteredCollections = computed(() => {
-  return collections.value.filter((col: Collection) => {
+  let result = collections.value.filter((col: Collection) => {
     // Filter by system collections
     if (!showSystemCollections.value && col.name.startsWith('_')) {
       return false;
@@ -45,12 +51,74 @@ const filteredCollections = computed(() => {
     // Filter by type
     return filterTypes.value[col.type];
   });
+
+  // Apply sorting
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortKey.value === 'records') {
+        // Special handling for record count
+        aValue = recordCounts.value[a.name] ?? 0;
+        bValue = recordCounts.value[b.name] ?? 0;
+      } else {
+        const key = sortKey.value as keyof Collection;
+        aValue = a[key];
+        bValue = b[key];
+      }
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortOrder.value === 'asc' ? 1 : -1;
+      if (bValue == null) return sortOrder.value === 'asc' ? -1 : 1;
+
+      // Handle dates
+      if (typeof aValue === 'string' && !isNaN(Date.parse(aValue)) &&
+          typeof bValue === 'string' && !isNaN(Date.parse(bValue))) {
+        const dateA = new Date(aValue).getTime();
+        const dateB = new Date(bValue).getTime();
+        return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      // Handle numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortOrder.value === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // Handle strings
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder.value === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Fallback comparison
+      const strA = String(aValue);
+      const strB = String(bValue);
+      return sortOrder.value === 'asc'
+        ? strA.localeCompare(strB)
+        : strB.localeCompare(strA);
+    });
+  }
+
+  return result;
 });
 
 const fetchCollections = async () => {
   try {
     const response = await axios.get('/api/admin/collections');
     collections.value = response.data.data;
+    
+    // Fetch record counts for each collection
+    for (const collection of collections.value) {
+      try {
+        const recordResponse = await axios.get(`/api/collections/${collection.name}/records?perPage=1`);
+        recordCounts.value[collection.name] = recordResponse.data.totalItems || 0;
+      } catch (error) {
+        console.error(`Failed to fetch record count for collection ${collection.name}:`, error);
+        recordCounts.value[collection.name] = 0;
+      }
+    }
   } catch (error) {
     console.error('Failed to fetch collections', error);
   }
@@ -86,10 +154,8 @@ onMounted(() => {
     <!-- Header -->
     <AppHeader>
       <template #breadcrumb>
-        <div class="flex items-center text-sm text-text-muted">
-          <span class="hover:text-text cursor-pointer" @click="router.push('/')">Vault</span>
-          <span class="mx-2">/</span>
-          <span class="font-medium text-text">Collections</span>
+        <div class="flex items-center text-sm text-text-muted truncate gap-2">
+          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/')">Collections</span>
         </div>
       </template>
     </AppHeader>
@@ -141,18 +207,27 @@ onMounted(() => {
         <!-- Data Table -->
         <Table
           :headers="[
-            { key: 'name', label: 'Name' },
-            { key: 'type', label: 'Type' },
-            { key: 'fields', label: 'Fields' },
-            { key: 'created', label: 'Created' },
-            { key: 'status', label: 'Status' },
+            { key: 'name', label: 'Name', sortable: true },
+            { key: 'type', label: 'Type', sortable: true },
+            { key: 'fields', label: 'Fields', sortable: true },
+            { key: 'records', label: 'Records', sortable: true },
+            { key: 'created', label: 'Created', sortable: true },
             { key: 'actions', label: 'Actions', align: 'center', sticky: true },
           ]"
           :items="filteredCollections"
           :enable-pagination="true"
           :default-page-size="10"
+          :sort-key="sortKey"
+          :sort-order="sortOrder"
+          @sort-change="(key, order) => { sortKey = key; sortOrder = order; }"
           row-clickable
-          @row-click="(item) => router.push(`/collections/${(item as unknown as Collection).name}`)"
+          @row-click="(item, event) => {
+            // Only navigate if the click didn't originate from the actions column
+            const target = event.target as HTMLElement;
+            if (!target.closest('.actions-cell')) {
+              router.push(`/collections/${(item as unknown as Collection).name}`)
+            }
+          }"
         >
           <template #cell(name)="{ item }">
             <div
@@ -179,6 +254,13 @@ onMounted(() => {
             >
           </template>
 
+          <template #cell(records)="{ item }">
+            <span
+              class="text-text-muted"
+              >{{ recordCounts[(item as unknown as Collection).name] ?? 0 }} records</span
+            >
+          </template>
+
           <template #cell(created)="{ item }">
             <span
               class="text-text-muted text-xs"
@@ -188,42 +270,37 @@ onMounted(() => {
             >
           </template>
 
-          <template #cell(status)>
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success"
-            >
-              Active
-            </span>
-          </template>
 
           <template #cell(actions)="{ item }">
-            <Popover align="right" @click.stop>
-              <template #trigger>
-                <Button variant="ghost" size="xs" @click.stop>
-                  <MoreHorizontal class="w-4 h-4" />
-                </Button>
-              </template>
-              <template #default="{ close }">
-                <PopoverItem
-                  :icon="Settings"
-                  @click="
-                    close();
-                    router.push(`/collections/${item.name}/settings`);
-                  "
-                >
-                  Settings
-                </PopoverItem>
-                <PopoverItem
-                  :icon="Trash2"
-                  variant="danger"
-                  @click="
-                    close();
-                    handleDeleteClick(item);
-                  ">
-                  Delete
-                </PopoverItem>
-              </template>
-            </Popover>
+            <div class="actions-cell">
+              <Popover align="right">
+                <template #trigger>
+                  <Button variant="ghost" size="xs">
+                    <MoreHorizontal class="w-4 h-4" />
+                  </Button>
+                </template>
+                <template #default="{ close }">
+                  <PopoverItem
+                    :icon="Settings"
+                    @click="
+                      close();
+                      router.push(`/collections/${item.name}/settings`);
+                    "
+                  >
+                    Settings
+                  </PopoverItem>
+                  <PopoverItem
+                    :icon="Trash2"
+                    variant="danger"
+                    @click="
+                      close();
+                      handleDeleteClick(item);
+                    ">
+                    Delete
+                  </PopoverItem>
+                </template>
+              </Popover>
+            </div>
           </template>
 
           <template #empty>

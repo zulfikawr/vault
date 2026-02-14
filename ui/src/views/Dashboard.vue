@@ -25,6 +25,7 @@ interface Collection {
 const router = useRouter();
 const auth = useAuthStore();
 const collections = ref<Collection[]>([]);
+const recordCounts = ref<Record<string, number>>({});
 const totalRecords = ref(0);
 const apiRequests = ref(0);
 const storage = ref('-');
@@ -46,9 +47,12 @@ const fetchDashboardStats = async () => {
       if (!col.name.startsWith('_')) {
         try {
           const response = await axios.get(`/api/collections/${col.name}/records?perPage=1`);
-          total += response.data.totalItems || 0;
+          const count = response.data.totalItems || 0;
+          recordCounts.value[col.name] = count;
+          total += count;
         } catch (error) {
           console.error(`Failed to fetch records for ${col.name}:`, error);
+          recordCounts.value[col.name] = 0;
         }
       }
     }
@@ -228,6 +232,7 @@ onMounted(async () => {
               { key: 'name', label: 'Name' },
               { key: 'type', label: 'Type' },
               { key: 'fields', label: 'Fields', align: 'right' },
+              { key: 'records', label: 'Records', align: 'right' },
               { key: 'created', label: 'Created', align: 'right' },
             ]"
             :items="
@@ -257,6 +262,9 @@ onMounted(async () => {
               <span class="text-text-muted shrink-0"
                 >{{ (item as unknown as Collection).fields?.length || 0 }} fields</span
               >
+            </template>
+            <template #cell(records)="{ item }">
+              <span class="text-text-muted shrink-0">{{ recordCounts[(item as unknown as Collection).name] ?? 0 }} records</span>
             </template>
             <template #cell(created)="{ item }">
               <span class="text-text-muted text-xs">
