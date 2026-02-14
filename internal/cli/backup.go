@@ -305,10 +305,11 @@ func (bc *BackupCommand) addDirToZip(zw *zip.Writer, dirPath, zipPath string) er
 }
 
 func (bc *BackupCommand) printUsage() {
-	fmt.Println("Usage:")
-	fmt.Println("  vault backup create [--output FILE]")
-	fmt.Println("  vault backup list")
-	fmt.Println("  vault backup restore --input FILE [--force]")
+	fmt.Println("Usage: vault backup <subcommand> [options]")
+	fmt.Println("Subcommands:")
+	fmt.Println("  create [--output FILE]")
+	fmt.Println("  list")
+	fmt.Println("  restore --input FILE [--force]")
 }
 
 func formatSize(bytes int64) string {

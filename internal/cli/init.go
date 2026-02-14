@@ -19,7 +19,13 @@ import (
 )
 
 func RunInit(args []string) error {
-	initCmd := flag.NewFlagSet("init", flag.ExitOnError)
+	// Check for help flags first
+	if len(args) >= 1 && (args[0] == "-h" || args[0] == "--help") {
+		printInitUsage()
+		return nil
+	}
+
+	initCmd := flag.NewFlagSet("init", flag.ContinueOnError)
 	email := initCmd.String("email", "", "Admin email address")
 	username := initCmd.String("username", "", "Admin username")
 	password := initCmd.String("password", "", "Admin password")
@@ -282,4 +288,15 @@ func createAdminUser(ctx context.Context, database *sql.DB, email, username, pas
 
 	_, err = database.ExecContext(ctx, query, userID, username, email, hashedPassword, time.Now(), time.Now())
 	return err
+}
+
+func printInitUsage() {
+	fmt.Println("Usage: vault init [options]")
+	fmt.Println("Options:")
+	fmt.Println("  --email EMAIL               Admin email address")
+	fmt.Println("  --username USERNAME         Admin username")
+	fmt.Println("  --password PASSWORD         Admin password")
+	fmt.Println("  --dir DIR                   Data directory (default: ./vault_data)")
+	fmt.Println("  --skip-admin                Skip admin creation")
+	fmt.Println("  --force                     Overwrite existing setup")
 }

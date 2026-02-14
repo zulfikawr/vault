@@ -331,11 +331,12 @@ func (ac *AdminCommand) ResetPassword(args []string) error {
 }
 
 func (ac *AdminCommand) printUsage() {
-	fmt.Println("Usage:")
-	fmt.Println("  vault admin create --email EMAIL --password PASSWORD --username USERNAME")
-	fmt.Println("  vault admin list")
-	fmt.Println("  vault admin delete --email EMAIL [--force]")
-	fmt.Println("  vault admin reset-password --email EMAIL --password PASSWORD")
+	fmt.Println("Usage: vault admin <subcommand> [options]")
+	fmt.Println("Subcommands:")
+	fmt.Println("  create --email EMAIL --password PASSWORD --username USERNAME")
+	fmt.Println("  list")
+	fmt.Println("  delete --email EMAIL [--force]")
+	fmt.Println("  reset-password --email EMAIL --password PASSWORD")
 }
 
 func generateID() string {

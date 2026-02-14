@@ -13,7 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vault admin -h/--help` - Displays admin command usage  
   - `vault backup -h/--help` - Displays backup command usage
   - `vault migrate -h/--help` - Displays migrate command usage
+  - `vault init -h/--help` - Displays init command usage in consistent format
   - Previously these showed "unknown subcommand" errors instead of help text
+
+### Changed
+- **Consistent Help Format** - Standardized help output format across all commands
+  - All commands now follow consistent "Usage: vault <command> [options|<subcommand> [options]]" pattern
+  - All subcommands now display in consistent "Subcommands:" format
+  - Init command now shows custom help format instead of Go's default flag usage
+  - Main help output simplified and now includes instruction to use '-h' with commands
 
 ## [0.5.0] - 2026-02-13
 

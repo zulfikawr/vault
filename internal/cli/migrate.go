@@ -215,9 +215,10 @@ func (mc *MigrateCommand) Status(args []string) error {
 }
 
 func (mc *MigrateCommand) printUsage() {
-	fmt.Println("Usage:")
-	fmt.Println("  vault migrate sync [--collection NAME] [--verbose]")
-	fmt.Println("  vault migrate status")
+	fmt.Println("Usage: vault migrate <subcommand> [options]")
+	fmt.Println("Subcommands:")
+	fmt.Println("  sync [--collection NAME] [--verbose]")
+	fmt.Println("  status")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  sync     - Synchronize database schema with collections")
