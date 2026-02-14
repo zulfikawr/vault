@@ -82,24 +82,75 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 
 ```
 vault/
-├── cmd/vault/          # CLI Entry point
+├── cmd/vault/                  # CLI Entry point
 ├── internal/
-│   ├── api/            # REST API Handlers & Routing
-│   ├── auth/           # JWT & Password Security
-│   ├── core/           # Config, Logger, & Error System
-│   ├── db/             # Schema Registry, Migration, & Executor
-│   ├── models/         # Collection & Record Definitions
-│   ├── realtime/       # SSE Hub & Event System
-│   ├── server/         # App Lifecycle & Server Management
-│   └── storage/        # Pluggable File Storage Drivers
-├── ui/                 # Vue 3 Admin Dashboard
-└── vault_data/         # Default data directory (SQLite + Storage)
+│   ├── api/                    # REST API Handlers & Routing
+│   │   ├── auth_handlers.go
+│   │   ├── crud_handlers.go
+│   │   ├── files_handlers.go
+│   │   ├── storage_handlers.go
+│   │   ├── admin_handlers.go
+│   │   ├── middleware.go
+│   │   └── router.go
+│   ├── auth/                   # JWT & Password Security
+│   │   ├── jwt.go
+│   │   └── password.go
+│   ├── cli/                    # CLI Commands
+│   │   ├── admin.go
+│   │   ├── backup.go
+│   │   ├── collection.go
+│   │   ├── init.go
+│   │   ├── migrate.go
+│   │   └── storage.go
+│   ├── core/                   # Config, Logger, & Error System
+│   │   ├── config.go
+│   │   ├── logger.go
+│   │   ├── file_logger.go
+│   │   └── context.go
+│   ├── db/                     # Schema Registry, Migration, & Executor
+│   │   ├── connection.go
+│   │   ├── executor.go
+│   │   ├── schema.go
+│   │   ├── migration.go
+│   │   ├── query_builder.go
+│   │   ├── validator.go
+│   │   ├── audit.go
+│   │   └── hooks.go
+│   ├── errors/                 # Error Handling System
+│   │   └── errors.go
+│   ├── models/                 # Collection & Record Definitions
+│   │   ├── collection.go
+│   │   ├── field.go
+│   │   ├── record.go
+│   │   ├── user.go
+│   │   └── file.go
+│   ├── realtime/               # SSE Hub & Event System
+│   │   ├── hub.go
+│   │   └── message.go
+│   ├── rules/                  # Authorization Rules Engine
+│   │   └── evaluator.go
+│   ├── server/                 # App Lifecycle & Server Management
+│   │   ├── app.go
+│   │   └── server.go
+│   └── storage/                # Pluggable File Storage Drivers
+│       ├── interface.go
+│       └── local.go
+├── ui/                         # Vue 3 Admin Dashboard
+│   ├── src/
+│   │   ├── components/         # Reusable Vue Components
+│   │   ├── views/              # Page Components
+│   │   ├── stores/             # Pinia State Management
+│   │   ├── router/             # Vue Router Configuration
+│   │   └── main.ts
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── tailwind.config.js
+├── .github/workflows/          # CI/CD Workflows
+├── go.mod & go.sum             # Go Dependencies
+├── Makefile                    # Build & Development Tasks
+├── CHANGELOG.md                # Version History
+└── vault_data/                 # Default data directory (SQLite + Storage)
+    ├── vault.db                # SQLite Database
+    ├── vault.log               # Application Logs
+    └── storage/                # File Storage
 ```
-
-## 📜 The Vault Standard
-
-This project follows a strict development standard:
-1. **Context-Aware**: All I/O operations (DB, Network) accept `context.Context` for tracing and cancellation.
-2. **Structured Errors**: Unified `VaultError` system for consistent API feedback.
-3. **Traceable**: Every request is assigned a unique `X-Request-ID` logged across all layers.
-4. **Minimal Dependencies**: Priority is given to the Go Standard Library to keep the binary small and secure.
