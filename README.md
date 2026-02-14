@@ -43,42 +43,232 @@ Visit `http://localhost:8090/_/` to access the Admin Dashboard.
 
 ## 🛠 CLI Usage
 
-### Initialization
-- `vault init [--email EMAIL] [--username USERNAME] [--password PASSWORD]` - Initialize new Vault project
-  - `--dir DIR` - Custom data directory (default: ./vault_data)
-  - `--skip-admin` - Skip admin creation
-  - `--force` - Overwrite existing setup
+### `vault init`
 
-### Server
-- `vault serve [--port PORT] [--dir DIR]` - Starts the HTTP server
-- `vault version` - Display current version
+Initialize new Vault project with admin user and database.
 
-### Admin Management
-- `vault admin create --email EMAIL --password PASSWORD --username USERNAME` - Create new admin user
-- `vault admin list` - List all admin users
-- `vault admin delete --email EMAIL [--force]` - Delete admin user (with confirmation)
-- `vault admin reset-password --email EMAIL --password PASSWORD` - Reset admin password
+| Flag | Type | Default | Required | Description |
+|------|------|---------|----------|-------------|
+| `--email` | string | | Yes | Admin email address |
+| `--username` | string | | Yes | Admin username |
+| `--password` | string | | Yes | Admin password |
+| `--dir` | string | ./vault_data | No | Custom data directory |
+| `--skip-admin` | bool | false | No | Skip admin creation |
+| `--force` | bool | false | No | Overwrite existing setup |
 
-### Collections
-- `vault collection create --name NAME --fields FIELDS --email EMAIL --password PASSWORD` - Create new collection
-- `vault collection list --email EMAIL --password PASSWORD` - List all collections
-- `vault collection get --name NAME --email EMAIL --password PASSWORD` - Get collection details
-- `vault collection delete --name NAME --email EMAIL --password PASSWORD [--force]` - Delete collection
+---
 
-### Storage Management
-- `vault storage list [--path PATH] [--recursive] --email EMAIL --password PASSWORD` - List files and folders
-- `vault storage create --path PATH --file FILE --email EMAIL --password PASSWORD` - Upload file to storage
-- `vault storage get --path PATH --output FILE --email EMAIL --password PASSWORD [--force]` - Download file from storage
-- `vault storage delete --path PATH [--recursive] [--force] --email EMAIL --password PASSWORD` - Delete file or folder
+### `vault serve`
 
-### Backup & Restore
-- `vault backup create [--output FILE]` - Create backup (default: vault_backup_TIMESTAMP.zip)
-- `vault backup list` - List all backups
-- `vault backup restore --input FILE [--force]` - Restore from backup (with confirmation)
+Start the HTTP server.
 
-### Migration
-- `vault migrate sync [--collection NAME] [--verbose]` - Synchronize database schema with collections
-- `vault migrate status` - Show current database and collection status
+| Flag | Type | Default | Required | Description |
+|------|------|---------|----------|-------------|
+| `--port` | int | 8090 | No | Server port |
+| `--dir` | string | ./vault_data | No | Data directory |
+
+---
+
+### `vault admin create`
+
+Create new admin user.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--email` | string | Yes | Admin email address |
+| `--password` | string | Yes | Admin password |
+| `--username` | string | Yes | Admin username |
+
+---
+
+### `vault admin list`
+
+List all admin users.
+
+No flags required.
+
+---
+
+### `vault admin delete`
+
+Delete admin user.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--email` | string | Yes | Admin email to delete |
+| `--force` | bool | No | Skip confirmation prompt |
+
+---
+
+### `vault admin reset-password`
+
+Reset admin password.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | New password |
+
+---
+
+### `vault collection create`
+
+Create new collection.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--name` | string | Yes | Collection name |
+| `--fields` | string | Yes | Fields format: `name:type[,name:type,...]` |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+**Field types:** text, number, boolean, date, json
+
+---
+
+### `vault collection list`
+
+List all collections.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+---
+
+### `vault collection get`
+
+Get collection details.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--name` | string | Yes | Collection name |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+---
+
+### `vault collection delete`
+
+Delete collection.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--name` | string | Yes | Collection name |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+| `--force` | bool | No | Skip confirmation prompt |
+
+---
+
+### `vault storage list`
+
+List files and folders in storage.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--path` | string | No | Storage path to list |
+| `--recursive` | bool | No | List recursively |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+---
+
+### `vault storage create`
+
+Upload file to storage.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--path` | string | Yes | Storage path |
+| `--file` | string | Yes | File to upload |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+---
+
+### `vault storage get`
+
+Download file from storage.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--path` | string | Yes | File path in storage |
+| `--output` | string | Yes | Output file path |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+| `--force` | bool | No | Overwrite output file |
+
+---
+
+### `vault storage delete`
+
+Delete file or folder from storage.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--path` | string | Yes | Path to delete |
+| `--recursive` | bool | No | Delete directory recursively |
+| `--force` | bool | No | Skip confirmation prompt |
+| `--email` | string | Yes | Admin email |
+| `--password` | string | Yes | Admin password |
+
+---
+
+### `vault backup create`
+
+Create backup of database and storage.
+
+| Flag | Type | Default | Required | Description |
+|------|------|---------|----------|-------------|
+| `--output` | string | vault_backup_TIMESTAMP.zip | No | Output file path |
+
+---
+
+### `vault backup list`
+
+List all backups.
+
+No flags required.
+
+---
+
+### `vault backup restore`
+
+Restore from backup.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--input` | string | Yes | Backup file path |
+| `--force` | bool | No | Skip confirmation prompt |
+
+---
+
+### `vault migrate sync`
+
+Synchronize database schema with collections.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--collection` | string | No | Specific collection to sync |
+| `--verbose` | bool | No | Verbose output |
+
+---
+
+### `vault migrate status`
+
+Show current database and collection status.
+
+No flags required.
+
+---
+
+### `vault version`
+
+Display current version.
+
+No flags required.
 
 ## 🏗 Project Structure
 
