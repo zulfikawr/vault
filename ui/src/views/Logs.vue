@@ -140,6 +140,8 @@ onMounted(fetchLogs);
           :items="parsedLogs"
           :loading="loading"
           empty-text="No logs available"
+          :enable-pagination="true"
+          :default-page-size="20"
         />
       </div>
     </main>

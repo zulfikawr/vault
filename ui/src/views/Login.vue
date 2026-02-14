@@ -186,10 +186,7 @@ onMounted(() => {
       </div>
 
       <!-- Footer -->
-      <div class="mt-8 text-center space-y-2">
-        <p class="text-xs text-text-dim">
-          Vault Framework v0.1.0 <span class="mx-1">·</span> Build #8892
-        </p>
+      <div class="mt-8 text-center">
         <div class="flex justify-center space-x-4 text-xs text-text-dim">
           <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
           <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>

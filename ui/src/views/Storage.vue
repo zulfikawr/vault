@@ -311,6 +311,8 @@ function getFileType(mimeType: string): string {
           empty-text="No files or folders"
           row-clickable
           @row-click="handleRowClick"
+          :enable-pagination="true"
+          :default-page-size="15"
         >
           <template #cell(name)="{ item }">
             <div class="flex items-center">

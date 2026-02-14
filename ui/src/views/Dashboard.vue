@@ -19,6 +19,7 @@ interface Collection {
   name: string;
   type: string;
   fields: Field[];
+  created: string;
 }
 
 const router = useRouter();
@@ -169,7 +170,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
+        <div>
           <h2 class="text-lg font-semibold text-text mb-4">Quick Actions</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Button
@@ -214,59 +215,66 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="bg-surface-dark border border-border rounded-lg overflow-hidden">
-          <div class="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <div class="py-4 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-text">Recent Collections</h2>
             <Button variant="link" class="text-xs sm:text-sm" @click="router.push('/collections')"
               >View All</Button
             >
           </div>
 
-          <div class="[&>div]:!rounded-none [&>div]:!border-none">
-            <Table
-              :headers="[
-                { key: 'name', label: 'Name' },
-                { key: 'type', label: 'Type' },
-                { key: 'fields', label: 'Fields', align: 'right' },
-              ]"
-              :items="
-                collections.filter((c) => !c.name.startsWith('_')).slice(0, 5) as Record<
-                  string,
-                  unknown
-                >[]
-              "
-              row-clickable
-              @row-click="(col: Record<string, unknown>) => router.push(`/collections/${col.name}`)"
-            >
-              <template #cell(name)="{ item }">
-                <div class="flex items-center gap-3">
-                  <div class="p-2 rounded bg-primary/10 text-primary">
-                    <FolderOpen class="w-4 h-4" />
-                  </div>
-                  <span class="font-medium text-text">{{ item.name }}</span>
+          <Table
+            :headers="[
+              { key: 'name', label: 'Name' },
+              { key: 'type', label: 'Type' },
+              { key: 'fields', label: 'Fields', align: 'right' },
+              { key: 'created', label: 'Created', align: 'right' },
+            ]"
+            :items="
+              collections.filter((c) => !c.name.startsWith('_')).slice(0, 5) as Record<
+                string,
+                unknown
+              >[]
+            "
+            row-clickable
+            @row-click="(col: Record<string, unknown>) => router.push(`/collections/${col.name}`)"
+            :enable-pagination="false"
+          >
+            <template #cell(name)="{ item }">
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded bg-primary/10 text-primary">
+                  <FolderOpen class="w-4 h-4" />
                 </div>
-              </template>
-              <template #cell(type)="{ item }">
-                <span class="text-text-muted truncate block max-w-[150px] sm:max-w-none"
-                  >{{ item.type }} collection</span
+                <span class="font-medium text-text">{{ item.name }}</span>
+              </div>
+            </template>
+            <template #cell(type)="{ item }">
+              <span class="text-text-muted truncate block max-w-[150px] sm:max-w-none"
+                >{{ item.type }} collection</span
+              >
+            </template>
+            <template #cell(fields)="{ item }">
+              <span class="text-text-muted shrink-0"
+                >{{ (item as unknown as Collection).fields?.length || 0 }} fields</span
+              >
+            </template>
+            <template #cell(created)="{ item }">
+              <span class="text-text-muted text-xs">
+                {{
+                  item.created ? new Date(item.created as string).toLocaleDateString() : '-'
+                }}
+              </span>
+            </template>
+            <template #empty>
+              <div class="py-6 text-center text-text-muted">
+                <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p class="text-sm">No collections yet</p>
+                <Button variant="link" class="mt-4" @click="router.push('/collections/new')"
+                  >Create your first collection</Button
                 >
-              </template>
-              <template #cell(fields)="{ item }">
-                <span class="text-text-muted shrink-0"
-                  >{{ (item as unknown as Collection).fields?.length || 0 }} fields</span
-                >
-              </template>
-              <template #empty>
-                <div class="py-6 text-center text-text-muted">
-                  <FolderOpen class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p class="text-sm">No collections yet</p>
-                  <Button variant="link" class="mt-4" @click="router.push('/collections/new')"
-                    >Create your first collection</Button
-                  >
-                </div>
-              </template>
-            </Table>
-          </div>
+              </div>
+            </template>
+          </Table>
         </div>
       </div>
     </div>

@@ -195,6 +195,8 @@ onMounted(() => {
             { key: 'actions', label: 'Actions', align: 'center', sticky: true },
           ]"
           :items="records"
+          :enable-pagination="true"
+          :default-page-size="15"
         >
           <template
             v-for="field in filteredFields"
@@ -252,20 +254,6 @@ onMounted(() => {
             </div>
           </template>
 
-          <template #footer>
-            <div
-              class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between"
-            >
-              <div class="text-xs text-text-muted">
-                Showing <span class="font-medium text-text">{{ records.length }}</span> of
-                <span class="font-medium text-text">{{ records.length }}</span> results
-              </div>
-              <div class="flex gap-2">
-                <Button variant="secondary" size="xs" disabled>Previous</Button>
-                <Button variant="secondary" size="xs">Next</Button>
-              </div>
-            </div>
-          </template>
         </Table>
       </div>
     </div>

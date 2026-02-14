@@ -80,6 +80,8 @@ onMounted(fetchAuditLogs);
           :items="parsedLogs"
           :loading="loading"
           empty-text="No audit logs available"
+          :enable-pagination="true"
+          :default-page-size="20"
         />
       </div>
     </main>

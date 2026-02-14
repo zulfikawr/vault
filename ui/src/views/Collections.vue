@@ -56,8 +56,8 @@ const fetchCollections = async () => {
   }
 };
 
-const handleDeleteClick = (collection: Collection) => {
-  collectionToDelete.value = collection;
+const handleDeleteClick = (collection: Record<string, unknown>) => {
+  collectionToDelete.value = collection as unknown as Collection;
   showDeleteModal.value = true;
 };
 
@@ -108,7 +108,7 @@ onMounted(() => {
           <div class="flex items-center gap-3">
             <Popover align="right">
               <template #trigger>
-                <Button variant="secondary" class="flex-1 sm:flex-none">
+                <Button variant="secondary" size="sm" class="flex-1 sm:flex-none">
                   <Filter class="w-4 h-4" />
                   Filter
                 </Button>
@@ -131,7 +131,7 @@ onMounted(() => {
                 </div>
               </template>
             </Popover>
-            <Button class="flex-1 sm:flex-none" @click="router.push('/collections/new')">
+            <Button size="sm" class="flex-1 sm:flex-none" @click="router.push('/collections/new')">
               <Plus class="w-4 h-4" />
               New Collection
             </Button>
@@ -149,11 +149,14 @@ onMounted(() => {
             { key: 'actions', label: 'Actions', align: 'center', sticky: true },
           ]"
           :items="filteredCollections"
+          :enable-pagination="true"
+          :default-page-size="10"
+          row-clickable
+          @row-click="(item) => router.push(`/collections/${(item as unknown as Collection).name}`)"
         >
           <template #cell(name)="{ item }">
             <div
-              class="flex items-center gap-3 cursor-pointer"
-              @click="router.push(`/collections/${item.name}`)"
+              class="flex items-center gap-3"
             >
               <div class="p-1.5 rounded bg-primary/10 text-primary">
                 <FolderOpen class="w-4 h-4" />
@@ -164,43 +167,39 @@ onMounted(() => {
 
           <template #cell(type)="{ item }">
             <span
-              class="text-text-muted cursor-pointer"
-              @click="router.push(`/collections/${item.name}`)"
+              class="text-text-muted"
               >{{ item.type }}</span
             >
           </template>
 
           <template #cell(fields)="{ item }">
             <span
-              class="text-text-muted cursor-pointer"
-              @click="router.push(`/collections/${(item as unknown as Collection).name}`)"
+              class="text-text-muted"
               >{{ (item as unknown as Collection).fields?.length ?? 0 }} fields</span
             >
           </template>
 
           <template #cell(created)="{ item }">
             <span
-              class="text-text-muted text-xs cursor-pointer"
-              @click="router.push(`/collections/${item.name}`)"
+              class="text-text-muted text-xs"
               >{{
                 item.created ? new Date(item.created as string).toLocaleDateString() : '-'
               }}</span
             >
           </template>
 
-          <template #cell(status)="{ item }">
+          <template #cell(status)>
             <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success cursor-pointer"
-              @click="router.push(`/collections/${item.name}`)"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success"
             >
               Active
             </span>
           </template>
 
           <template #cell(actions)="{ item }">
-            <Popover align="right">
+            <Popover align="right" @click.stop>
               <template #trigger>
-                <Button variant="ghost" size="xs">
+                <Button variant="ghost" size="xs" @click.stop>
                   <MoreHorizontal class="w-4 h-4" />
                 </Button>
               </template>
@@ -214,14 +213,14 @@ onMounted(() => {
                 >
                   Settings
                 </PopoverItem>
-                <PopoverItem 
-                  :icon="Trash2" 
-                  variant="danger" 
+                <PopoverItem
+                  :icon="Trash2"
+                  variant="danger"
                   @click="
                     close();
                     handleDeleteClick(item);
-                  "> 
-                  Delete 
+                  ">
+                  Delete
                 </PopoverItem>
               </template>
             </Popover>
@@ -237,21 +236,6 @@ onMounted(() => {
             </div>
           </template>
 
-          <template #footer>
-            <div
-              class="bg-surface px-4 sm:px-6 py-3 border-t border-border flex items-center justify-between"
-            >
-              <div class="text-xs text-text-muted">
-                Showing
-                <span class="font-medium text-text">{{ filteredCollections.length }}</span> of
-                <span class="font-medium text-text">{{ collections.length }}</span> results
-              </div>
-              <div class="flex gap-2">
-                <Button variant="secondary" size="xs" disabled>Previous</Button>
-                <Button variant="secondary" size="xs">Next</Button>
-              </div>
-            </div>
-          </template>
         </Table>
       </div>
     </div>
