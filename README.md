@@ -16,25 +16,22 @@ Vault is a self-contained, batteries-included backend framework written in Go. I
 
 ## 🚀 Quick Start
 
-### 1. Build the project
-Ensure you have Go and Bun (for the UI) installed.
-
+### 1. Install Vault
+**Linux/macOS (one-line installation):**
 ```bash
-# Build the UI
-cd ui && bun install && bun x vite build && cd ..
-
-# Build the Vault binary
-go build -o vault ./cmd/vault/main.go
+curl -fsSL https://raw.githubusercontent.com/zulfikawr/vault/main/install.sh | bash
 ```
 
-### 2. Create your first Admin
+**Or download from [GitHub Releases](https://github.com/zulfikawr/vault/releases)**
+
+### 2. Initialize Vault
 ```bash
-./vault admin create --email "admin@vault.local" --password "yourpassword" --username "admin"
+vault init --email "email@example.com" --password "yourpassword" --username "yourusername"
 ```
 
 ### 3. Start the server
 ```bash
-./vault serve --port 8090
+vault serve
 ```
 
 Visit `http://localhost:8090/_/` to access the Admin Dashboard.
