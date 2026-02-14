@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -165,14 +167,27 @@ func (a *App) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
+	serverError := make(chan error, 1)
 	go func() {
 		if err := a.Server.Start(); err != nil {
-			slog.Error("Server failed", "error", err)
-			os.Exit(1)
+			serverError <- err
 		}
 	}()
 
-	<-stop
+	select {
+	case err := <-serverError:
+		fmt.Fprintf(os.Stderr, "\n❌ Error: Could not start server\n")
+		if strings.Contains(err.Error(), "bind: address already in use") {
+			fmt.Fprintf(os.Stderr, "   Port %d is already in use by another process.\n", a.Config.Port)
+			fmt.Fprintf(os.Stderr, "   Please use a different port with the --port flag.\n\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "   %v\n\n", err)
+		}
+		slog.Error("Server failed to start", "error", err)
+		os.Exit(1)
+	case <-stop:
+		slog.Info("Shutting down server...")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

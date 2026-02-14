@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -40,6 +41,22 @@ func (s *SchemaRegistry) GetCollections() []*models.Collection {
 	for _, c := range s.collections {
 		list = append(list, c)
 	}
+	
+	// Sort collections by Created field in descending order (most recent first)
+	sort.Slice(list, func(i, j int) bool {
+		// Parse the created timestamps to compare them
+		timeI, errI := time.Parse(time.RFC3339, list[i].Created)
+		timeJ, errJ := time.Parse(time.RFC3339, list[j].Created)
+		
+		// If parsing fails, fallback to string comparison
+		if errI != nil || errJ != nil {
+			return list[i].Created > list[j].Created
+		}
+		
+		// Compare times (descending order - most recent first)
+		return timeI.After(timeJ)
+	})
+	
 	return list
 }
 

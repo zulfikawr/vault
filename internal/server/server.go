@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 )
 
@@ -23,11 +24,17 @@ func NewServer(port int, handler http.Handler) *Server {
 }
 
 func (s *Server) Start() error {
+	ln, err := net.Listen("tcp", s.server.Addr)
+	if err != nil {
+		return err
+	}
+
 	fmt.Printf("\n✓ Vault server started successfully\n")
 	fmt.Printf("  Web UI:  http://localhost:%d/\n", s.port)
 	fmt.Printf("  API:     http://localhost:%d/api\n\n", s.port)
 	slog.Info("Starting server", "port", s.port)
-	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+
+	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil

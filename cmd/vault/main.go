@@ -11,7 +11,7 @@ import (
 	"github.com/zulfikawr/vault/internal/server"
 )
 
-const Version = "0.5.1"
+const Version = "0.5.2"
 
 func main() {
 	if len(os.Args) < 2 {

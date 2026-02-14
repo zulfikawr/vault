@@ -5,6 +5,21 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-02-14
+
+### Fixed
+- **Server Startup Error Handling** - Improved port availability check before starting the server
+  - The server now verifies the port is available before printing the "Vault server started successfully" message.
+  - Added professional error messages when the port is already in use by another process.
+  - Previously, the CLI would misleadingly claim the server started successfully even if it failed to bind to the port.
+
+### Changed
+- **Collection Sorting** - Collections in the sidebar now display in chronological order
+  - The `/api/admin/collections` endpoint now returns collections sorted by creation date (most recent first)
+  - The "Recent Collections" section in the sidebar now accurately shows the most recently created collections
+  - Implemented proper timestamp parsing and comparison using RFC3339 format
+  - Added fallback string comparison for edge cases where timestamp parsing fails
+
 ## [0.5.1] - 2026-02-14
 
 ### Fixed
@@ -212,6 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.5.2]: https://github.com/zulfikawr/vault/releases/tag/v0.5.2
 [0.5.1]: https://github.com/zulfikawr/vault/releases/tag/v0.5.1
 [0.5.0]: https://github.com/zulfikawr/vault/releases/tag/v0.5.0
 [0.4.1]: https://github.com/zulfikawr/vault/releases/tag/v0.4.1
