@@ -1,18 +1,23 @@
 # Vault
 
+![Vault Dashboard](ui/public/image.png)
+
 Vault is a self-contained, batteries-included backend framework written in Go. It provides a dynamic database schema engine, robust authentication, real-time subscriptions, and a professional administrative dashboard—all delivered as a single, lightweight binary.
 
 ## ✨ Features
 
 - **Embedded SQLite**: Pure-Go SQLite implementation (`modernc.org/sqlite`) with WAL mode enabled for high-concurrency performance.
-- **Dynamic Schema Engine**: Create and modify "Collections" (tables) and "Fields" (columns) on the fly via the API or Admin UI.
-- **Auto-Migrations**: The framework automatically handles SQLite table creation and schema synchronization.
-- **Identity & Auth**: Full JWT-based authentication with Bcrypt password hashing, session refresh tokens, and a protected middleware chain.
+- **Dynamic Schema Engine**: Create and modify "Collections" (tables) and "Fields" (columns) on the fly via the API or Admin UI with support for multiple field types (text, number, boolean, date, json).
+- **Auto-Migrations**: The framework automatically handles SQLite table creation and schema synchronization with `vault migrate` commands.
+- **Identity & Auth**: Full JWT-based authentication with Bcrypt password hashing, session refresh tokens, and a protected middleware chain. Admin user management via CLI.
 - **Rule-Based Authorization**: Fine-grained, record-level security using simple string expressions (e.g., `id = @request.auth.id`).
 - **Real-time Subscriptions**: Instant event broadcasting using Server-Sent Events (SSE).
 - **File Storage**: Pluggable storage system with a built-in local filesystem driver and multipart upload support.
-- **Embedded Admin Dashboard**: A professional, Gruvbox-themed management interface built with Vue 3 and Vite, embedded directly into the binary.
-- **Developer CLI**: Simple commands to serve the API, manage admins, and handle migrations.
+- **Storage Management CLI**: Manage files directly from the command line with `vault storage` commands (list, create, get, delete) with recursive operations and path traversal protection.
+- **Backup & Restore**: Full database and storage backup/restore capabilities with `vault backup` commands (create, list, restore).
+- **Embedded Admin Dashboard**: A professional, Gruvbox-themed management interface built with Vue 3 and Vite, embedded directly into the binary with real-time UI updates.
+- **Comprehensive Developer CLI**: Full-featured CLI for managing collections, storage, backups, migrations, and admin users with authentication and confirmation prompts.
+- **Single Binary Distribution**: Pre-built binaries for Linux, macOS, and Windows (amd64/arm64) with one-line installation script.
 
 ## 🚀 Quick Start
 
