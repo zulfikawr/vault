@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Init command now shows custom help format instead of Go's default flag usage
   - Main help output simplified and now includes instruction to use '-h' with commands
 
+### Added
+- **Bordered Tables** - Collection commands now display data in formatted tables with borders
+  - `vault collection list` now shows collections in a bordered table format with Name, Type, and Fields columns
+  - `vault collection get` now shows collection fields in a bordered table format with Name, Type, Required, and Unique columns
+  - Uses Unicode box-drawing characters for clean, readable tables
+
 ## [0.5.0] - 2026-02-13
 
 ### Added

@@ -187,13 +187,41 @@ func (cc *CollectionCommand) List(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	fmt.Println("\nCollections:")
-	fmt.Println("─────────────────────────────────────────────────────")
+	// Calculate max width for alignment
+	maxNameLen := len("Name")
+	maxTypeLen := len("Type")
+	maxFieldsLen := len("Fields")
+
 	for _, col := range collections {
-		fmt.Printf("  %s (%s) - %d fields\n", col.Name, col.Type, len(col.Fields))
+		if len(col.Name) > maxNameLen {
+			maxNameLen = len(col.Name)
+		}
+		if len(string(col.Type)) > maxTypeLen {
+			maxTypeLen = len(string(col.Type))
+		}
+		fieldCountStr := fmt.Sprintf("%d", len(col.Fields))
+		if len(fieldCountStr) > maxFieldsLen {
+			maxFieldsLen = len(fieldCountStr)
+		}
 	}
-	fmt.Println("─────────────────────────────────────────────────────")
-	fmt.Printf("Total: %d collections\n\n", len(collections))
+
+	fmt.Println("\nCollections:")
+	// Print top border
+	fmt.Printf("┌%s┬%s┬%s┐\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+	// Print header
+	fmt.Printf("│ %-*s │ %-*s │ %-*s │\n", maxNameLen, "Name", maxTypeLen, "Type", maxFieldsLen, "Fields")
+	// Print separator
+	fmt.Printf("├%s┼%s┼%s┤\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+	// Print data rows
+	for _, col := range collections {
+		fmt.Printf("│ %-*s │ %-*s │ %*d │\n", maxNameLen, col.Name, maxTypeLen, string(col.Type), maxFieldsLen, len(col.Fields))
+	}
+	
+	// Print bottom border
+	fmt.Printf("└%s┴%s┴%s┘\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+
+	// Print total outside the table
+	fmt.Printf("\nTotal: %d collections\n\n", len(collections))
 
 	return nil
 }
@@ -232,9 +260,42 @@ func (cc *CollectionCommand) Get(ctx context.Context, args []string) error {
 	fmt.Printf("Type: %s\n", col.Type)
 	fmt.Printf("Created: %s\n", col.Created)
 	fmt.Printf("Updated: %s\n", col.Updated)
-	fmt.Println("\nFields:")
-	for _, field := range col.Fields {
-		fmt.Printf("  - %s (%s) required=%v unique=%v\n", field.Name, field.Type, field.Required, field.Unique)
+	
+	if len(col.Fields) > 0 {
+		fmt.Println("\nFields:")
+		
+		// Calculate max width for alignment
+		maxNameLen := len("Name")
+		maxTypeLen := len("Type")
+		maxRequiredLen := len("Required")
+		maxUniqueLen := len("Unique")
+
+		for _, field := range col.Fields {
+			if len(field.Name) > maxNameLen {
+				maxNameLen = len(field.Name)
+			}
+			typeStr := string(field.Type)
+			if len(typeStr) > maxTypeLen {
+				maxTypeLen = len(typeStr)
+			}
+		}
+
+		// Print top border
+		fmt.Printf("┌%s┬%s┬%s┬%s┐\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxRequiredLen+2), strings.Repeat("─", maxUniqueLen+2))
+		// Print header
+		fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │\n", maxNameLen, "Name", maxTypeLen, "Type", maxRequiredLen, "Required", maxUniqueLen, "Unique")
+		// Print separator
+		fmt.Printf("├%s┼%s┼%s┼%s┤\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxRequiredLen+2), strings.Repeat("─", maxUniqueLen+2))
+		// Print data rows
+		for _, field := range col.Fields {
+			requiredStr := fmt.Sprintf("%v", field.Required)
+			uniqueStr := fmt.Sprintf("%v", field.Unique)
+			fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │\n", maxNameLen, field.Name, maxTypeLen, string(field.Type), maxRequiredLen, requiredStr, maxUniqueLen, uniqueStr)
+		}
+		// Print bottom border
+		fmt.Printf("└%s┴%s┴%s┴%s┘\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxRequiredLen+2), strings.Repeat("─", maxUniqueLen+2))
+	} else {
+		fmt.Println("\nFields: None")
 	}
 	fmt.Println()
 
