@@ -3,40 +3,46 @@ package api
 import (
 	"net/http"
 
+	"github.com/zulfikawr/vault/internal/api/middleware"
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/realtime"
+	"github.com/zulfikawr/vault/internal/service"
 	"github.com/zulfikawr/vault/internal/storage"
 	"github.com/zulfikawr/vault/ui"
 )
 
-func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage.Storage, hub *realtime.Hub, migration *db.MigrationEngine, config *core.Config) *http.ServeMux {
+func NewRouter(
+	recordService *service.RecordService,
+	collectionService *service.CollectionService,
+	registry *db.SchemaRegistry,
+	store storage.Storage,
+	hub *realtime.Hub,
+	config *core.Config,
+) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	authHandler := NewAuthHandler(executor, config)
-	crudHandler := NewCollectionHandler(executor, registry)
-	fileHandler := NewFileHandler(store, executor)
+	authHandler := NewAuthHandler(recordService, config)
+	crudHandler := NewCollectionHandler(recordService, registry)
+	fileHandler := NewFileHandler(store, config.MaxFileUploadSize)
 	realtimeHandler := NewRealtimeHandler(hub)
-	adminHandler := NewAdminHandler(executor, registry, migration)
+	adminHandler := NewAdminHandler(collectionService)
 	logsHandler := NewLogsHandler()
 	settingsHandler := NewSettingsHandler(config)
-	storageHandler := NewStorageHandler(config.StoragePath())
-
-	// Rate limiter for collection operations (10 per minute default)
-	collectionLimiter := NewRateLimiter(10)
+	storageHandler := NewStorageHandler(config.DataDir + "/storage") // Fix: Use DataDir directly or ensure StoragePath exists
 
 	// Base routes
 	// Mount UI handler - serves at both / and /_/ for devtunnel compatibility
 	uiHandler := ui.Handler()
 	mux.Handle("/", uiHandler)
 	mux.Handle("/_/", http.StripPrefix("/_", uiHandler))
-	
+
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		SendJSON(w, http.StatusOK, map[string]string{"status": "ok"}, nil)
 	})
 
 	mux.HandleFunc("GET /api/health/collections", func(w http.ResponseWriter, r *http.Request) {
-		collections := registry.GetCollections()
+		collections := collectionService.ListCollections()
 		SendJSON(w, http.StatusOK, map[string]any{
 			"collections": len(collections),
 			"status":      "healthy",
@@ -84,8 +90,8 @@ func NewRouter(executor *db.Executor, registry *db.SchemaRegistry, store storage
 	collectionRouter.HandleFunc("DELETE /{name}", adminHandler.DeleteCollection)
 
 	// Mount admin router with middleware
-	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", AdminOnly(adminRouter)))
-	mux.Handle("/api/admin/collections", http.StripPrefix("/api/admin", AdminOnly(RateLimitMiddleware(collectionLimiter)(collectionRouter))))
+	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", middleware.AdminOnly(adminRouter)))
+	mux.Handle("/api/admin/collections", http.StripPrefix("/api/admin", middleware.AdminOnly(middleware.RateLimitMiddleware(10)(collectionRouter))))
 
 	return mux
 }

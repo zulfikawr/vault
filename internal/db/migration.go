@@ -26,7 +26,7 @@ func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collecti
 	if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_TX_BEGIN_FAILED", "Failed to begin transaction").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var tableName string
 	err = tx.QueryRowContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", c.Name).Scan(&tableName)
@@ -43,7 +43,36 @@ func (m *MigrationEngine) SyncCollection(ctx context.Context, c *models.Collecti
 		}
 	}
 
+	if err := m.syncIndexes(ctx, tx, c); err != nil {
+		return err
+	}
+
 	return tx.Commit()
+}
+
+func (m *MigrationEngine) syncIndexes(ctx context.Context, tx *sql.Tx, c *models.Collection) error {
+	for _, idx := range c.Indexes {
+		// Clean up field names
+		fields := strings.Split(idx, ",")
+		safeFields := make([]string, 0, len(fields))
+		for _, f := range fields {
+			safeFields = append(safeFields, strings.TrimSpace(f))
+		}
+
+		if len(safeFields) == 0 {
+			continue
+		}
+
+		indexName := fmt.Sprintf("idx_%s_%s", c.Name, strings.Join(safeFields, "_"))
+		// SQLite handles IF NOT EXISTS
+		query := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s (%s)", indexName, c.Name, strings.Join(safeFields, ","))
+
+		_, err := tx.ExecContext(ctx, query)
+		if err != nil {
+			return errors.NewError(http.StatusInternalServerError, "DB_CREATE_INDEX_FAILED", "Failed to create index").WithDetails(map[string]any{"error": err.Error(), "query": query})
+		}
+	}
+	return nil
 }
 
 func (m *MigrationEngine) createTableTx(ctx context.Context, tx *sql.Tx, c *models.Collection) error {
@@ -78,7 +107,7 @@ func (m *MigrationEngine) createTableTx(ctx context.Context, tx *sql.Tx, c *mode
 		return errors.NewError(http.StatusInternalServerError, "DB_CREATE_TABLE_FAILED", "Failed to create table").WithDetails(map[string]any{"error": err.Error(), "query": query})
 	}
 
-	slog.Info("Created table", "collection", c.Name, "request_id", core.GetRequestID(ctx))
+	slog.Debug("Created table", "collection", c.Name, "request_id", core.GetRequestID(ctx))
 	return nil
 }
 
@@ -119,7 +148,7 @@ func (m *MigrationEngine) updateTableTx(ctx context.Context, tx *sql.Tx, c *mode
 			if _, err := tx.ExecContext(ctx, query); err != nil {
 				return errors.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add column").WithDetails(map[string]any{"error": err.Error(), "field": f.Name})
 			}
-			slog.Info("Added column", "collection", c.Name, "field", f.Name, "request_id", core.GetRequestID(ctx))
+			slog.Debug("Added column", "collection", c.Name, "field", f.Name, "request_id", core.GetRequestID(ctx))
 		}
 	}
 
@@ -131,7 +160,7 @@ func (m *MigrationEngine) DropCollection(ctx context.Context, name string) error
 	if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_TX_BEGIN_FAILED", "Failed to begin transaction").WithDetails(map[string]any{"error": err.Error()})
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Drop the table
 	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", name)
@@ -151,6 +180,6 @@ func (m *MigrationEngine) DropCollection(ctx context.Context, name string) error
 		return errors.NewError(http.StatusInternalServerError, "DB_COMMIT_FAILED", "Failed to commit transaction").WithDetails(map[string]any{"error": err.Error()})
 	}
 
-	slog.Info("Dropped collection", "collection", name, "request_id", core.GetRequestID(ctx))
+	slog.Debug("Dropped collection", "collection", name, "request_id", core.GetRequestID(ctx))
 	return nil
 }

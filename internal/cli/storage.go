@@ -443,7 +443,7 @@ func (sc *StorageCommand) Delete(ctx context.Context, args []string) error {
 		// Calculate size and count before deletion
 		var totalSize int64
 		var fileCount int
-		filepath.WalkDir(fullPath, func(p string, d os.DirEntry, err error) error {
+		_ = filepath.WalkDir(fullPath, func(p string, d os.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return nil
 			}
@@ -457,7 +457,9 @@ func (sc *StorageCommand) Delete(ctx context.Context, args []string) error {
 		if !*force {
 			fmt.Printf("Are you sure you want to delete this directory and all its contents? (%d files, %s) (y/n): ", fileCount, sc.formatSize(totalSize))
 			var response string
-			fmt.Scanln(&response)
+			if _, err := fmt.Scanln(&response); err != nil {
+				return fmt.Errorf("failed to read response: %w", err)
+			}
 			if response != "y" && response != "Y" {
 				fmt.Println("Delete cancelled")
 				return nil
@@ -480,7 +482,9 @@ func (sc *StorageCommand) Delete(ctx context.Context, args []string) error {
 	if !*force {
 		fmt.Printf("Are you sure you want to delete this file? (%s) (y/n): ", sc.formatSize(fileSize))
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			return fmt.Errorf("failed to read response: %w", err)
+		}
 		if response != "y" && response != "Y" {
 			fmt.Println("Delete cancelled")
 			return nil

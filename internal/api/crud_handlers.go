@@ -8,17 +8,18 @@ import (
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/rules"
+	"github.com/zulfikawr/vault/internal/service"
 )
 
 type CollectionHandler struct {
-	executor *db.Executor
-	registry *db.SchemaRegistry
+	recordService *service.RecordService
+	registry      *db.SchemaRegistry
 }
 
-func NewCollectionHandler(executor *db.Executor, registry *db.SchemaRegistry) *CollectionHandler {
+func NewCollectionHandler(recordService *service.RecordService, registry *db.SchemaRegistry) *CollectionHandler {
 	return &CollectionHandler{
-		executor: executor,
-		registry: registry,
+		recordService: recordService,
+		registry:      registry,
 	}
 }
 
@@ -34,7 +35,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	// If it's set, we check basic auth for now.
 	// (Step 3 will implement full SQL-level filtering)
 	if col.ListRule != nil && *col.ListRule != "" {
-		evalCtx := GetEvaluationContext(r, nil)
+		evalCtx := service.GetEvaluationContext(r, nil)
 		allowed, err := rules.Evaluate(*col.ListRule, evalCtx)
 		if !allowed || err != nil {
 			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to list this collection"))
@@ -43,7 +44,7 @@ func (h *CollectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := h.parseQueryParams(r)
-	records, total, err := h.executor.ListRecords(r.Context(), collectionName, params)
+	records, total, err := h.recordService.ListRecords(r.Context(), collectionName, params)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -72,7 +73,7 @@ func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	record, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
+	record, err := h.recordService.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -80,7 +81,7 @@ func (h *CollectionHandler) View(w http.ResponseWriter, r *http.Request) {
 
 	// Rule Check
 	if col.ViewRule != nil && *col.ViewRule != "" {
-		evalCtx := GetEvaluationContext(r, record.Data)
+		evalCtx := service.GetEvaluationContext(r, record.Data)
 		allowed, err := rules.Evaluate(*col.ViewRule, evalCtx)
 		if !allowed || err != nil {
 			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to view this record"))
@@ -112,7 +113,7 @@ func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Rule Check (Pre-create check)
 	if col.CreateRule != nil && *col.CreateRule != "" {
-		evalCtx := GetEvaluationContext(r, nil)
+		evalCtx := service.GetEvaluationContext(r, nil)
 		evalCtx.Data = data // Inject incoming data
 		allowed, err := rules.Evaluate(*col.CreateRule, evalCtx)
 		if !allowed || err != nil {
@@ -121,12 +122,12 @@ func (h *CollectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := db.ValidateRecord(col, data); err != nil {
+	if err := service.ValidateRecord(col, data); err != nil {
 		errors.SendError(w, err)
 		return
 	}
 
-	record, err := h.executor.CreateRecord(r.Context(), collectionName, data)
+	record, err := h.recordService.CreateRecord(r.Context(), collectionName, data)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -156,7 +157,7 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch current for rule evaluation
-	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
+	existing, err := h.recordService.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -164,7 +165,7 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Rule Check
 	if col.UpdateRule != nil && *col.UpdateRule != "" {
-		evalCtx := GetEvaluationContext(r, existing.Data)
+		evalCtx := service.GetEvaluationContext(r, existing.Data)
 		evalCtx.Data = data
 		allowed, err := rules.Evaluate(*col.UpdateRule, evalCtx)
 		if !allowed || err != nil {
@@ -173,7 +174,7 @@ func (h *CollectionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	record, err := h.executor.UpdateRecord(r.Context(), collectionName, id, data)
+	record, err := h.recordService.UpdateRecord(r.Context(), collectionName, id, data)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -197,7 +198,7 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch current for rule evaluation
-	existing, err := h.executor.FindRecordByID(r.Context(), collectionName, id)
+	existing, err := h.recordService.FindRecordByID(r.Context(), collectionName, id)
 	if err != nil {
 		errors.SendError(w, err)
 		return
@@ -205,7 +206,7 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// Rule Check
 	if col.DeleteRule != nil && *col.DeleteRule != "" {
-		evalCtx := GetEvaluationContext(r, existing.Data)
+		evalCtx := service.GetEvaluationContext(r, existing.Data)
 		allowed, err := rules.Evaluate(*col.DeleteRule, evalCtx)
 		if !allowed || err != nil {
 			errors.SendError(w, errors.NewError(http.StatusForbidden, "FORBIDDEN", "You do not have permission to delete this record"))
@@ -213,7 +214,7 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.executor.DeleteRecord(r.Context(), collectionName, id); err != nil {
+	if err := h.recordService.DeleteRecord(r.Context(), collectionName, id); err != nil {
 		errors.SendError(w, err)
 		return
 	}

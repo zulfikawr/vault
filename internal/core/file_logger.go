@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
@@ -19,20 +18,21 @@ type FileLogger struct {
 
 var fileLogger *FileLogger
 
-func InitFileLogger(dataDir string) error {
-	logPath := filepath.Join(dataDir, "vault.log")
+func NewFileLogger(logPath string) (*FileLogger, error) {
 	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	fileLogger = &FileLogger{
+	return &FileLogger{
 		file:   file,
 		writer: bufio.NewWriter(file),
 		path:   logPath,
-	}
+	}, nil
+}
 
-	return nil
+func SetGlobalFileLogger(fl *FileLogger) {
+	fileLogger = fl
 }
 
 func GetFileLogger() *FileLogger {

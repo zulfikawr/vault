@@ -13,11 +13,14 @@ import (
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/models"
+	"github.com/zulfikawr/vault/internal/service"
 )
 
 type CollectionCommand struct {
-	config *core.Config
-	db     *sql.DB
+	config            *core.Config
+	db                *sql.DB
+	collectionService *service.CollectionService
+	recordService     *service.RecordService
 }
 
 func NewCollectionCommand(config *core.Config) *CollectionCommand {
@@ -48,6 +51,16 @@ func (cc *CollectionCommand) Run(args []string) error {
 	defer database.Close()
 
 	cc.db = database
+
+	registry := db.NewSchemaRegistry(database)
+	if err := registry.LoadFromDB(ctx); err != nil {
+		return fmt.Errorf("failed to load schema: %w", err)
+	}
+	migration := db.NewMigrationEngine(database)
+	repo := db.NewRepository(database, registry)
+
+	cc.collectionService = service.NewCollectionService(registry, migration)
+	cc.recordService = service.NewRecordService(repo, nil) // Hub is not needed for CLI
 
 	switch subcommand {
 	case "create":
@@ -81,14 +94,19 @@ func (cc *CollectionCommand) authenticateAdmin(ctx context.Context, email, passw
 		return fmt.Errorf("email and password are required")
 	}
 
-	var storedPassword string
-	err := cc.db.QueryRowContext(ctx, "SELECT password FROM users WHERE email = ?", email).Scan(&storedPassword)
+	params := db.QueryParams{
+		Filter: fmt.Sprintf("email = '%s'", email),
+	}
+	records, _, err := cc.recordService.ListRecords(ctx, "users", params)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("admin user not found")
-		}
 		return fmt.Errorf("failed to authenticate: %w", err)
 	}
+	if len(records) == 0 {
+		return fmt.Errorf("admin user not found")
+	}
+
+	user := records[0]
+	storedPassword := user.GetString("password")
 
 	if !auth.ComparePasswords(storedPassword, password) {
 		return fmt.Errorf("invalid password")
@@ -132,22 +150,12 @@ func (cc *CollectionCommand) Create(ctx context.Context, args []string) error {
 		Updated: time.Now().Format(time.RFC3339),
 	}
 
-	registry := db.NewSchemaRegistry(cc.db)
-	if err := registry.LoadFromDB(ctx); err != nil {
-		return fmt.Errorf("failed to load schema: %w", err)
-	}
-
-	migration := db.NewMigrationEngine(cc.db)
-	if err := migration.SyncCollection(ctx, col); err != nil {
-		return fmt.Errorf("failed to sync collection: %w", err)
-	}
-
-	if err := registry.SaveCollection(ctx, col); err != nil {
-		return fmt.Errorf("failed to save collection: %w", err)
+	if err := cc.collectionService.CreateCollection(ctx, col); err != nil {
+		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
 	// Log audit event
-	db.LogAuditEvent(ctx, cc.db, "collection_created", col.Name, *email, map[string]any{
+	_ = db.LogAuditEvent(ctx, cc.db, "collection_created", col.Name, *email, map[string]any{
 		"fields": len(fields),
 		"type":   col.Type,
 	})
@@ -176,12 +184,7 @@ func (cc *CollectionCommand) List(ctx context.Context, args []string) error {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 
-	registry := db.NewSchemaRegistry(cc.db)
-	if err := registry.LoadFromDB(ctx); err != nil {
-		return fmt.Errorf("failed to load schema: %w", err)
-	}
-
-	collections := registry.GetCollections()
+	collections := cc.collectionService.ListCollections()
 	if len(collections) == 0 {
 		fmt.Println("No collections found")
 		return nil
@@ -216,7 +219,7 @@ func (cc *CollectionCommand) List(ctx context.Context, args []string) error {
 	for _, col := range collections {
 		fmt.Printf("│ %-*s │ %-*s │ %*d │\n", maxNameLen, col.Name, maxTypeLen, string(col.Type), maxFieldsLen, len(col.Fields))
 	}
-	
+
 	// Print bottom border
 	fmt.Printf("└%s┴%s┴%s┘\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
 
@@ -246,12 +249,7 @@ func (cc *CollectionCommand) Get(ctx context.Context, args []string) error {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 
-	registry := db.NewSchemaRegistry(cc.db)
-	if err := registry.LoadFromDB(ctx); err != nil {
-		return fmt.Errorf("failed to load schema: %w", err)
-	}
-
-	col, ok := registry.GetCollection(*name)
+	col, ok := cc.collectionService.GetCollection(*name)
 	if !ok {
 		return fmt.Errorf("collection '%s' not found", *name)
 	}
@@ -260,10 +258,10 @@ func (cc *CollectionCommand) Get(ctx context.Context, args []string) error {
 	fmt.Printf("Type: %s\n", col.Type)
 	fmt.Printf("Created: %s\n", col.Created)
 	fmt.Printf("Updated: %s\n", col.Updated)
-	
+
 	if len(col.Fields) > 0 {
 		fmt.Println("\nFields:")
-		
+
 		// Calculate max width for alignment
 		maxNameLen := len("Name")
 		maxTypeLen := len("Type")
@@ -336,41 +334,25 @@ func (cc *CollectionCommand) Delete(ctx context.Context, args []string) error {
 	if !*force {
 		fmt.Printf("Are you sure you want to delete collection '%s'? (yes/no): ", *name)
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			return fmt.Errorf("failed to read response: %w", err)
+		}
 		if strings.ToLower(response) != "yes" {
 			fmt.Println("Deletion cancelled")
 			return nil
 		}
 	}
 
-	if err := cc.deleteCollection(ctx, *name); err != nil {
+	if err := cc.collectionService.DeleteCollection(ctx, *name); err != nil {
 		return fmt.Errorf("failed to delete collection: %w", err)
 	}
 
 	// Log audit event
-	db.LogAuditEvent(ctx, cc.db, "collection_deleted", *name, *email, map[string]any{})
+	_ = db.LogAuditEvent(ctx, cc.db, "collection_deleted", *name, *email, map[string]any{})
 
 	slog.Info("collection_deleted", "collection", *name, "email", *email)
 	fmt.Printf("✓ Collection '%s' deleted\n", *name)
 	return nil
-}
-
-func (cc *CollectionCommand) deleteCollection(ctx context.Context, name string) error {
-	tx, err := cc.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", name)); err != nil {
-		return err
-	}
-
-	if _, err := tx.ExecContext(ctx, "DELETE FROM _collections WHERE name = ?", name); err != nil {
-		return err
-	}
-
-	return tx.Commit()
 }
 
 func (cc *CollectionCommand) parseFields(fieldsStr string) ([]models.Field, error) {

@@ -5,21 +5,22 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
-	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/storage"
 )
 
 type FileHandler struct {
-	storage  storage.Storage
-	executor *db.Executor
+	storage       storage.Storage
+	maxUploadSize int64
 }
 
-func NewFileHandler(s storage.Storage, e *db.Executor) *FileHandler {
-	return &FileHandler{storage: s, executor: e}
+func NewFileHandler(s storage.Storage, maxUploadSize int64) *FileHandler {
+	return &FileHandler{
+		storage:       s,
+		maxUploadSize: maxUploadSize,
+	}
 }
 
 func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
@@ -36,14 +37,16 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 	defer errors.Defer(r.Context(), file.Close, "close file", "path", path)
 
-	// Simple content type detection
-	contentType := "application/octet-stream"
-	if strings.HasSuffix(filename, ".jpg") || strings.HasSuffix(filename, ".jpeg") {
-		contentType = "image/jpeg"
-	} else if strings.HasSuffix(filename, ".png") {
-		contentType = "image/png"
-	} else if strings.HasSuffix(filename, ".gif") {
-		contentType = "image/gif"
+	// Read first 512 bytes for content type detection
+	buffer := make([]byte, 512)
+	n, _ := file.Read(buffer)
+	contentType := http.DetectContentType(buffer[:n])
+
+	// Reset file pointer
+	if seeker, ok := file.(io.Seeker); ok {
+		if _, err := seeker.Seek(0, io.SeekStart); err != nil {
+			errors.Log(r.Context(), err, "seek file", "path", path)
+		}
 	}
 
 	w.Header().Set("Content-Type", contentType)
@@ -54,11 +57,10 @@ func (h *FileHandler) Serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	// For this prototype, we'll implement a standalone upload that returns the filename/metadata.
-	// Later we can integrate it directly into the Record Create/Update handlers.
-
-	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max
-		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_MULTIPART", "Failed to parse multipart form"))
+	// Enforce max upload size
+	r.Body = http.MaxBytesReader(w, r.Body, h.maxUploadSize)
+	if err := r.ParseMultipartForm(h.maxUploadSize); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "FILE_TOO_LARGE", "File exceeds maximum allowed size"))
 		return
 	}
 
@@ -68,6 +70,24 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer errors.Defer(r.Context(), file.Close, "close uploaded file", "filename", header.Filename)
+
+	// Validate content type
+	buff := make([]byte, 512)
+	if _, err := file.Read(buff); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "FILE_READ_ERROR", "Failed to read file header"))
+		return
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusInternalServerError, "FILE_SEEK_ERROR", "Failed to seek file"))
+		return
+	}
+
+	// Validate mime type
+	mimeType := http.DetectContentType(buff)
+	if isBlockedMimeType(mimeType) {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "FILE_TYPE_NOT_ALLOWED", fmt.Sprintf("File type %s is not allowed", mimeType)))
+		return
+	}
 
 	collection := r.FormValue("collection")
 	recordID := r.FormValue("recordID")
@@ -92,4 +112,20 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		"mime": header.Header.Get("Content-Type"),
 		"url":  fmt.Sprintf("/api/files/%s/%s/%s", collection, recordID, safeName),
 	}, nil)
+}
+
+func isBlockedMimeType(mimeType string) bool {
+	// Block potentially dangerous file types
+	blocked := map[string]bool{
+		"application/x-dosexec":    true, // Windows Executables
+		"application/x-msdownload": true, // DLLs, etc.
+		"application/x-sh":         true, // Shell scripts
+		"text/html":                true, // Prevent Stored XSS
+		"text/javascript":          true, // JS files
+	}
+	// Check exact match or prefix
+	if blocked[mimeType] {
+		return true
+	}
+	return false
 }

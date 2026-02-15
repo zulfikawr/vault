@@ -8,14 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zulfikawr/vault/internal/auth"
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
+	"github.com/zulfikawr/vault/internal/service"
 )
 
 type AdminCommand struct {
-	config *core.Config
-	db     *sql.DB
+	config            *core.Config
+	db                *sql.DB
+	recordService     *service.RecordService
+	collectionService *service.CollectionService
 }
 
 func NewAdminCommand(config *core.Config) *AdminCommand {
@@ -48,22 +50,44 @@ func (ac *AdminCommand) Run(args []string) error {
 
 	ac.db = database
 
+	registry := db.NewSchemaRegistry(database)
+	migration := db.NewMigrationEngine(database)
+	repo := db.NewRepository(database, registry)
+
+	ac.collectionService = service.NewCollectionService(registry, migration)
+	ac.recordService = service.NewRecordService(repo, nil)
+
+	// Initialize system and hooks
+	service.RegisterAuthHooks()
+	// Note: We don't call InitSystem here automatically for all commands,
+	// but Create command might need it. Actually, Create command does bootstrap.
+	// Let's defer InitSystem to Create command or do it here if it's safe.
+	// Doing it here ensures schema is ready for List/Delete too.
+	if err := ac.collectionService.InitSystem(ctx); err != nil {
+		return fmt.Errorf("failed to initialize system: %w", err)
+	}
+
+	// Load dynamic collections
+	if err := registry.LoadFromDB(ctx); err != nil {
+		return fmt.Errorf("failed to load schema: %w", err)
+	}
+
 	switch subcommand {
 	case "create":
-		return ac.Create(args[1:])
+		return ac.Create(ctx, args[1:])
 	case "list":
-		return ac.List(args[1:])
+		return ac.List(ctx, args[1:])
 	case "delete":
-		return ac.Delete(args[1:])
+		return ac.Delete(ctx, args[1:])
 	case "reset-password":
-		return ac.ResetPassword(args[1:])
+		return ac.ResetPassword(ctx, args[1:])
 	default:
 		ac.printUsage()
 		return fmt.Errorf("unknown admin subcommand: %s", subcommand)
 	}
 }
 
-func (ac *AdminCommand) Create(args []string) error {
+func (ac *AdminCommand) Create(ctx context.Context, args []string) error {
 	cmd := flag.NewFlagSet("admin create", flag.ContinueOnError)
 	email := cmd.String("email", "", "Admin email")
 	password := cmd.String("password", "", "Admin password")
@@ -77,137 +101,85 @@ func (ac *AdminCommand) Create(args []string) error {
 		return fmt.Errorf("email, password, and username are required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Bootstrap system collections
-	registry := db.NewSchemaRegistry(ac.db)
-	migration := db.NewMigrationEngine(ac.db)
-
-	if err := registry.BootstrapSystemCollections(); err != nil {
-		return fmt.Errorf("failed to bootstrap system collections: %w", err)
-	}
-
-	if err := registry.BootstrapRefreshTokensCollection(); err != nil {
-		return fmt.Errorf("failed to bootstrap refresh tokens collection: %w", err)
-	}
-
-	if err := registry.BootstrapUsersCollection(); err != nil {
-		return fmt.Errorf("failed to bootstrap users collection: %w", err)
-	}
-
-	if err := registry.BootstrapAuditLogsCollection(); err != nil {
-		return fmt.Errorf("failed to bootstrap audit logs collection: %w", err)
-	}
-
-	// Sync tables
-	systemCols := []string{"_collections", "_refresh_tokens", "_audit_logs", "users"}
-	for _, name := range systemCols {
-		col, ok := registry.GetCollection(name)
-		if !ok || col == nil {
-			return fmt.Errorf("failed to find system collection: %s", name)
-		}
-		if err := migration.SyncCollection(ctx, col); err != nil {
-			return fmt.Errorf("failed to sync collection %s: %w", name, err)
-		}
-		if name != "_collections" {
-			if err := registry.SaveCollection(ctx, col); err != nil {
-				return fmt.Errorf("failed to save collection %s: %w", name, err)
-			}
-		}
-	}
-
-	// Check if user already exists
-	var existingID string
-	err := ac.db.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ? OR username = ?", *email, *username).Scan(&existingID)
-	if err == nil {
-		return fmt.Errorf("user with email or username already exists")
-	}
-	if err != sql.ErrNoRows {
-		return fmt.Errorf("database error: %w", err)
-	}
-
-	// Hash password
-	hashedPassword, err := auth.HashPassword(ctx, *password)
+	// Check if user exists (email)
+	records, _, err := ac.recordService.ListRecords(ctx, "users", db.QueryParams{Filter: fmt.Sprintf("email = '%s'", *email)})
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		return fmt.Errorf("failed to check existing user: %w", err)
+	}
+	if len(records) > 0 {
+		return fmt.Errorf("user with email %s already exists", *email)
 	}
 
-	// Insert user
-	userID := generateID()
-	_, err = ac.db.ExecContext(ctx,
-		"INSERT INTO users (id, username, email, password, created, updated) VALUES (?, ?, ?, ?, ?, ?)",
-		userID, *username, *email, hashedPassword, time.Now(), time.Now(),
-	)
+	// Check if user exists (username)
+	records, _, err = ac.recordService.ListRecords(ctx, "users", db.QueryParams{Filter: fmt.Sprintf("username = '%s'", *username)})
+	if err != nil {
+		return fmt.Errorf("failed to check existing user: %w", err)
+	}
+	if len(records) > 0 {
+		return fmt.Errorf("user with username %s already exists", *username)
+	}
+
+	// Create user
+	data := map[string]any{
+		"email":    *email,
+		"username": *username,
+		"password": *password, // Will be hashed by hook
+	}
+
+	record, err := ac.recordService.CreateRecord(ctx, "users", data)
 	if err != nil {
 		return fmt.Errorf("failed to create admin user: %w", err)
 	}
 
 	fmt.Printf("✓ Admin user created successfully\n")
-	fmt.Printf("  ID: %s\n", userID)
+	fmt.Printf("  ID: %s\n", record.ID)
 	fmt.Printf("  Email: %s\n", *email)
 	fmt.Printf("  Username: %s\n", *username)
 
 	return nil
 }
 
-func (ac *AdminCommand) List(args []string) error {
+func (ac *AdminCommand) List(ctx context.Context, args []string) error {
 	cmd := flag.NewFlagSet("admin list", flag.ContinueOnError)
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	rows, err := ac.db.QueryContext(ctx, "SELECT id, username, email, created FROM users ORDER BY created DESC")
+	records, _, err := ac.recordService.ListRecords(ctx, "users", db.QueryParams{
+		Sort: "-created",
+	})
 	if err != nil {
-		return fmt.Errorf("failed to query users: %w", err)
-	}
-	defer rows.Close()
-
-	var admins []map[string]interface{}
-	for rows.Next() {
-		var id, username, email, createdStr string
-
-		if err := rows.Scan(&id, &username, &email, &createdStr); err != nil {
-			return fmt.Errorf("failed to scan user: %w", err)
-		}
-
-		admins = append(admins, map[string]interface{}{
-			"id":       id,
-			"username": username,
-			"email":    email,
-			"created":  createdStr,
-		})
+		return fmt.Errorf("failed to list users: %w", err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating users: %w", err)
-	}
-
-	if len(admins) == 0 {
+	if len(records) == 0 {
 		fmt.Println("No admin users found")
 		return nil
 	}
 
-	fmt.Printf("Total admins: %d\n\n", len(admins))
+	fmt.Printf("Total admins: %d\n\n", len(records))
 	fmt.Printf("%-20s %-20s %-30s %-25s\n", "ID", "Username", "Email", "Created")
 	fmt.Println(strings.Repeat("-", 95))
 
-	for _, admin := range admins {
+	for _, record := range records {
+		createdStr := record.GetString("created")
+		// Format if needed, or just print string if it's already formatted by service/repo
+		// Repository usually returns time.Time or string depending on driver.
+		// SQLite driver might return string or time.Time.
+		// record.GetString handles type assertion.
+
 		fmt.Printf("%-20s %-20s %-30s %-25s\n",
-			admin["id"].(string)[:20],
-			admin["username"].(string),
-			admin["email"].(string),
-			admin["created"].(string),
+			record.ID[:20], // Assuming ID is long enough
+			record.GetString("username"),
+			record.GetString("email"),
+			createdStr,
 		)
 	}
 
 	return nil
 }
 
-func (ac *AdminCommand) Delete(args []string) error {
+func (ac *AdminCommand) Delete(ctx context.Context, args []string) error {
 	cmd := flag.NewFlagSet("admin delete", flag.ContinueOnError)
 	email := cmd.String("email", "", "Admin email to delete")
 	force := cmd.Bool("force", false, "Skip confirmation prompt")
@@ -220,22 +192,19 @@ func (ac *AdminCommand) Delete(args []string) error {
 		return fmt.Errorf("email is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Check if user exists
-	var userID, username string
-	err := ac.db.QueryRowContext(ctx, "SELECT id, username FROM users WHERE email = ?", *email).Scan(&userID, &username)
-	if err == sql.ErrNoRows {
+	// Find user
+	records, _, err := ac.recordService.ListRecords(ctx, "users", db.QueryParams{Filter: fmt.Sprintf("email = '%s'", *email)})
+	if err != nil {
+		return fmt.Errorf("failed to find user: %w", err)
+	}
+	if len(records) == 0 {
 		return fmt.Errorf("user with email %s not found", *email)
 	}
-	if err != nil {
-		return fmt.Errorf("database error: %w", err)
-	}
+	user := records[0]
 
 	// Confirm deletion
 	if !*force {
-		fmt.Printf("Are you sure you want to delete admin user '%s' (%s)? (yes/no): ", username, *email)
+		fmt.Printf("Are you sure you want to delete admin user '%s' (%s)? (yes/no): ", user.GetString("username"), *email)
 		var response string
 		if _, err := fmt.Scanln(&response); err != nil {
 			return fmt.Errorf("failed to read input: %w", err)
@@ -247,28 +216,18 @@ func (ac *AdminCommand) Delete(args []string) error {
 	}
 
 	// Delete user
-	result, err := ac.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", userID)
-	if err != nil {
+	if err := ac.recordService.DeleteRecord(ctx, "users", user.ID); err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
 	}
 
 	fmt.Printf("✓ Admin user deleted successfully\n")
 	fmt.Printf("  Email: %s\n", *email)
-	fmt.Printf("  Username: %s\n", username)
+	fmt.Printf("  Username: %s\n", user.GetString("username"))
 
 	return nil
 }
 
-func (ac *AdminCommand) ResetPassword(args []string) error {
+func (ac *AdminCommand) ResetPassword(ctx context.Context, args []string) error {
 	cmd := flag.NewFlagSet("admin reset-password", flag.ContinueOnError)
 	email := cmd.String("email", "", "Admin email")
 	newPassword := cmd.String("password", "", "New password")
@@ -289,43 +248,29 @@ func (ac *AdminCommand) ResetPassword(args []string) error {
 		return fmt.Errorf("password must be at least 8 characters long")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Check if user exists
-	var userID, username string
-	err := ac.db.QueryRowContext(ctx, "SELECT id, username FROM users WHERE email = ?", *email).Scan(&userID, &username)
-	if err == sql.ErrNoRows {
+	// Find user
+	records, _, err := ac.recordService.ListRecords(ctx, "users", db.QueryParams{Filter: fmt.Sprintf("email = '%s'", *email)})
+	if err != nil {
+		return fmt.Errorf("failed to find user: %w", err)
+	}
+	if len(records) == 0 {
 		return fmt.Errorf("user with email %s not found", *email)
 	}
-	if err != nil {
-		return fmt.Errorf("database error: %w", err)
-	}
-
-	// Hash new password
-	hashedPassword, err := auth.HashPassword(ctx, *newPassword)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
+	user := records[0]
 
 	// Update password
-	result, err := ac.db.ExecContext(ctx, "UPDATE users SET password = ?, updated = ? WHERE id = ?", hashedPassword, time.Now(), userID)
-	if err != nil {
+	// Hook will hash it
+	data := map[string]any{
+		"password": *newPassword,
+	}
+
+	if _, err := ac.recordService.UpdateRecord(ctx, "users", user.ID, data); err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
 	}
 
 	fmt.Printf("✓ Password reset successfully\n")
 	fmt.Printf("  Email: %s\n", *email)
-	fmt.Printf("  Username: %s\n", username)
+	fmt.Printf("  Username: %s\n", user.GetString("username"))
 
 	return nil
 }
@@ -337,8 +282,4 @@ func (ac *AdminCommand) printUsage() {
 	fmt.Println("  list")
 	fmt.Println("  delete --email EMAIL [--force]")
 	fmt.Println("  reset-password --email EMAIL --password PASSWORD")
-}
-
-func generateID() string {
-	return fmt.Sprintf("usr_%d", time.Now().UnixNano())
 }

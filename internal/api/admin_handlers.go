@@ -4,23 +4,21 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/errors"
 	"github.com/zulfikawr/vault/internal/models"
+	"github.com/zulfikawr/vault/internal/service"
 )
 
 type AdminHandler struct {
-	executor  *db.Executor
-	registry  *db.SchemaRegistry
-	migration *db.MigrationEngine
+	collectionService *service.CollectionService
 }
 
-func NewAdminHandler(e *db.Executor, r *db.SchemaRegistry, m *db.MigrationEngine) *AdminHandler {
-	return &AdminHandler{executor: e, registry: r, migration: m}
+func NewAdminHandler(collectionService *service.CollectionService) *AdminHandler {
+	return &AdminHandler{collectionService: collectionService}
 }
 
 func (h *AdminHandler) ListCollections(w http.ResponseWriter, r *http.Request) {
-	collections := h.registry.GetCollections()
+	collections := h.collectionService.ListCollections()
 	SendJSON(w, http.StatusOK, collections, nil)
 }
 
@@ -31,14 +29,7 @@ func (h *AdminHandler) CreateCollection(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// 1. Sync DB
-	if err := h.migration.SyncCollection(r.Context(), &col); err != nil {
-		errors.SendError(w, err)
-		return
-	}
-
-	// 2. Persist Definition
-	if err := h.registry.SaveCollection(r.Context(), &col); err != nil {
+	if err := h.collectionService.CreateCollection(r.Context(), &col); err != nil {
 		errors.SendError(w, err)
 		return
 	}
@@ -65,17 +56,12 @@ func (h *AdminHandler) DeleteCollection(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Check if collection exists
-	if _, exists := h.registry.GetCollection(name); !exists {
+	if _, exists := h.collectionService.GetCollection(name); !exists {
 		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
 		return
 	}
 
-	// Remove from registry
-	h.registry.RemoveCollection(name)
-
-	// Remove from database
-	ctx := r.Context()
-	if err := h.migration.DropCollection(ctx, name); err != nil {
+	if err := h.collectionService.DeleteCollection(r.Context(), name); err != nil {
 		errors.SendError(w, err)
 		return
 	}

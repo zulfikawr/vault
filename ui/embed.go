@@ -37,12 +37,12 @@ func Handler() http.Handler {
 		}
 
 		cleanPath := strings.TrimPrefix(path, "/")
-		
+
 		// Handle root path
 		if cleanPath == "" {
 			cleanPath = "index.html"
 		}
-		
+
 		file, err := stripped.Open(cleanPath)
 		if err != nil {
 			// Try to serve index.html if path is a directory or not found
@@ -54,14 +54,14 @@ func Handler() http.Handler {
 					indexPath = "index.html"
 				}
 			}
-			
+
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			data, err := fs.ReadFile(stripped, indexPath)
 			if err != nil {
 				http.NotFound(w, r)
 				return
 			}
-			w.Write(data)
+			_, _ = w.Write(data)
 			return
 		}
 		defer file.Close()
@@ -81,14 +81,14 @@ func Handler() http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			w.Write(data)
+			_, _ = w.Write(data)
 		} else {
 			data, err := fs.ReadFile(stripped, cleanPath)
 			if err != nil {
 				http.NotFound(w, r)
 				return
 			}
-			w.Write(data)
+			_, _ = w.Write(data)
 		}
 	})
 }

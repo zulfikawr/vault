@@ -23,7 +23,7 @@ type Config struct {
 	TLSKeyPath        string `json:"tls_key_path"`
 }
 
-func LoadConfig() *Config {
+func LoadConfig(path ...string) *Config {
 	// Defaults
 	cfg := &Config{
 		Port:              8090,
@@ -41,11 +41,18 @@ func LoadConfig() *Config {
 		TLSKeyPath:        "",
 	}
 
-	// Load from config.json if exists
-	if data, err := os.ReadFile("config.json"); err == nil {
+	configPath := "config.json"
+	if len(path) > 0 && path[0] != "" {
+		configPath = path[0]
+	} else if envPath := os.Getenv("VAULT_CONFIG_FILE"); envPath != "" {
+		configPath = envPath
+	}
+
+	// Load from config file if exists
+	if data, err := os.ReadFile(configPath); err == nil {
 		if err := json.Unmarshal(data, cfg); err != nil {
 			// Log error but continue with defaults
-			slog.Warn("Failed to unmarshal config.json, using defaults", "error", err)
+			slog.Warn("Failed to unmarshal config file, using defaults", "path", configPath, "error", err)
 		}
 	}
 

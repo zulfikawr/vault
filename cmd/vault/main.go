@@ -100,43 +100,40 @@ func runServe() {
 		os.Exit(1)
 	}
 
-	// Set environment variables for config loading
-	os.Setenv("VAULT_PORT", fmt.Sprintf("%d", *port))
-	os.Setenv("VAULT_DATA_DIR", *dir)
+	// Load base config (handles defaults, file, and env vars)
+	cfg := core.LoadConfig(*configFile)
 
-	if *dbPath != "" {
-		os.Setenv("VAULT_DB_PATH", *dbPath)
-	}
-	if *logLevel != "" {
-		os.Setenv("VAULT_LOG_LEVEL", *logLevel)
-	}
-	if *logFormat != "" {
-		os.Setenv("VAULT_LOG_FORMAT", *logFormat)
-	}
-	if *tlsCert != "" {
-		os.Setenv("VAULT_TLS_CERT_PATH", *tlsCert)
-	}
-	if *tlsKey != "" {
-		os.Setenv("VAULT_TLS_KEY_PATH", *tlsKey)
-	}
-	if *jwtSecret != "" {
-		os.Setenv("VAULT_JWT_SECRET", *jwtSecret)
-	}
-	if *corsOrigins != "" {
-		os.Setenv("VAULT_CORS_ORIGINS", *corsOrigins)
-	}
-	if *rateLimit > 0 {
-		os.Setenv("VAULT_RATE_LIMIT_PER_MIN", fmt.Sprintf("%d", *rateLimit))
-	}
-	if *maxUploadSize != "" {
-		bytes := parseSize(*maxUploadSize)
-		os.Setenv("VAULT_MAX_FILE_UPLOAD_SIZE", fmt.Sprintf("%d", bytes))
-	}
-	if *configFile != "" {
-		os.Setenv("VAULT_CONFIG_FILE", *configFile)
-	}
+	// Apply flags overrides
+	serveCmd.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "port":
+			cfg.Port = *port
+		case "dir":
+			cfg.DataDir = *dir
+		case "db-path":
+			cfg.DBPath = *dbPath
+		case "log-level":
+			cfg.LogLevel = *logLevel
+		case "log-format":
+			cfg.LogFormat = *logFormat
+		case "tls-cert":
+			cfg.TLSCertPath = *tlsCert
+		case "tls-key":
+			cfg.TLSKeyPath = *tlsKey
+		case "jwt-secret":
+			cfg.JWTSecret = *jwtSecret
+		case "cors-origins":
+			cfg.CORSOrigins = *corsOrigins
+		case "rate-limit":
+			cfg.RateLimitPerMin = *rateLimit
+		case "max-upload-size":
+			if size := parseSize(*maxUploadSize); size > 0 {
+				cfg.MaxFileUploadSize = size
+			}
+		}
+	})
 
-	runServer()
+	runServer(cfg)
 }
 
 func runAdmin() {
@@ -151,7 +148,10 @@ func runAdmin() {
 	}
 
 	cfg := core.LoadConfig()
-	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 
 	adminCmd := cli.NewAdminCommand(cfg)
 	if err := adminCmd.Run(os.Args[2:]); err != nil {
@@ -160,9 +160,9 @@ func runAdmin() {
 	}
 }
 
-func runServer() {
+func runServer(cfg *core.Config) {
 	// Import server package
-	app := server.NewApp()
+	app := server.NewApp(cfg)
 	app.Run()
 }
 
@@ -199,7 +199,10 @@ func runMigrate() {
 	}
 
 	cfg := core.LoadConfig()
-	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 
 	migrateCmd := cli.NewMigrateCommand(cfg)
 	if err := migrateCmd.Run(os.Args[2:]); err != nil {
@@ -227,7 +230,10 @@ func runCollection() {
 	}
 
 	cfg := core.LoadConfig()
-	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 
 	collectionCmd := cli.NewCollectionCommand(cfg)
 	if err := collectionCmd.Run(os.Args[2:]); err != nil {
@@ -248,7 +254,10 @@ func runStorage() {
 	}
 
 	cfg := core.LoadConfig()
-	core.InitLogger(cfg.LogLevel, cfg.LogFormat)
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 
 	storageCmd := cli.NewStorageCommand(cfg)
 	if err := storageCmd.Run(os.Args[2:]); err != nil {

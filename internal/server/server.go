@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/http"
 )
@@ -32,7 +31,6 @@ func (s *Server) Start() error {
 	fmt.Printf("\n✓ Vault server started successfully\n")
 	fmt.Printf("  Web UI:  http://localhost:%d/\n", s.port)
 	fmt.Printf("  API:     http://localhost:%d/api\n\n", s.port)
-	slog.Info("Starting server", "port", s.port)
 
 	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
@@ -41,6 +39,5 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	slog.Info("Shutting down server...")
 	return s.server.Shutdown(ctx)
 }

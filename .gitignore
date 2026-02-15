@@ -8,6 +8,7 @@
 
 # Data
 vault_data/
+config.json
 *.db
 *.db-journal
 *.db-wal

@@ -41,6 +41,8 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 
 	// SQLite typically works best with a single writer
 	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0) // No limit on connection lifetime for local file DB
 
 	if err := db.PingContext(ctx); err != nil {
 		errors.Log(ctx, db.Close(), "close database connection")

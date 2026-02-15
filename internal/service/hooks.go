@@ -1,4 +1,4 @@
-package db
+package service
 
 import (
 	"context"
@@ -39,6 +39,42 @@ func (h *Hooks) TriggerBeforeCreate(ctx context.Context, record *models.Record) 
 
 func (h *Hooks) TriggerAfterCreate(ctx context.Context, record *models.Record) error {
 	for _, fn := range h.AfterCreate {
+		if err := fn(ctx, record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Hooks) TriggerBeforeUpdate(ctx context.Context, record *models.Record) error {
+	for _, fn := range h.BeforeUpdate {
+		if err := fn(ctx, record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Hooks) TriggerAfterUpdate(ctx context.Context, record *models.Record) error {
+	for _, fn := range h.AfterUpdate {
+		if err := fn(ctx, record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Hooks) TriggerBeforeDelete(ctx context.Context, record *models.Record) error {
+	for _, fn := range h.BeforeDelete {
+		if err := fn(ctx, record); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Hooks) TriggerAfterDelete(ctx context.Context, record *models.Record) error {
+	for _, fn := range h.AfterDelete {
 		if err := fn(ctx, record); err != nil {
 			return err
 		}

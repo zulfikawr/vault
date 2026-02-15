@@ -11,17 +11,18 @@ import (
 	"github.com/zulfikawr/vault/internal/core"
 	"github.com/zulfikawr/vault/internal/db"
 	"github.com/zulfikawr/vault/internal/errors"
+	"github.com/zulfikawr/vault/internal/service"
 )
 
 type AuthHandler struct {
-	executor *db.Executor
-	config   *core.Config
+	recordService *service.RecordService
+	config        *core.Config
 }
 
-func NewAuthHandler(executor *db.Executor, config *core.Config) *AuthHandler {
+func NewAuthHandler(rs *service.RecordService, config *core.Config) *AuthHandler {
 	return &AuthHandler{
-		executor: executor,
-		config:   config,
+		recordService: rs,
+		config:        config,
 	}
 }
 
@@ -43,10 +44,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Find user by email
 	// In Phase 5 we implemented a simple filter parser that requires valid field names.
-	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Identity})
+	records, _, err := h.recordService.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Identity})
 	if err != nil || len(records) == 0 {
 		// If not found by email, try username
-		records, _, err = h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "username = " + req.Identity})
+		records, _, err = h.recordService.ListRecords(r.Context(), "users", db.QueryParams{Filter: "username = " + req.Identity})
 	}
 
 	if err != nil || len(records) == 0 {
@@ -63,7 +64,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update lastLogin timestamp
-	_, err = h.executor.UpdateRecord(r.Context(), "users", userRecord.ID, map[string]any{
+	_, err = h.recordService.UpdateRecord(r.Context(), "users", userRecord.ID, map[string]any{
 		"lastLogin": time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
@@ -71,7 +72,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Refresh the user record to get updated lastLogin
-	records, _, err = h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "id = " + userRecord.ID})
+	records, _, err = h.recordService.ListRecords(r.Context(), "users", db.QueryParams{Filter: "id = " + userRecord.ID})
 	if err == nil && len(records) > 0 {
 		userRecord = records[0]
 	}
@@ -86,7 +87,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Generate Refresh Token
 	refreshToken := uuid.New().String()
-	_, err = h.executor.CreateRecord(r.Context(), "_refresh_tokens", map[string]any{
+	_, err = h.recordService.CreateRecord(r.Context(), "_refresh_tokens", map[string]any{
 		"token":   refreshToken,
 		"user_id": userRecord.ID,
 		"expires": time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339),
@@ -113,7 +114,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Lookup refresh token
-	records, _, err := h.executor.ListRecords(r.Context(), "_refresh_tokens", db.QueryParams{Filter: "token = " + req.RefreshToken})
+	records, _, err := h.recordService.ListRecords(r.Context(), "_refresh_tokens", db.QueryParams{Filter: "token = " + req.RefreshToken})
 	if err != nil || len(records) == 0 {
 		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "INVALID_REFRESH_TOKEN", "Invalid or expired refresh token"))
 		return
@@ -123,7 +124,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	// Check expiry (omitted for brevity, but should be checked)
 
 	userID := refreshTokenRecord.GetString("user_id")
-	userRecord, err := h.executor.FindRecordByID(r.Context(), "users", userID)
+	userRecord, err := h.recordService.FindRecordByID(r.Context(), "users", userID)
 	if err != nil {
 		errors.SendError(w, errors.NewError(http.StatusUnauthorized, "USER_NOT_FOUND", "Associated user not found"))
 		return
@@ -152,7 +153,7 @@ func (h *AuthHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Reques
 	}
 
 	// 1. Find user
-	records, _, err := h.executor.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Email})
+	records, _, err := h.recordService.ListRecords(r.Context(), "users", db.QueryParams{Filter: "email = " + req.Email})
 	if err != nil || len(records) == 0 {
 		// Silent fail for security: don't reveal if email exists
 		SendJSON(w, http.StatusOK, map[string]string{"message": "If the email exists, a reset link will be sent"}, nil)
@@ -164,7 +165,6 @@ func (h *AuthHandler) RequestPasswordReset(w http.ResponseWriter, r *http.Reques
 
 	// In a real implementation, we'd save this to a 'password_resets' collection with an expiry.
 	// For now, we log it (representing the "email" being sent).
-	core.InitLogger("INFO", "text") // Ensure logger is ready
 	slog.Info("Password reset requested", "email", req.Email, "token", resetToken, "request_id", core.GetRequestID(r.Context()))
 
 	SendJSON(w, http.StatusOK, map[string]string{"message": "If the email exists, a reset link will be sent"}, nil)

@@ -105,9 +105,8 @@ func RunInit(args []string) error {
 	fmt.Println("🎉 Vault initialized successfully!")
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("  1. Review config.json for customization")
-	fmt.Println("  2. Run: vault serve --port 8090")
-	fmt.Println("  3. Visit: http://localhost:8090/_/")
+	fmt.Println("  Run: vault serve")
+	fmt.Println("  Visit: http://localhost:8090/")
 
 	return nil
 }
@@ -288,6 +287,10 @@ func createAdminUser(ctx context.Context, database *sql.DB, email, username, pas
 
 	_, err = database.ExecContext(ctx, query, userID, username, email, hashedPassword, time.Now(), time.Now())
 	return err
+}
+
+func generateID() string {
+	return fmt.Sprintf("usr_%d", time.Now().UnixNano())
 }
 
 func printInitUsage() {
