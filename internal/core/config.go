@@ -35,7 +35,7 @@ func LoadConfig(path ...string) *Config {
 		JWTExpiry:         72,
 		MaxFileUploadSize: 10 * 1024 * 1024, // 10MB
 		CORSOrigins:       "*",
-		RateLimitPerMin:   60,
+		RateLimitPerMin:   300,
 		TLSEnabled:        false,
 		TLSCertPath:       "",
 		TLSKeyPath:        "",

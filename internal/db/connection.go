@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/zulfikawr/vault/internal/errors"
 	"net/http"
@@ -39,10 +40,12 @@ func Connect(ctx context.Context, path string) (*sql.DB, error) {
 		}
 	}
 
-	// SQLite typically works best with a single writer
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	db.SetConnMaxLifetime(0) // No limit on connection lifetime for local file DB
+	// SQLite in WAL mode handles multiple readers and one writer concurrently.
+	// Setting a higher MaxOpenConns allows concurrent reads to proceed without waiting for a single connection.
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxIdleTime(time.Minute)
+	db.SetConnMaxLifetime(0)
 
 	if err := db.PingContext(ctx); err != nil {
 		errors.Log(ctx, db.Close(), "close database connection")

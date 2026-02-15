@@ -83,15 +83,8 @@ func NewRouter(
 	adminRouter.HandleFunc("GET /storage/stats", storageHandler.Stats)
 	adminRouter.HandleFunc("DELETE /storage", storageHandler.Delete)
 
-	// Apply rate limiting to collection operations
-	collectionRouter := http.NewServeMux()
-	collectionRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
-	collectionRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
-	collectionRouter.HandleFunc("DELETE /{name}", adminHandler.DeleteCollection)
-
-	// Mount admin router with middleware
-	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", middleware.AdminOnly(adminRouter)))
-	mux.Handle("/api/admin/collections", http.StripPrefix("/api/admin", middleware.AdminOnly(middleware.RateLimitMiddleware(10)(collectionRouter))))
+	// Apply rate limiting to admin operations
+	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", middleware.RateLimitMiddleware(config.RateLimitPerMin)(middleware.AdminOnly(adminRouter))))
 
 	return mux
 }
