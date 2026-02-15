@@ -121,7 +121,11 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
           <span class="font-medium text-text truncate">{{ collectionName }}</span>
         </div>
@@ -251,7 +255,6 @@ onMounted(() => {
               >
             </div>
           </template>
-
         </Table>
       </div>
     </div>

@@ -9,7 +9,15 @@ import ConfirmModal from '../components/ConfirmModal.vue';
 import Input from '../components/Input.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
-import { Upload, Download, Trash2, FolderOpen, File, MoreHorizontal, Settings } from 'lucide-vue-next';
+import {
+  Upload,
+  Download,
+  Trash2,
+  FolderOpen,
+  File,
+  MoreHorizontal,
+  Settings,
+} from 'lucide-vue-next';
 
 interface FileInfo {
   name: string;
@@ -58,7 +66,7 @@ const tableItems = computed(() => {
   if (sortKey.value) {
     items.sort((a, b) => {
       let aValue, bValue;
-      
+
       if (sortKey.value === 'size') {
         // Special handling for size
         aValue = a.size || 0;
@@ -92,17 +100,15 @@ const tableItems = computed(() => {
 
       // Handle strings
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortOrder.value === 'asc' 
-          ? aValue.localeCompare(bValue) 
+        return sortOrder.value === 'asc'
+          ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
       // Fallback comparison
       const strA = String(aValue);
       const strB = String(bValue);
-      return sortOrder.value === 'asc' 
-        ? strA.localeCompare(strB) 
-        : strB.localeCompare(strA);
+      return sortOrder.value === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
     });
   }
 
@@ -200,13 +206,13 @@ async function deleteFile() {
   if (!fileToDelete.value) return;
 
   try {
-    const data: any = { path: fileToDelete.value.path };
-    
+    const data: { path: string; recursive?: boolean } = { path: fileToDelete.value.path };
+
     // If it's a directory, add recursive flag
     if (fileToDelete.value.isFolder) {
       data.recursive = true;
     }
-    
+
     await axios.delete('/api/admin/storage', { data });
     showDeleteModal.value = false;
     fileToDelete.value = null;
@@ -253,9 +259,11 @@ function getFileType(mimeType: string): string {
     <ConfirmModal
       :show="showDeleteModal"
       :title="fileToDelete?.isFolder ? 'Delete Folder' : 'Delete File'"
-      :message="fileToDelete?.isFolder 
-        ? `Are you sure you want to delete the folder '${fileToDelete?.name}' and all its contents? This action cannot be undone.`
-        : `Are you sure you want to delete '${fileToDelete?.name}'? This action cannot be undone.`"
+      :message="
+        fileToDelete?.isFolder
+          ? `Are you sure you want to delete the folder '${fileToDelete?.name}' and all its contents? This action cannot be undone.`
+          : `Are you sure you want to delete '${fileToDelete?.name}'? This action cannot be undone.`
+      "
       confirm-text="Delete"
       cancel-text="Cancel"
       variant="danger"
@@ -314,11 +322,13 @@ function getFileType(mimeType: string): string {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="navigateTo('')">Storage</span>
+          <span class="hover:text-text cursor-pointer font-medium text-text" @click="navigateTo('')"
+            >Storage</span
+          >
           <template v-for="(part, index) in pathParts" :key="index">
             <span class="text-text-muted flex-shrink-0">/</span>
-            <span 
-              class="text-text truncate hover:text-text cursor-pointer" 
+            <span
+              class="text-text truncate hover:text-text cursor-pointer"
               @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
             >
               {{ part }}
@@ -337,7 +347,7 @@ function getFileType(mimeType: string): string {
             <h1 class="text-2xl font-bold text-text tracking-tight">Storage Bucket</h1>
             <p class="mt-1 text-sm text-text-muted">Manage uploaded files and media assets.</p>
           </div>
-          <Button @click="showUploadModal = true" size="sm">
+          <Button size="sm" @click="showUploadModal = true">
             <template #leftIcon><Upload class="w-4 h-4" /></template>
             Upload File
           </Button>
@@ -369,17 +379,24 @@ function getFileType(mimeType: string): string {
           :default-page-size="15"
           :sort-key="sortKey"
           :sort-order="sortOrder"
-          @sort-change="(key, order) => { sortKey = key; sortOrder = order; }"
           row-clickable
-          @row-click="(item, event) => {
-            const target = event.target as HTMLElement;
-            if (!target.closest('.actions-cell')) {
-              handleRowClick(item as Record<string, unknown>);
+          @sort-change="
+            (key, order) => {
+              sortKey = key;
+              sortOrder = order;
             }
-          }"
+          "
+          @row-click="
+            (item, event) => {
+              const target = event.target as HTMLElement;
+              if (!target.closest('.actions-cell')) {
+                handleRowClick(item as Record<string, unknown>);
+              }
+            }
+          "
         >
           <template #cell(name)="{ item }">
-            <div 
+            <div
               class="flex items-center"
               :class="item.isFolder ? 'cursor-pointer hover:text-primary' : ''"
               @click="item.isFolder && navigateTo(item.path as string)"
@@ -423,13 +440,7 @@ function getFileType(mimeType: string): string {
                   >
                     Download
                   </PopoverItem>
-                  <PopoverItem
-                    v-if="item.isFolder"
-                    :icon="Settings"
-                    @click="
-                      close();
-                    "
-                  >
+                  <PopoverItem v-if="item.isFolder" :icon="Settings" @click="close()">
                     Settings
                   </PopoverItem>
                   <PopoverItem
@@ -439,7 +450,8 @@ function getFileType(mimeType: string): string {
                     @click="
                       close();
                       confirmDelete(item as unknown as FileInfo);
-                    ">
+                    "
+                  >
                     Delete
                   </PopoverItem>
                   <PopoverItem
@@ -449,7 +461,8 @@ function getFileType(mimeType: string): string {
                     @click="
                       close();
                       confirmDelete(item as unknown as FileInfo);
-                    ">
+                    "
+                  >
                     Delete
                   </PopoverItem>
                 </template>

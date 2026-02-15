@@ -58,8 +58,6 @@ onMounted(fetchSettings);
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
-          <span class="hover:text-text cursor-pointer" @click="$router.push('/')">Vault</span>
-          <span class="mx-2">/</span>
           <span class="font-medium text-text">Settings</span>
         </div>
       </template>
@@ -69,13 +67,14 @@ onMounted(fetchSettings);
       <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">System Settings</h1>
+            <h1 class="text-xl font-semibold text-text">System Settings</h1>
             <p class="mt-1 text-sm text-text-muted">Configure your Vault instance.</p>
           </div>
           <Button
             v-if="settings"
             variant="primary"
             size="sm"
+            class="px-3 py-1.5 text-sm"
             :disabled="saving"
             @click="saveSettings"
           >
@@ -86,7 +85,7 @@ onMounted(fetchSettings);
 
         <div v-if="loading" class="text-center text-text-muted">Loading settings...</div>
 
-        <div v-else-if="settings" class="space-y-6">
+        <div v-else-if="settings" class="space-y-4">
           <div class="bg-surface border border-border rounded-lg p-6">
             <h2 class="text-lg font-semibold text-text mb-4">Server Configuration</h2>
             <div class="grid grid-cols-2 gap-4">
@@ -95,6 +94,7 @@ onMounted(fetchSettings);
                 <Input
                   :model-value="String(settings!.port)"
                   type="number"
+                  size="sm"
                   @update:model-value="settings!.port = Number($event)"
                 />
               </div>
@@ -102,6 +102,7 @@ onMounted(fetchSettings);
                 <label class="block text-sm text-text-muted mb-2">TLS Enabled</label>
                 <Dropdown
                   :model-value="settings!.tls_enabled ? 'true' : 'false'"
+                  size="sm"
                   @update:model-value="settings!.tls_enabled = $event === 'true'"
                 >
                   <template #trigger>
@@ -141,7 +142,7 @@ onMounted(fetchSettings);
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm text-text-muted mb-2">Log Level</label>
-                <Dropdown v-model="settings!.log_level">
+                <Dropdown v-model="settings!.log_level" size="sm">
                   <template #trigger>
                     {{ settings!.log_level }}
                   </template>
@@ -195,7 +196,7 @@ onMounted(fetchSettings);
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">Log Format</label>
-                <Dropdown v-model="settings!.log_format">
+                <Dropdown v-model="settings!.log_format" size="sm">
                   <template #trigger>
                     {{ settings!.log_format }}
                   </template>
@@ -236,6 +237,7 @@ onMounted(fetchSettings);
                 <Input
                   :model-value="String(settings!.jwt_expiry)"
                   type="number"
+                  size="sm"
                   @update:model-value="settings!.jwt_expiry = Number($event)"
                 />
               </div>
@@ -244,6 +246,7 @@ onMounted(fetchSettings);
                 <Input
                   :model-value="String(settings!.max_file_upload_size / 1024 / 1024)"
                   type="number"
+                  size="sm"
                   @update:model-value="
                     settings!.max_file_upload_size = Number($event) * 1024 * 1024
                   "
@@ -254,12 +257,13 @@ onMounted(fetchSettings);
                 <Input
                   :model-value="String(settings!.rate_limit_per_min)"
                   type="number"
+                  size="sm"
                   @update:model-value="settings!.rate_limit_per_min = Number($event)"
                 />
               </div>
               <div>
                 <label class="block text-sm text-text-muted mb-2">CORS Origins</label>
-                <Input v-model="settings!.cors_origins" type="text" />
+                <Input v-model="settings!.cors_origins" type="text" size="sm" />
               </div>
             </div>
           </div>

@@ -18,7 +18,7 @@ const updatePosition = async () => {
   if (!isOpen.value || !triggerRef.value) return;
 
   await nextTick();
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
   if (!popoverRef.value) return;
 
   const triggerRect = triggerRef.value.getBoundingClientRect();

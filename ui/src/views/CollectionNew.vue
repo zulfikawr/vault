@@ -43,7 +43,11 @@ const saveCollection = async () => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
           <span class="font-medium text-text flex-shrink-0">New</span>
         </div>
@@ -56,34 +60,40 @@ const saveCollection = async () => {
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Create New Collection</h1>
+            <h1 class="text-xl font-semibold text-text">Create New Collection</h1>
             <p class="mt-1 text-sm text-text-muted">Define your database schema and fields</p>
           </div>
-          <div class="flex items-center gap-3">
-            <Button variant="secondary" size="sm" class="flex-1 sm:flex-none" @click="router.push('/collections')">
+          <div class="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              class="px-3 py-1.5 text-sm"
+              @click="router.push('/collections')"
+            >
               Cancel
             </Button>
-            <Button type="submit" size="sm" class="flex-1 sm:flex-none">
+            <Button type="submit" size="sm" class="px-3 py-1.5 text-sm">
               <Save class="w-4 h-4" />
-              Create Collection
+              Create
             </Button>
           </div>
         </div>
 
-        <form class="space-y-6 sm:space-y-8" @submit.prevent="saveCollection">
+        <form class="space-y-4" @submit.prevent="saveCollection">
           <!-- Basic Info Card -->
-          <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
-            <h2 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
-              <FolderPlus class="w-5 h-5 text-primary" />
+          <div class="bg-surface-dark border border-border rounded-lg p-4">
+            <h2 class="text-base font-medium text-text mb-3 flex items-center gap-2">
+              <FolderPlus class="w-4 h-4 text-primary" />
               Basic Information
             </h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium text-text mb-2">Collection Name</label>
                 <Input
                   v-model="collectionFormData.name"
                   type="text"
+                  size="sm"
                   required
                   placeholder="e.g. products, users, posts"
                 />
@@ -92,7 +102,7 @@ const saveCollection = async () => {
 
               <div>
                 <label class="block text-sm font-medium text-text mb-2">Collection Type</label>
-                <Dropdown v-model="collectionFormData.type" align="left">
+                <Dropdown v-model="collectionFormData.type" align="left" size="sm">
                   <template #trigger>
                     {{
                       collectionFormData.type === 'base'
@@ -113,30 +123,30 @@ const saveCollection = async () => {
           </div>
 
           <!-- Fields Card -->
-          <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-text flex items-center gap-2">
-                <Plus class="w-5 h-5 text-primary" />
+          <div class="bg-surface-dark border border-border rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-base font-medium text-text flex items-center gap-2">
+                <Plus class="w-4 h-4 text-primary" />
                 Fields Definition
               </h2>
-              <Button variant="secondary" size="sm" @click="addField">
+              <Button variant="secondary" size="sm" class="text-xs px-2.5 py-1" @click="addField">
                 <Plus class="w-4 h-4" />
                 <span class="hidden sm:inline">Add Field</span>
               </Button>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-2">
               <div
                 v-for="(field, index) in collectionFormData.fields"
                 :key="index"
-                class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-surface p-3 rounded border border-border"
               >
                 <div class="w-full sm:flex-1">
-                  <Input v-model="field.name" placeholder="field_name" type="text" />
+                  <Input v-model="field.name" placeholder="field_name" type="text" size="sm" />
                 </div>
 
-                <div class="w-full sm:w-40">
-                  <Dropdown v-model="field.type" align="left">
+                <div class="w-full sm:w-32">
+                  <Dropdown v-model="field.type" align="left" size="sm">
                     <template #trigger>
                       {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
                     </template>
@@ -150,8 +160,8 @@ const saveCollection = async () => {
                   </Dropdown>
                 </div>
 
-                <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-                  <Checkbox v-model="field.required" label="Required" />
+                <div class="flex items-center justify-between w-full sm:w-auto gap-3">
+                  <Checkbox v-model="field.required" label="Required" size="sm" />
 
                   <Button
                     variant="ghost"
@@ -166,7 +176,6 @@ const saveCollection = async () => {
               </div>
             </div>
           </div>
-
         </form>
       </div>
     </div>

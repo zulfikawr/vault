@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout.vue';
 import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import Tabs from '../components/Tabs.vue';
 import { Trash2, RefreshCw } from 'lucide-vue-next';
 
 interface LogEntry {
@@ -15,11 +16,27 @@ interface LogEntry {
   [key: string]: string;
 }
 
+interface AuditLog {
+  id: string;
+  action: string;
+  resource: string;
+  admin_id: string;
+  details: string;
+  timestamp: string;
+}
+
+const activeTab = ref('system');
+const tabs = [
+  { id: 'system', label: 'System Logs' },
+  { id: 'audit', label: 'Audit Logs' },
+];
+
+// System Logs
 const rawLogs = ref<string[]>([]);
-const loading = ref(false);
+const systemLoading = ref(false);
 const showClearModal = ref(false);
 
-const parsedLogs = computed(() => {
+const parsedSystemLogs = computed(() => {
   const logs = rawLogs.value.map((log) => {
     const timeMatch = log.match(/time=([^ ]+)/);
     const levelMatch = log.match(/level=([^ ]+)/);
@@ -45,7 +62,7 @@ const parsedLogs = computed(() => {
   return logs.reverse();
 });
 
-const headers = computed(() => {
+const systemHeaders = computed(() => {
   const baseHeaders = [
     { key: 'time', label: 'Time' },
     { key: 'level', label: 'Level' },
@@ -53,7 +70,7 @@ const headers = computed(() => {
   ];
 
   const allKeys = new Set<string>();
-  parsedLogs.value.forEach((log) => {
+  parsedSystemLogs.value.forEach((log) => {
     Object.keys(log).forEach((key) => {
       if (!['time', 'level', 'message'].includes(key)) {
         allKeys.add(key);
@@ -68,15 +85,15 @@ const headers = computed(() => {
   return baseHeaders;
 });
 
-const fetchLogs = async () => {
-  loading.value = true;
+const fetchSystemLogs = async () => {
+  systemLoading.value = true;
   try {
     const response = await axios.get('/api/admin/logs?limit=500');
     rawLogs.value = response.data.data || [];
   } catch (error) {
     console.error('Failed to fetch logs', error);
   } finally {
-    loading.value = false;
+    systemLoading.value = false;
   }
 };
 
@@ -90,7 +107,59 @@ const handleClearLogs = async () => {
   }
 };
 
-onMounted(fetchLogs);
+// Audit Logs
+const auditLogsData = ref<AuditLog[]>([]);
+const auditLoading = ref(false);
+
+const parsedAuditLogs = computed(() => {
+  return auditLogsData.value.map((log) => ({
+    ...log,
+    timestamp: new Date(log.timestamp).toLocaleString(),
+    details: typeof log.details === 'string' ? log.details : JSON.stringify(log.details),
+  }));
+});
+
+const auditHeaders = [
+  { key: 'timestamp', label: 'Timestamp' },
+  { key: 'action', label: 'Action' },
+  { key: 'resource', label: 'Resource' },
+  { key: 'admin_id', label: 'Admin' },
+  { key: 'details', label: 'Details' },
+];
+
+const fetchAuditLogs = async () => {
+  auditLoading.value = true;
+  try {
+    const response = await axios.get(
+      '/api/collections/_audit_logs/records?limit=100&sort=-timestamp'
+    );
+    auditLogsData.value = response.data.data || [];
+  } catch (error) {
+    console.error('Failed to fetch audit logs', error);
+  } finally {
+    auditLoading.value = false;
+  }
+};
+
+const refresh = () => {
+  if (activeTab.value === 'system') {
+    fetchSystemLogs();
+  } else {
+    fetchAuditLogs();
+  }
+};
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'system' && rawLogs.value.length === 0) {
+    fetchSystemLogs();
+  } else if (newTab === 'audit' && auditLogsData.value.length === 0) {
+    fetchAuditLogs();
+  }
+});
+
+onMounted(() => {
+  fetchSystemLogs();
+});
 </script>
 
 <template>
@@ -98,7 +167,7 @@ onMounted(fetchLogs);
     <ConfirmModal
       :show="showClearModal"
       title="Clear Logs"
-      message="Are you sure you want to clear all logs? This action cannot be undone."
+      message="Are you sure you want to log out? You will need to sign in again to access the admin panel."
       confirm-text="Clear"
       cancel-text="Cancel"
       variant="warning"
@@ -109,8 +178,6 @@ onMounted(fetchLogs);
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
-          <span class="hover:text-text cursor-pointer" @click="$router.push('/')">Vault</span>
-          <span class="mx-2">/</span>
           <span class="font-medium text-text">Logs</span>
         </div>
       </template>
@@ -120,29 +187,53 @@ onMounted(fetchLogs);
       <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">System Logs</h1>
-            <p class="mt-1 text-sm text-text-muted">View and manage application logs.</p>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Logs</h1>
+            <p class="mt-1 text-sm text-text-muted">Monitor system events and audit trails.</p>
           </div>
           <div class="flex gap-2">
-            <Button variant="secondary" size="sm" :disabled="loading" @click="fetchLogs">
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="systemLoading || auditLoading"
+              @click="refresh"
+            >
               <RefreshCw class="w-4 h-4" />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" class="!text-error" @click="showClearModal = true">
+            <Button
+              v-if="activeTab === 'system'"
+              variant="destructive"
+              size="sm"
+              @click="showClearModal = true"
+            >
               <Trash2 class="w-4 h-4" />
               Clear
             </Button>
           </div>
         </div>
 
-        <Table
-          :headers="headers"
-          :items="parsedLogs"
-          :loading="loading"
-          empty-text="No logs available"
-          :enable-pagination="true"
-          :default-page-size="20"
-        />
+        <Tabs v-model="activeTab" :tabs="tabs" />
+
+        <div v-if="activeTab === 'system'">
+          <Table
+            :headers="systemHeaders"
+            :items="parsedSystemLogs"
+            :loading="systemLoading"
+            empty-text="No system logs available"
+            :enable-pagination="true"
+            :default-page-size="20"
+          />
+        </div>
+        <div v-else>
+          <Table
+            :headers="auditHeaders"
+            :items="parsedAuditLogs"
+            :loading="auditLoading"
+            empty-text="No audit logs available"
+            :enable-pagination="true"
+            :default-page-size="20"
+          />
+        </div>
       </div>
     </main>
   </AppLayout>

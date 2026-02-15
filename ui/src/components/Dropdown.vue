@@ -5,11 +5,13 @@ import { ChevronDown } from 'lucide-vue-next';
 interface Props {
   align?: 'left' | 'right';
   modelValue?: string | number;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 const props = withDefaults(defineProps<Props>(), {
   align: 'left',
   modelValue: '',
+  size: 'md',
 });
 
 defineEmits<{
@@ -106,7 +108,16 @@ defineExpose({ close });
     <button
       ref="triggerRef"
       type="button"
-      class="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all flex items-center justify-between"
+      :class="[
+        'w-full bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all flex items-center justify-between',
+        props.size === 'xs'
+          ? 'px-2 py-1 text-xs'
+          : props.size === 'sm'
+            ? 'px-3 py-1.5 text-sm'
+            : props.size === 'lg'
+              ? 'px-5 py-3 text-base'
+              : 'px-4 py-2.5 text-base',
+      ]"
       @click="toggle"
     >
       <slot name="trigger" />

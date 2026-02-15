@@ -81,9 +81,17 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
-          <span class="hover:text-text cursor-pointer text-text truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span
+            class="hover:text-text cursor-pointer text-text truncate"
+            @click="router.push(`/collections/${collectionName}`)"
+            >{{ collectionName }}</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
           <span class="font-medium text-text flex-shrink-0">New</span>
         </div>
@@ -96,28 +104,28 @@ onMounted(() => {
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Create New Record</h1>
+            <h1 class="text-xl font-semibold text-text">Create New Record</h1>
             <p class="mt-1 text-sm text-text-muted">Add a new record to {{ collectionName }}</p>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              class="flex-1 sm:flex-none"
+              class="px-3 py-1.5 text-sm"
               @click="router.push(`/collections/${collectionName}`)"
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" class="flex-1 sm:flex-none">
+            <Button type="submit" size="sm" class="px-3 py-1.5 text-sm">
               <Save class="w-4 h-4" />
-              Create Record
+              Create
             </Button>
           </div>
         </div>
 
-        <form class="space-y-6 sm:space-y-8" @submit.prevent="saveRecord">
-          <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
-            <div class="space-y-6">
+        <form class="space-y-4" @submit.prevent="saveRecord">
+          <div class="bg-surface-dark border border-border rounded-lg p-4">
+            <div class="space-y-4">
               <div v-for="field in collection?.fields" :key="field.name">
                 <label class="block text-sm font-medium text-text mb-2">
                   {{ field.name }}
@@ -128,6 +136,7 @@ onMounted(() => {
                   v-if="field.type === 'text'"
                   v-model="formData[field.name] as string"
                   type="text"
+                  size="sm"
                   :required="field.required"
                 />
 
@@ -135,6 +144,7 @@ onMounted(() => {
                   v-else-if="field.type === 'number'"
                   v-model="formData[field.name] as number"
                   type="number"
+                  size="sm"
                   :required="field.required"
                 />
 
@@ -149,6 +159,7 @@ onMounted(() => {
                   v-else-if="field.type === 'json'"
                   v-model="formData[field.name] as string"
                   type="textarea"
+                  size="sm"
                   :required="field.required"
                   placeholder='{"key": "value"}'
                   :rows="4"
@@ -158,6 +169,7 @@ onMounted(() => {
                   v-else
                   v-model="formData[field.name] as string"
                   type="text"
+                  size="sm"
                   :required="field.required"
                 />
 

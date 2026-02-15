@@ -93,10 +93,10 @@ onMounted(fetchCollections);
           <span
             v-if="!sidebarCollapsed || isMobileMenuOpen"
             class="font-bold text-lg tracking-tight text-primary"
-            >vault</span
+            >Vault</span
           >
           <div class="hidden lg:block">
-            <Button variant="ghost" size="xs" @click="toggleSidebar">
+            <Button variant="ghost" size="sm" class="!p-2" @click="toggleSidebar">
               <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
               <ChevronRight v-else class="w-5 h-5 text-text-muted" />
             </Button>
@@ -104,15 +104,20 @@ onMounted(fetchCollections);
         </div>
 
         <!-- Navigation -->
-        <nav class="p-4 space-y-1">
+        <nav
+          :class="[
+            'p-4 space-y-1',
+            sidebarCollapsed ? 'lg:px-0 lg:flex lg:flex-col lg:items-center' : '',
+          ]"
+        >
           <Button
             as="RouterLink"
             to="/"
             variant="ghost"
             size="sm"
             :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
               isActive('/') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
@@ -127,8 +132,8 @@ onMounted(fetchCollections);
             variant="ghost"
             size="sm"
             :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0' : 'gap-3 px-3',
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
               isActive('/collections') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
@@ -143,8 +148,8 @@ onMounted(fetchCollections);
             variant="ghost"
             size="sm"
             :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
               isActive('/storage') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
@@ -159,8 +164,8 @@ onMounted(fetchCollections);
             variant="ghost"
             size="sm"
             :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
               isActive('/logs') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
@@ -171,28 +176,12 @@ onMounted(fetchCollections);
           </Button>
           <Button
             as="RouterLink"
-            to="/audit-logs"
-            variant="ghost"
-            size="sm"
-            :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
-              isActive('/audit-logs') ? '!bg-primary/10 !text-primary' : '',
-            ]"
-          >
-            <template #leftIcon>
-              <Terminal class="w-5 h-5 flex-shrink-0" />
-            </template>
-            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Audit Logs</span>
-          </Button>
-          <Button
-            as="RouterLink"
             to="/settings"
             variant="ghost"
             size="sm"
             :class="[
-              'w-full !justify-start',
-              sidebarCollapsed ? 'lg:!justify-center lg:px-0 gap-3 px-3' : 'gap-3 px-3',
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
               isActive('/settings') ? '!bg-primary/10 !text-primary' : '',
             ]"
           >
@@ -233,7 +222,12 @@ onMounted(fetchCollections);
       </div>
 
       <!-- User Profile -->
-      <div class="p-4 border-t border-border">
+      <div
+        :class="[
+          'p-4 border-t border-border',
+          sidebarCollapsed ? 'lg:px-0 lg:flex lg:flex-col lg:items-center' : '',
+        ]"
+      >
         <div
           v-if="!sidebarCollapsed || isMobileMenuOpen"
           class="flex items-center gap-3 w-full p-2 rounded-lg mb-2"
@@ -261,11 +255,16 @@ onMounted(fetchCollections);
         </div>
         <Button
           variant="ghost"
-          class="w-full !text-error hover:!bg-error/10"
-          :class="sidebarCollapsed && !isMobileMenuOpen ? '!justify-center' : '!justify-start px-3'"
+          size="sm"
+          class="!text-error hover:!bg-error/10 h-9 transition-all duration-300"
+          :class="[
+            sidebarCollapsed && !isMobileMenuOpen
+              ? 'lg:w-9 lg:!p-0'
+              : 'w-full !justify-start gap-3 px-3',
+          ]"
           @click="showLogoutModal = true"
         >
-          <LogOut class="w-4 h-4 flex-shrink-0" />
+          <LogOut class="w-5 h-5 flex-shrink-0" />
           <span v-if="!sidebarCollapsed || isMobileMenuOpen" class="text-xs font-bold"
             >Sign Out</span
           >

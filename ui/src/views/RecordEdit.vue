@@ -78,9 +78,17 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
-          <span class="hover:text-text cursor-pointer text-text truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span
+            class="hover:text-text cursor-pointer text-text truncate"
+            @click="router.push(`/collections/${collectionName}`)"
+            >{{ collectionName }}</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
           <span class="font-medium text-text flex-shrink-0">Edit</span>
         </div>
@@ -92,24 +100,31 @@ onMounted(() => {
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Edit Record</h1>
-            <p class="mt-1 text-sm text-text-muted">Update record in {{ collectionName }} collection</p>
+            <h1 class="text-xl font-semibold text-text">Edit Record</h1>
+            <p class="mt-1 text-sm text-text-muted">
+              Update record in {{ collectionName }} collection
+            </p>
           </div>
-          <div class="flex items-center gap-3">
-            <Button variant="secondary" size="sm" class="flex-1 sm:flex-none" @click="router.push(`/collections/${collectionName}`)">
+          <div class="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              class="px-3 py-1.5 text-sm"
+              @click="router.push(`/collections/${collectionName}`)"
+            >
               <X class="w-4 h-4" />
               Cancel
             </Button>
-            <Button type="submit" size="sm" class="flex-1 sm:flex-none">
+            <Button type="submit" size="sm" class="px-3 py-1.5 text-sm">
               <Save class="w-4 h-4" />
-              Update Record
+              Update
             </Button>
           </div>
         </div>
 
         <form
           v-if="collection"
-          class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6 sm:space-y-8"
+          class="bg-surface-dark rounded-lg border border-border p-4 space-y-4"
           @submit.prevent="handleSubmit"
         >
           <div class="space-y-4">
@@ -123,6 +138,7 @@ onMounted(() => {
                 v-if="field.type === 'text'"
                 :model-value="String(formData[field.name] || '')"
                 type="text"
+                size="sm"
                 :required="field.required"
                 @update:model-value="formData[field.name] = $event"
               />
@@ -131,6 +147,7 @@ onMounted(() => {
                 v-else-if="field.type === 'number'"
                 :model-value="String(formData[field.name] || '')"
                 type="number"
+                size="sm"
                 :required="field.required"
                 @update:model-value="formData[field.name] = $event"
               />
@@ -139,6 +156,7 @@ onMounted(() => {
                 v-else-if="field.type === 'email'"
                 :model-value="String(formData[field.name] || '')"
                 type="email"
+                size="sm"
                 :required="field.required"
                 @update:model-value="formData[field.name] = $event"
               />
@@ -147,6 +165,7 @@ onMounted(() => {
                 v-else-if="field.type === 'date'"
                 :model-value="String(formData[field.name] || '')"
                 type="date"
+                size="sm"
                 :required="field.required"
                 @update:model-value="formData[field.name] = $event"
               />
@@ -163,6 +182,7 @@ onMounted(() => {
                 v-else-if="field.type === 'json'"
                 :model-value="String(formData[field.name] || '')"
                 type="textarea"
+                size="sm"
                 :required="field.required"
                 :rows="4"
                 @update:model-value="formData[field.name] = $event"
@@ -172,6 +192,7 @@ onMounted(() => {
                 v-else
                 :model-value="String(formData[field.name] || '')"
                 type="text"
+                size="sm"
                 :required="field.required"
                 @update:model-value="formData[field.name] = $event"
               />

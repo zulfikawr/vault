@@ -54,12 +54,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/audit-logs',
-      name: 'AuditLogs',
-      component: () => import('../views/AuditLogs.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue'),

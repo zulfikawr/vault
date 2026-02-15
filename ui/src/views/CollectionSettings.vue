@@ -52,7 +52,7 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find((c: any) => c.name === collectionName.value);
+    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
     collection.value = col || null;
     fields.value = JSON.parse(JSON.stringify(col?.fields || []));
     rules.value = {
@@ -114,9 +114,17 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/collections')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/collections')"
+            >Collections</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
-          <span class="hover:text-text cursor-pointer text-text truncate" @click="router.push(`/collections/${collectionName}`)">{{ collectionName }}</span>
+          <span
+            class="hover:text-text cursor-pointer text-text truncate"
+            @click="router.push(`/collections/${collectionName}`)"
+            >{{ collectionName }}</span
+          >
           <span class="text-text-muted flex-shrink-0">/</span>
           <span class="font-medium text-text flex-shrink-0">Settings</span>
         </div>
@@ -129,14 +137,14 @@ onMounted(() => {
         <!-- Page Title and Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-text tracking-tight">Collection Settings</h1>
+            <h1 class="text-xl font-semibold text-text">Collection Settings</h1>
             <p class="mt-1 text-sm text-text-muted">Manage fields for {{ collectionName }}</p>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              class="flex-1 sm:flex-none"
+              class="px-3 py-1.5 text-sm"
               @click="router.push(`/collections/${collectionName}`)"
             >
               Cancel
@@ -144,62 +152,56 @@ onMounted(() => {
             <Button
               variant="destructive"
               size="sm"
-              class="flex-1 sm:flex-none"
+              class="px-3 py-1.5 text-sm"
               @click="showDeleteModal = true"
             >
               <Trash2 class="w-4 h-4" />
-              Delete Collection
+              Delete
             </Button>
-            <Button 
-              size="sm"
-              type="submit" 
-              class="flex-1 sm:flex-none">
+            <Button size="sm" type="submit" class="px-3 py-1.5 text-sm">
               <Save class="w-4 h-4" />
-              Save Changes
+              Save
             </Button>
           </div>
         </div>
 
-        <form class="space-y-6" @submit.prevent="saveSettings">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-text flex items-center gap-2">
-              <Settings class="w-5 h-5 text-primary" />
+        <form class="space-y-4" @submit.prevent="saveSettings">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-medium text-text flex items-center gap-2">
+              <Settings class="w-4 h-4 text-primary" />
               Fields Definition
             </h2>
-            <Button variant="secondary" size="sm" @click="addField">
+            <Button variant="secondary" size="sm" class="text-xs px-2.5 py-1" @click="addField">
               <Plus class="w-4 h-4" />
               <span class="hidden sm:inline">Add Field</span>
-              <span class="sm:hidden">Add</span>
             </Button>
           </div>
 
-          <div class="space-y-3">
+          <div class="space-y-2">
             <div
               v-for="(field, index) in fields"
               :key="index"
-              class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-surface p-4 rounded-lg border border-border"
+              class="flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-surface p-3 rounded border border-border"
             >
               <div class="w-full sm:flex-1">
-                <Input v-model="field.name" placeholder="field_name" type="text" />
+                <Input v-model="field.name" placeholder="field_name" type="text" size="sm" />
               </div>
 
-              <div class="w-full sm:w-40">
-                <Dropdown v-model="field.type" align="left">
+              <div class="w-full sm:w-32">
+                <Dropdown v-model="field.type" align="left" size="sm">
                   <template #trigger>
                     {{ field.type.charAt(0).toUpperCase() + field.type.slice(1) }}
                   </template>
                   <DropdownItem value="text" @select="field.type = 'text'">Text</DropdownItem>
-                  <DropdownItem value="number" @select="field.type = 'number'"
-                    >Number</DropdownItem
-                  >
+                  <DropdownItem value="number" @select="field.type = 'number'">Number</DropdownItem>
                   <DropdownItem value="bool" @select="field.type = 'bool'">Boolean</DropdownItem>
                   <DropdownItem value="json" @select="field.type = 'json'">JSON</DropdownItem>
                   <DropdownItem value="file" @select="field.type = 'file'">File</DropdownItem>
                 </Dropdown>
               </div>
 
-              <div class="flex items-center justify-between w-full sm:w-auto gap-4">
-                <Checkbox v-model="field.required" label="Required" />
+              <div class="flex items-center justify-between w-full sm:w-auto gap-3">
+                <Checkbox v-model="field.required" label="Required" size="sm" />
 
                 <Button
                   variant="ghost"
@@ -214,37 +216,67 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="pt-8 border-t border-border">
-            <h2 class="text-lg font-semibold text-text flex items-center gap-2 mb-4">
-              <Settings class="w-5 h-5 text-primary" />
+          <div class="pt-4 border-t border-border">
+            <h2 class="text-base font-medium text-text flex items-center gap-2 mb-3">
+              <Settings class="w-4 h-4 text-primary" />
               API Rules
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">List Rule</label>
-                <Input v-model="rules.list_rule" placeholder="e.g. id = @request.auth.id" />
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider"
+                  >List Rule</label
+                >
+                <Input
+                  v-model="rules.list_rule"
+                  placeholder="e.g. id = @request.auth.id"
+                  size="sm"
+                />
                 <p class="text-[10px] text-text-dim">Leave empty for public access</p>
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">View Rule</label>
-                <Input v-model="rules.view_rule" placeholder="e.g. id = @request.auth.id" />
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider"
+                  >View Rule</label
+                >
+                <Input
+                  v-model="rules.view_rule"
+                  placeholder="e.g. id = @request.auth.id"
+                  size="sm"
+                />
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Create Rule</label>
-                <Input v-model="rules.create_rule" placeholder="e.g. @request.auth.id != ''" />
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider"
+                  >Create Rule</label
+                >
+                <Input
+                  v-model="rules.create_rule"
+                  placeholder="e.g. @request.auth.id != ''"
+                  size="sm"
+                />
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Update Rule</label>
-                <Input v-model="rules.update_rule" placeholder="e.g. id = @request.auth.id" />
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider"
+                  >Update Rule</label
+                >
+                <Input
+                  v-model="rules.update_rule"
+                  placeholder="e.g. id = @request.auth.id"
+                  size="sm"
+                />
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Delete Rule</label>
-                <Input v-model="rules.delete_rule" placeholder="e.g. @request.auth.id = 'admin-id'" />
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider"
+                  >Delete Rule</label
+                >
+                <Input
+                  v-model="rules.delete_rule"
+                  placeholder="e.g. @request.auth.id = 'admin-id'"
+                  size="sm"
+                />
               </div>
             </div>
           </div>
         </form>
-        
+
         <!-- Delete Confirmation Modal -->
         <ConfirmModal
           :show="showDeleteModal"

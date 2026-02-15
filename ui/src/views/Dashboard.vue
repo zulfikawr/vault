@@ -242,8 +242,8 @@ onMounted(async () => {
               >[]
             "
             row-clickable
-            @row-click="(col: Record<string, unknown>) => router.push(`/collections/${col.name}`)"
             :enable-pagination="false"
+            @row-click="(col: Record<string, unknown>) => router.push(`/collections/${col.name}`)"
           >
             <template #cell(name)="{ item }">
               <div class="flex items-center gap-3">
@@ -264,13 +264,13 @@ onMounted(async () => {
               >
             </template>
             <template #cell(records)="{ item }">
-              <span class="text-text-muted shrink-0">{{ recordCounts[(item as unknown as Collection).name] ?? 0 }} records</span>
+              <span class="text-text-muted shrink-0"
+                >{{ recordCounts[(item as unknown as Collection).name] ?? 0 }} records</span
+              >
             </template>
             <template #cell(created)="{ item }">
               <span class="text-text-muted text-xs">
-                {{
-                  item.created ? new Date(item.created as string).toLocaleDateString() : '-'
-                }}
+                {{ item.created ? new Date(item.created as string).toLocaleDateString() : '-' }}
               </span>
             </template>
             <template #empty>

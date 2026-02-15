@@ -56,7 +56,7 @@ const filteredCollections = computed(() => {
   if (sortKey.value) {
     result.sort((a, b) => {
       let aValue, bValue;
-      
+
       if (sortKey.value === 'records') {
         // Special handling for record count
         aValue = recordCounts.value[a.name] ?? 0;
@@ -73,8 +73,12 @@ const filteredCollections = computed(() => {
       if (bValue == null) return sortOrder.value === 'asc' ? -1 : 1;
 
       // Handle dates
-      if (typeof aValue === 'string' && !isNaN(Date.parse(aValue)) &&
-          typeof bValue === 'string' && !isNaN(Date.parse(bValue))) {
+      if (
+        typeof aValue === 'string' &&
+        !isNaN(Date.parse(aValue)) &&
+        typeof bValue === 'string' &&
+        !isNaN(Date.parse(bValue))
+      ) {
         const dateA = new Date(aValue).getTime();
         const dateB = new Date(bValue).getTime();
         return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA;
@@ -95,9 +99,7 @@ const filteredCollections = computed(() => {
       // Fallback comparison
       const strA = String(aValue);
       const strB = String(bValue);
-      return sortOrder.value === 'asc'
-        ? strA.localeCompare(strB)
-        : strB.localeCompare(strA);
+      return sortOrder.value === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
     });
   }
 
@@ -108,11 +110,13 @@ const fetchCollections = async () => {
   try {
     const response = await axios.get('/api/admin/collections');
     collections.value = response.data.data;
-    
+
     // Fetch record counts for each collection
     for (const collection of collections.value) {
       try {
-        const recordResponse = await axios.get(`/api/collections/${collection.name}/records?perPage=1`);
+        const recordResponse = await axios.get(
+          `/api/collections/${collection.name}/records?perPage=1`
+        );
         recordCounts.value[collection.name] = recordResponse.data.totalItems || 0;
       } catch (error) {
         console.error(`Failed to fetch record count for collection ${collection.name}:`, error);
@@ -131,7 +135,7 @@ const handleDeleteClick = (collection: Record<string, unknown>) => {
 
 const confirmDelete = async () => {
   if (!collectionToDelete.value) return;
-  
+
   try {
     await axios.delete(`/api/admin/collections/${collectionToDelete.value.name}`);
     // Refresh the collections list
@@ -155,7 +159,11 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="router.push('/')">Collections</span>
+          <span
+            class="hover:text-text cursor-pointer font-medium text-text"
+            @click="router.push('/')"
+            >Collections</span
+          >
         </div>
       </template>
     </AppHeader>
@@ -219,20 +227,25 @@ onMounted(() => {
           :default-page-size="10"
           :sort-key="sortKey"
           :sort-order="sortOrder"
-          @sort-change="(key, order) => { sortKey = key; sortOrder = order; }"
           row-clickable
-          @row-click="(item, event) => {
-            // Only navigate if the click didn't originate from the actions column
-            const target = event.target as HTMLElement;
-            if (!target.closest('.actions-cell')) {
-              router.push(`/collections/${(item as unknown as Collection).name}`)
+          @sort-change="
+            (key, order) => {
+              sortKey = key;
+              sortOrder = order;
             }
-          }"
+          "
+          @row-click="
+            (item, event) => {
+              // Only navigate if the click didn't originate from the actions column
+              const target = event.target as HTMLElement;
+              if (!target.closest('.actions-cell')) {
+                router.push(`/collections/${(item as unknown as Collection).name}`);
+              }
+            }
+          "
         >
           <template #cell(name)="{ item }">
-            <div
-              class="flex items-center gap-3"
-            >
+            <div class="flex items-center gap-3">
               <div class="p-1.5 rounded bg-primary/10 text-primary">
                 <FolderOpen class="w-4 h-4" />
               </div>
@@ -241,35 +254,26 @@ onMounted(() => {
           </template>
 
           <template #cell(type)="{ item }">
-            <span
-              class="text-text-muted"
-              >{{ item.type }}</span
-            >
+            <span class="text-text-muted">{{ item.type }}</span>
           </template>
 
           <template #cell(fields)="{ item }">
-            <span
-              class="text-text-muted"
+            <span class="text-text-muted"
               >{{ (item as unknown as Collection).fields?.length ?? 0 }} fields</span
             >
           </template>
 
           <template #cell(records)="{ item }">
-            <span
-              class="text-text-muted"
+            <span class="text-text-muted"
               >{{ recordCounts[(item as unknown as Collection).name] ?? 0 }} records</span
             >
           </template>
 
           <template #cell(created)="{ item }">
-            <span
-              class="text-text-muted text-xs"
-              >{{
-                item.created ? new Date(item.created as string).toLocaleDateString() : '-'
-              }}</span
-            >
+            <span class="text-text-muted text-xs">{{
+              item.created ? new Date(item.created as string).toLocaleDateString() : '-'
+            }}</span>
           </template>
-
 
           <template #cell(actions)="{ item }">
             <div class="actions-cell">
@@ -295,7 +299,8 @@ onMounted(() => {
                     @click="
                       close();
                       handleDeleteClick(item);
-                    ">
+                    "
+                  >
                     Delete
                   </PopoverItem>
                 </template>
@@ -312,11 +317,10 @@ onMounted(() => {
               >
             </div>
           </template>
-
         </Table>
       </div>
     </div>
-    
+
     <!-- Delete Confirmation Modal -->
     <ConfirmModal
       :show="showDeleteModal"

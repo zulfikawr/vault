@@ -2,7 +2,14 @@
 import { ref, computed } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DropdownItem from './DropdownItem.vue';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-vue-next';
+import {
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-vue-next';
 
 interface Header {
   key: string;
@@ -40,16 +47,16 @@ const emit = defineEmits<{
 }>();
 
 const handleSort = (headerKey: string) => {
-  if (!props.headers.find(h => h.key === headerKey)?.sortable) {
+  if (!props.headers.find((h) => h.key === headerKey)?.sortable) {
     return;
   }
-  
+
   let newSortOrder: 'asc' | 'desc' = 'asc';
   if (props.sortKey === headerKey) {
     // Toggle order if clicking the same column
     newSortOrder = props.sortOrder === 'asc' ? 'desc' : 'asc';
   }
-  
+
   emit('sortChange', headerKey, newSortOrder);
 };
 
@@ -61,45 +68,47 @@ const sortedItems = computed(() => {
   if (!props.sortKey) {
     return props.items;
   }
-  
+
   return [...props.items].sort((a, b) => {
     // Check if sortKey is defined before accessing
     if (!props.sortKey) return 0;
-    
+
     const aValue = a[props.sortKey as keyof typeof a];
     const bValue = b[props.sortKey as keyof typeof b];
-    
+
     // Handle null/undefined values
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return props.sortOrder === 'asc' ? 1 : -1;
     if (bValue == null) return props.sortOrder === 'asc' ? -1 : 1;
-    
+
     // Handle dates
-    if (typeof aValue === 'string' && !isNaN(Date.parse(aValue)) && 
-        typeof bValue === 'string' && !isNaN(Date.parse(bValue))) {
+    if (
+      typeof aValue === 'string' &&
+      !isNaN(Date.parse(aValue)) &&
+      typeof bValue === 'string' &&
+      !isNaN(Date.parse(bValue))
+    ) {
       const dateA = new Date(aValue).getTime();
       const dateB = new Date(bValue).getTime();
       return props.sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     }
-    
+
     // Handle numbers
     if (typeof aValue === 'number' && typeof bValue === 'number') {
       return props.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
     }
-    
+
     // Handle strings
     if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return props.sortOrder === 'asc' 
-        ? aValue.localeCompare(bValue) 
+      return props.sortOrder === 'asc'
+        ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
-    
+
     // Fallback comparison
     const strA = String(aValue);
     const strB = String(bValue);
-    return props.sortOrder === 'asc' 
-      ? strA.localeCompare(strB) 
-      : strB.localeCompare(strA);
+    return props.sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
   });
 });
 
@@ -161,24 +170,28 @@ const getFlexAlignClass = (align?: string) => {
                 'px-4 sm:px-6 py-3 text-xs font-medium text-text-muted uppercase tracking-wider',
                 getAlignClass(header.align),
                 header.sticky ? 'sticky right-0 bg-surface z-10' : '',
-                header.sortable ? 'cursor-pointer select-none hover:text-text' : ''
+                header.sortable ? 'cursor-pointer select-none hover:text-text' : '',
               ]"
               @click="header.sortable ? handleSort(header.key) : null"
             >
               <div class="flex items-center gap-1" :class="getFlexAlignClass(header.align)">
                 <span>{{ header.label }}</span>
                 <div v-if="header.sortable" class="flex flex-col">
-                  <ArrowUp 
+                  <ArrowUp
                     :class="[
                       'w-2 h-2',
-                      sortKey === header.key && sortOrder === 'asc' ? 'text-text' : 'text-text-muted'
-                    ]" 
+                      sortKey === header.key && sortOrder === 'asc'
+                        ? 'text-text'
+                        : 'text-text-muted',
+                    ]"
                   />
-                  <ArrowDown 
+                  <ArrowDown
                     :class="[
                       'w-2 h-2',
-                      sortKey === header.key && sortOrder === 'desc' ? 'text-text' : 'text-text-muted'
-                    ]" 
+                      sortKey === header.key && sortOrder === 'desc'
+                        ? 'text-text'
+                        : 'text-text-muted',
+                    ]"
                   />
                 </div>
               </div>
@@ -201,9 +214,7 @@ const getFlexAlignClass = (align?: string) => {
               :class="[
                 'px-4 sm:px-6 py-4',
                 getAlignClass(header.align),
-                header.sticky
-                  ? 'sticky right-0 bg-transparent z-10'
-                  : '',
+                header.sticky ? 'sticky right-0 bg-transparent z-10' : '',
               ]"
             >
               <slot :name="`cell(${header.key})`" :item="item">
@@ -258,10 +269,10 @@ const getFlexAlignClass = (align?: string) => {
       <div class="text-xs text-text-muted flex items-center gap-1">
         <div class="flex items-center whitespace-nowrap flex-shrink-0">
           <span class="mr-1">Showing</span>
-          <Dropdown align="left">
+          <Dropdown align="left" size="xs">
             <template #trigger>
-              <span class="pr-2">
-                {{pageSize}}
+              <span class="px-1">
+                {{ pageSize }}
               </span>
             </template>
             <template #default>
@@ -277,36 +288,34 @@ const getFlexAlignClass = (align?: string) => {
       <div class="flex items-center gap-1">
         <button
           :disabled="currentPage <= 1"
-          @click="firstPage"
           class="p-1.5 rounded hover:bg-surface-dark disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'opacity-50 cursor-not-allowed': currentPage <= 1 }"
+          @click="firstPage"
         >
           <ChevronFirst class="w-4 h-4 text-text" />
         </button>
         <button
           :disabled="currentPage <= 1"
-          @click="prevPage"
           class="p-1.5 rounded hover:bg-surface-dark disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'opacity-50 cursor-not-allowed': currentPage <= 1 }"
+          @click="prevPage"
         >
           <ChevronLeft class="w-4 h-4 text-text" />
         </button>
-        <span class="px-2 text-sm text-text">
-          {{ currentPage }} of {{ totalPages }}
-        </span>
+        <span class="px-2 text-xs text-text"> {{ currentPage }} of {{ totalPages }} </span>
         <button
           :disabled="currentPage >= totalPages"
-          @click="nextPage"
           class="p-1.5 rounded hover:bg-surface-dark disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'opacity-50 cursor-not-allowed': currentPage >= totalPages }"
+          @click="nextPage"
         >
           <ChevronRight class="w-4 h-4 text-text" />
         </button>
         <button
           :disabled="currentPage >= totalPages"
-          @click="lastPage"
           class="p-1.5 rounded hover:bg-surface-dark disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'opacity-50 cursor-not-allowed': currentPage >= totalPages }"
+          @click="lastPage"
         >
           <ChevronLast class="w-4 h-4 text-text" />
         </button>
