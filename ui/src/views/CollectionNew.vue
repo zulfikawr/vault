@@ -52,13 +52,25 @@ const saveCollection = async () => {
 
     <!-- Form Content -->
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 class="text-2xl font-bold text-text">Create New Collection</h1>
-          <p class="text-sm text-text-muted mt-1">Define your database schema and fields</p>
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <!-- Page Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Create New Collection</h1>
+            <p class="mt-1 text-sm text-text-muted">Define your database schema and fields</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <Button variant="secondary" size="sm" class="flex-1 sm:flex-none" @click="router.push('/collections')">
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" class="flex-1 sm:flex-none">
+              <Save class="w-4 h-4" />
+              Create Collection
+            </Button>
+          </div>
         </div>
 
-        <form class="space-y-6" @submit.prevent="saveCollection">
+        <form class="space-y-6 sm:space-y-8" @submit.prevent="saveCollection">
           <!-- Basic Info Card -->
           <div class="bg-surface-dark border border-border rounded-lg p-4 sm:p-6">
             <h2 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
@@ -66,7 +78,7 @@ const saveCollection = async () => {
               Basic Information
             </h2>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-text mb-2">Collection Name</label>
                 <Input
@@ -110,7 +122,6 @@ const saveCollection = async () => {
               <Button variant="secondary" size="sm" @click="addField">
                 <Plus class="w-4 h-4" />
                 <span class="hidden sm:inline">Add Field</span>
-                <span class="sm:hidden">Add</span>
               </Button>
             </div>
 
@@ -156,16 +167,6 @@ const saveCollection = async () => {
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="flex items-center justify-end gap-3">
-            <Button variant="secondary" class="flex-1 sm:flex-none" @click="router.push('/')">
-              Cancel
-            </Button>
-            <Button type="submit" class="flex-1 sm:flex-none">
-              <Save class="w-4 h-4" />
-              Create Collection
-            </Button>
-          </div>
         </form>
       </div>
     </div>

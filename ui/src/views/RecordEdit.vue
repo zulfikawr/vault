@@ -88,15 +88,28 @@ onMounted(() => {
     </AppHeader>
 
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 class="text-2xl font-bold text-text mb-2">Edit Record</h1>
-          <p class="text-text-muted">Update record in {{ collectionName }} collection</p>
+      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <!-- Page Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Edit Record</h1>
+            <p class="mt-1 text-sm text-text-muted">Update record in {{ collectionName }} collection</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <Button variant="secondary" size="sm" class="flex-1 sm:flex-none" @click="router.push(`/collections/${collectionName}`)">
+              <X class="w-4 h-4" />
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" class="flex-1 sm:flex-none">
+              <Save class="w-4 h-4" />
+              Update Record
+            </Button>
+          </div>
         </div>
 
         <form
           v-if="collection"
-          class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6"
+          class="bg-surface-dark rounded-lg border border-border p-4 sm:p-6 space-y-6 sm:space-y-8"
           @submit.prevent="handleSubmit"
         >
           <div class="space-y-4">
@@ -163,17 +176,6 @@ onMounted(() => {
                 @update:model-value="formData[field.name] = $event"
               />
             </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-border">
-            <Button variant="secondary" @click="router.push(`/collections/${collectionName}`)">
-              <X class="w-4 h-4" />
-              Cancel
-            </Button>
-            <Button type="submit">
-              <Save class="w-4 h-4" />
-              Update Record
-            </Button>
           </div>
         </form>
       </div>
