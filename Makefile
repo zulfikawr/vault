@@ -1,4 +1,4 @@
-.PHONY: all build clean test install help run lint fmt ui
+.PHONY: all build clean test install help run lint ui
 
 BINARY_NAME=vault
 LDFLAGS=-s -w
@@ -31,14 +31,11 @@ clean:
 test:
 	go test ./...
 
-## fmt: Format code
-fmt:
-	go fmt ./...
-
-## lint: Run golangci-lint and go fmt
+## lint: Run go fmt golangci-lint, go fmt, and eslint+prettier
 lint:
 	go fmt ./...
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run ./...
+	cd ui && bun run lint
 
 ## help: Show this help message
 help:
