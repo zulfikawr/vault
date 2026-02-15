@@ -122,18 +122,18 @@ func generateSecret(length int) (string, error) {
 func createConfigFile(jwtSecret string) error {
 	config := fmt.Sprintf(`{
   "port": 8090,
+  "db_path": "./vault_data/vault.db",
   "data_dir": "./vault_data",
   "log_level": "INFO",
   "log_format": "text",
   "jwt_secret": "%s",
-  "jwt_expiry_hours": 24,
-  "refresh_token_days": 30,
+  "jwt_expiry": 72,
   "tls_enabled": false,
   "tls_cert_path": "",
   "tls_key_path": "",
-  "cors_origins": ["*"],
-  "rate_limit_per_min": 100,
-  "max_upload_size_mb": 10
+  "cors_origins": "*",
+  "rate_limit_per_min": 300,
+  "max_file_upload_size": 10485760
 }`, jwtSecret)
 
 	return os.WriteFile("config.json", []byte(config), 0644)

@@ -79,7 +79,7 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 		slog.Warn("Failed to migrate _collections IDs", "error", err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, "SELECT id, name, type, fields, created, updated FROM _collections")
+	rows, err := s.db.QueryContext(ctx, "SELECT id, name, type, fields, list_rule, view_rule, create_rule, update_rule, delete_rule, created, updated FROM _collections")
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,8 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 
 	for rows.Next() {
 		var id, name, ctype, fieldsJSON, created, updated string
-		if err := rows.Scan(&id, &name, &ctype, &fieldsJSON, &created, &updated); err != nil {
+		var listRule, viewRule, createRule, updateRule, deleteRule sql.NullString
+		if err := rows.Scan(&id, &name, &ctype, &fieldsJSON, &listRule, &viewRule, &createRule, &updateRule, &deleteRule, &created, &updated); err != nil {
 			return err
 		}
 
@@ -96,14 +97,32 @@ func (s *SchemaRegistry) LoadFromDB(ctx context.Context) error {
 			return err
 		}
 
-		s.AddCollection(&models.Collection{
+		col := &models.Collection{
 			ID:      id,
 			Name:    name,
 			Type:    models.CollectionType(ctype),
 			Fields:  fields,
 			Created: created,
 			Updated: updated,
-		})
+		}
+
+		if listRule.Valid {
+			col.ListRule = &listRule.String
+		}
+		if viewRule.Valid {
+			col.ViewRule = &viewRule.String
+		}
+		if createRule.Valid {
+			col.CreateRule = &createRule.String
+		}
+		if updateRule.Valid {
+			col.UpdateRule = &updateRule.String
+		}
+		if deleteRule.Valid {
+			col.DeleteRule = &deleteRule.String
+		}
+
+		s.AddCollection(col)
 	}
 	return nil
 }
@@ -116,10 +135,21 @@ func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collectio
 		c.ID = "col_" + c.Name
 	}
 
-	query := `INSERT INTO _collections (id, name, type, fields) VALUES (?, ?, ?, ?) 
-	          ON CONFLICT(name) DO UPDATE SET type=excluded.type, fields=excluded.fields`
+	query := `INSERT INTO _collections (id, name, type, fields, list_rule, view_rule, create_rule, update_rule, delete_rule) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+	          ON CONFLICT(name) DO UPDATE SET 
+			  type=excluded.type, 
+			  fields=excluded.fields,
+			  list_rule=excluded.list_rule,
+			  view_rule=excluded.view_rule,
+			  create_rule=excluded.create_rule,
+			  update_rule=excluded.update_rule,
+			  delete_rule=excluded.delete_rule`
 
-	_, err := s.db.ExecContext(ctx, query, c.ID, c.Name, c.Type, string(fieldsJSON))
+	_, err := s.db.ExecContext(ctx, query,
+		c.ID, c.Name, c.Type, string(fieldsJSON),
+		c.ListRule, c.ViewRule, c.CreateRule, c.UpdateRule, c.DeleteRule,
+	)
 	if err != nil {
 		return errors.NewError(http.StatusInternalServerError, "DB_SAVE_COLLECTION_FAILED", "Failed to persist collection definition").WithDetails(map[string]any{"error": err.Error()})
 	}
@@ -130,6 +160,7 @@ func (s *SchemaRegistry) SaveCollection(ctx context.Context, c *models.Collectio
 
 // BootstrapSystemCollections initializes the internal meta tables
 func (s *SchemaRegistry) BootstrapSystemCollections() error {
+	adminOnly := "@request.auth.id != ''"
 	collectionsTable := &models.Collection{
 		ID:   "system_collections",
 		Name: "_collections",
@@ -138,14 +169,19 @@ func (s *SchemaRegistry) BootstrapSystemCollections() error {
 			{Name: "name", Type: models.FieldTypeText, Required: true, Unique: true},
 			{Name: "type", Type: models.FieldTypeText, Required: true},
 			{Name: "fields", Type: models.FieldTypeJSON, Required: true},
-			{Name: "listRule", Type: models.FieldTypeText},
-			{Name: "viewRule", Type: models.FieldTypeText},
-			{Name: "createRule", Type: models.FieldTypeText},
-			{Name: "updateRule", Type: models.FieldTypeText},
-			{Name: "deleteRule", Type: models.FieldTypeText},
+			{Name: "list_rule", Type: models.FieldTypeText},
+			{Name: "view_rule", Type: models.FieldTypeText},
+			{Name: "create_rule", Type: models.FieldTypeText},
+			{Name: "update_rule", Type: models.FieldTypeText},
+			{Name: "delete_rule", Type: models.FieldTypeText},
 		},
-		Created: time.Now().Format(time.RFC3339),
-		Updated: time.Now().Format(time.RFC3339),
+		ListRule:   &adminOnly,
+		ViewRule:   &adminOnly,
+		CreateRule: &adminOnly,
+		UpdateRule: &adminOnly,
+		DeleteRule: &adminOnly,
+		Created:    time.Now().Format(time.RFC3339),
+		Updated:    time.Now().Format(time.RFC3339),
 	}
 
 	s.AddCollection(collectionsTable)
@@ -153,6 +189,7 @@ func (s *SchemaRegistry) BootstrapSystemCollections() error {
 }
 
 func (s *SchemaRegistry) BootstrapUsersCollection() error {
+	adminOnly := "@request.auth.id != ''"
 	usersTable := &models.Collection{
 		ID:   "system_users",
 		Name: "users",
@@ -163,6 +200,11 @@ func (s *SchemaRegistry) BootstrapUsersCollection() error {
 			{Name: "password", Type: models.FieldTypeText, Required: true},
 			{Name: "lastLogin", Type: models.FieldTypeDate},
 		},
+		ListRule:   &adminOnly,
+		ViewRule:   &adminOnly,
+		CreateRule: &adminOnly,
+		UpdateRule: &adminOnly,
+		DeleteRule: &adminOnly,
 	}
 
 	s.AddCollection(usersTable)
@@ -170,6 +212,7 @@ func (s *SchemaRegistry) BootstrapUsersCollection() error {
 }
 
 func (s *SchemaRegistry) BootstrapRefreshTokensCollection() error {
+	adminOnly := "@request.auth.id != ''"
 	tokensTable := &models.Collection{
 		ID:   "system_refresh_tokens",
 		Name: "_refresh_tokens",
@@ -179,6 +222,11 @@ func (s *SchemaRegistry) BootstrapRefreshTokensCollection() error {
 			{Name: "user_id", Type: models.FieldTypeText, Required: true},
 			{Name: "expires", Type: models.FieldTypeDate, Required: true},
 		},
+		ListRule:   &adminOnly,
+		ViewRule:   &adminOnly,
+		CreateRule: &adminOnly,
+		UpdateRule: &adminOnly,
+		DeleteRule: &adminOnly,
 	}
 
 	s.AddCollection(tokensTable)
@@ -186,6 +234,7 @@ func (s *SchemaRegistry) BootstrapRefreshTokensCollection() error {
 }
 
 func (s *SchemaRegistry) BootstrapAuditLogsCollection() error {
+	adminOnly := "@request.auth.id != ''"
 	auditTable := &models.Collection{
 		ID:   "system_audit_logs",
 		Name: "_audit_logs",
@@ -197,8 +246,13 @@ func (s *SchemaRegistry) BootstrapAuditLogsCollection() error {
 			{Name: "details", Type: models.FieldTypeJSON},
 			{Name: "timestamp", Type: models.FieldTypeDate, Required: true},
 		},
-		Created: time.Now().Format(time.RFC3339),
-		Updated: time.Now().Format(time.RFC3339),
+		ListRule:   &adminOnly,
+		ViewRule:   &adminOnly,
+		CreateRule: &adminOnly,
+		UpdateRule: &adminOnly,
+		DeleteRule: &adminOnly,
+		Created:    time.Now().Format(time.RFC3339),
+		Updated:    time.Now().Format(time.RFC3339),
 	}
 
 	s.AddCollection(auditTable)

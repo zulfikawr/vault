@@ -29,6 +29,13 @@ const route = useRoute();
 const collections = ref<Collection[]>([]);
 const collection = ref<Collection | null>(null);
 const fields = ref<Field[]>([]);
+const rules = ref({
+  list_rule: '',
+  view_rule: '',
+  create_rule: '',
+  update_rule: '',
+  delete_rule: '',
+});
 const showDeleteModal = ref(false);
 
 const collectionName = computed(() => route.params.name as string);
@@ -45,9 +52,16 @@ const fetchCollections = async () => {
 const fetchCollection = async () => {
   try {
     const response = await axios.get(`/api/admin/collections`);
-    const col = response.data.data.find((c: Collection) => c.name === collectionName.value);
+    const col = response.data.data.find((c: any) => c.name === collectionName.value);
     collection.value = col || null;
     fields.value = JSON.parse(JSON.stringify(col?.fields || []));
+    rules.value = {
+      list_rule: col?.list_rule || '',
+      view_rule: col?.view_rule || '',
+      create_rule: col?.create_rule || '',
+      update_rule: col?.update_rule || '',
+      delete_rule: col?.delete_rule || '',
+    };
   } catch (error) {
     console.error('Failed to fetch collection', error);
   }
@@ -66,7 +80,9 @@ const saveSettings = async () => {
 
   try {
     await axios.patch(`/api/admin/collections/${collection.value.id}`, {
+      ...collection.value,
       fields: fields.value,
+      ...rules.value,
     });
     router.push(`/collections/${collectionName.value}`);
   } catch (error) {
@@ -194,6 +210,36 @@ onMounted(() => {
                 >
                   <Trash2 class="w-4 h-4" />
                 </Button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-8 border-t border-border">
+            <h2 class="text-lg font-semibold text-text flex items-center gap-2 mb-4">
+              <Settings class="w-5 h-5 text-primary" />
+              API Rules
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">List Rule</label>
+                <Input v-model="rules.list_rule" placeholder="e.g. id = @request.auth.id" />
+                <p class="text-[10px] text-text-dim">Leave empty for public access</p>
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">View Rule</label>
+                <Input v-model="rules.view_rule" placeholder="e.g. id = @request.auth.id" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Create Rule</label>
+                <Input v-model="rules.create_rule" placeholder="e.g. @request.auth.id != ''" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Update Rule</label>
+                <Input v-model="rules.update_rule" placeholder="e.g. id = @request.auth.id" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Delete Rule</label>
+                <Input v-model="rules.delete_rule" placeholder="e.g. @request.auth.id = 'admin-id'" />
               </div>
             </div>
           </div>

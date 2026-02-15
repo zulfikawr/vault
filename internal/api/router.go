@@ -73,6 +73,7 @@ func NewRouter(
 	adminRouter := http.NewServeMux()
 	adminRouter.HandleFunc("GET /collections", adminHandler.ListCollections)
 	adminRouter.HandleFunc("POST /collections", adminHandler.CreateCollection)
+	adminRouter.HandleFunc("PATCH /collections/{id}", adminHandler.UpdateCollection)
 	adminRouter.HandleFunc("DELETE /collections/{name}", adminHandler.DeleteCollection)
 	adminRouter.HandleFunc("GET /settings", settingsHandler.GetSettings)
 	adminRouter.HandleFunc("PATCH /settings", settingsHandler.UpdateSettings)

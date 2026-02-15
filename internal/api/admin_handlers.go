@@ -37,6 +37,30 @@ func (h *AdminHandler) CreateCollection(w http.ResponseWriter, r *http.Request) 
 	SendJSON(w, http.StatusCreated, col, nil)
 }
 
+func (h *AdminHandler) UpdateCollection(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_ID", "Collection ID is required"))
+		return
+	}
+
+	var col models.Collection
+	if err := json.NewDecoder(r.Body).Decode(&col); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		return
+	}
+
+	// Ensure the ID from the path is used
+	col.ID = id
+
+	if err := h.collectionService.CreateCollection(r.Context(), &col); err != nil {
+		errors.SendError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, col, nil)
+}
+
 func (h *AdminHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 	// Simple placeholder for settings
 	SendJSON(w, http.StatusOK, map[string]string{"appName": "Vault"}, nil)
