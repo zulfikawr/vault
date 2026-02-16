@@ -58,7 +58,7 @@ onMounted(fetchSettings);
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
-          <span class="font-medium text-text">Settings</span>
+          <span class="font-medium text-primary">Settings</span>
         </div>
       </template>
     </AppHeader>

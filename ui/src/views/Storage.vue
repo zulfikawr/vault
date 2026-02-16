@@ -322,13 +322,24 @@ function getFileType(mimeType: string): string {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted truncate gap-2">
-          <span class="hover:text-text cursor-pointer font-medium text-text" @click="navigateTo('')"
+          <span
+            :class="[
+              !currentPath
+                ? 'font-medium text-primary'
+                : 'hover:text-primary cursor-pointer transition-colors duration-200',
+            ]"
+            @click="navigateTo('')"
             >Storage</span
           >
           <template v-for="(part, index) in pathParts" :key="index">
             <span class="text-text-muted flex-shrink-0">/</span>
             <span
-              class="text-text truncate hover:text-text cursor-pointer"
+              :class="[
+                index === pathParts.length - 1
+                  ? 'font-medium text-primary'
+                  : 'hover:text-primary cursor-pointer transition-colors duration-200',
+              ]"
+              class="truncate"
               @click="navigateTo(pathParts.slice(0, index + 1).join('/'))"
             >
               {{ part }}

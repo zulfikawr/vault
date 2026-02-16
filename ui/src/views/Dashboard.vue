@@ -106,7 +106,7 @@ onMounted(async () => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
-          <span class="font-medium text-text">Dashboard</span>
+          <span class="font-medium text-primary">Dashboard</span>
         </div>
       </template>
     </AppHeader>

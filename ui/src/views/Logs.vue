@@ -178,7 +178,7 @@ onMounted(() => {
     <AppHeader>
       <template #breadcrumb>
         <div class="flex items-center text-sm text-text-muted">
-          <span class="font-medium text-text">Logs</span>
+          <span class="font-medium text-primary">Logs</span>
         </div>
       </template>
     </AppHeader>
