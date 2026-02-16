@@ -5,6 +5,13 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-16
+
+### Added
+- **SQL Editor** - New interactive admin view to execute raw SQL queries.
+  - **Backend**: Added `SqlService` and admin API endpoint for database query execution.
+  - **UI**: Added a 2-pane SQL editor with Table and JSON result views.
+
 ## [0.6.0] - 2026-02-14
 
 ### Added
@@ -251,6 +258,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.7.0]: https://github.com/zulfikawr/vault/releases/tag/v0.7.0
+[0.6.0]: https://github.com/zulfikawr/vault/releases/tag/v0.6.0
 [0.5.2]: https://github.com/zulfikawr/vault/releases/tag/v0.5.2
 [0.5.1]: https://github.com/zulfikawr/vault/releases/tag/v0.5.1
 [0.5.0]: https://github.com/zulfikawr/vault/releases/tag/v0.5.0

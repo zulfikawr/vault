@@ -15,6 +15,7 @@ import (
 func NewRouter(
 	recordService *service.RecordService,
 	collectionService *service.CollectionService,
+	sqlService *service.SqlService,
 	registry *db.SchemaRegistry,
 	store storage.Storage,
 	hub *realtime.Hub,
@@ -26,13 +27,12 @@ func NewRouter(
 	crudHandler := NewCollectionHandler(recordService, registry)
 	fileHandler := NewFileHandler(store, config.MaxFileUploadSize)
 	realtimeHandler := NewRealtimeHandler(hub)
-	adminHandler := NewAdminHandler(collectionService)
+	adminHandler := NewAdminHandler(collectionService, sqlService)
 	logsHandler := NewLogsHandler()
 	settingsHandler := NewSettingsHandler(config)
-	storageHandler := NewStorageHandler(config.DataDir + "/storage") // Fix: Use DataDir directly or ensure StoragePath exists
+	storageHandler := NewStorageHandler(config.DataDir + "/storage")
 
 	// Base routes
-	// Mount UI handler - serves at both / and /_/ for devtunnel compatibility
 	uiHandler := ui.Handler()
 	mux.Handle("/", uiHandler)
 	mux.Handle("/_/", http.StripPrefix("/_", uiHandler))
@@ -83,6 +83,7 @@ func NewRouter(
 	adminRouter.HandleFunc("GET /storage", storageHandler.List)
 	adminRouter.HandleFunc("GET /storage/stats", storageHandler.Stats)
 	adminRouter.HandleFunc("DELETE /storage", storageHandler.Delete)
+	adminRouter.HandleFunc("POST /query", adminHandler.ExecuteQuery)
 
 	// Apply rate limiting to admin operations
 	mux.Handle("/api/admin/", http.StripPrefix("/api/admin", middleware.RateLimitMiddleware(config.RateLimitPerMin)(middleware.AdminOnly(adminRouter))))

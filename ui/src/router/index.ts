@@ -65,6 +65,12 @@ const router = createRouter({
       component: () => import('../views/Storage.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/sql-editor',
+      name: 'SqlEditor',
+      component: () => import('../views/SqlEditor.vue'),
+      meta: { requiresAuth: true },
+    },
     { path: '/login', name: 'Login', component: Login },
   ],
 });

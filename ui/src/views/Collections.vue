@@ -156,13 +156,13 @@ onMounted(() => {
 <template>
   <AppLayout>
     <!-- Header -->
-        <AppHeader>
-          <template #breadcrumb>
-            <div class="flex items-center text-sm text-text-muted truncate gap-2">
-              <span class="font-medium text-primary">Collections</span>
-            </div>
-          </template>
-        </AppHeader>
+    <AppHeader>
+      <template #breadcrumb>
+        <div class="flex items-center text-sm text-text-muted truncate gap-2">
+          <span class="font-medium text-primary">Collections</span>
+        </div>
+      </template>
+    </AppHeader>
 
     <!-- Main Scrollable Area -->
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">

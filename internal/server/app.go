@@ -71,6 +71,7 @@ func NewApp(cfg *core.Config) *App {
 
 	recordService := service.NewRecordService(repo, hub)
 	collectionService := service.NewCollectionService(registry, migration)
+	sqlService := service.NewSqlService(database)
 
 	// Register Auth Hooks
 	service.RegisterAuthHooks()
@@ -87,7 +88,7 @@ func NewApp(cfg *core.Config) *App {
 		os.Exit(1)
 	}
 
-	router := api.NewRouter(recordService, collectionService, registry, store, hub, cfg)
+	router := api.NewRouter(recordService, collectionService, sqlService, registry, store, hub, cfg)
 	handler := middleware.Chain(router,
 		middleware.RecoveryMiddleware,
 		middleware.LoggerMiddleware,

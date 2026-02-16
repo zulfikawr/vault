@@ -11,10 +11,37 @@ import (
 
 type AdminHandler struct {
 	collectionService *service.CollectionService
+	sqlService        *service.SqlService
 }
 
-func NewAdminHandler(collectionService *service.CollectionService) *AdminHandler {
-	return &AdminHandler{collectionService: collectionService}
+func NewAdminHandler(collectionService *service.CollectionService, sqlService *service.SqlService) *AdminHandler {
+	return &AdminHandler{
+		collectionService: collectionService,
+		sqlService:        sqlService,
+	}
+}
+
+func (h *AdminHandler) ExecuteQuery(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Query string `json:"query"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		return
+	}
+
+	if body.Query == "" {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_QUERY", "SQL query is required"))
+		return
+	}
+
+	result, err := h.sqlService.Execute(r.Context(), body.Query)
+	if err != nil {
+		errors.SendError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, result, nil)
 }
 
 func (h *AdminHandler) ListCollections(w http.ResponseWriter, r *http.Request) {

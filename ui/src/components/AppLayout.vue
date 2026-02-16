@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Database,
 } from 'lucide-vue-next';
 
 interface Collection {
@@ -173,6 +174,22 @@ onMounted(fetchCollections);
               <Terminal class="w-5 h-5 flex-shrink-0" />
             </template>
             <span :class="sidebarCollapsed ? 'lg:hidden' : ''">Logs</span>
+          </Button>
+          <Button
+            as="RouterLink"
+            to="/sql-editor"
+            variant="ghost"
+            size="sm"
+            :class="[
+              'h-9 transition-all duration-300',
+              sidebarCollapsed ? 'lg:w-9 lg:!p-0' : 'w-full !justify-start gap-3 px-3',
+              isActive('/sql-editor') ? '!bg-primary/10 !text-primary' : '',
+            ]"
+          >
+            <template #leftIcon>
+              <Database class="w-5 h-5 flex-shrink-0" />
+            </template>
+            <span :class="sidebarCollapsed ? 'lg:hidden' : ''">SQL Editor</span>
           </Button>
           <Button
             as="RouterLink"
