@@ -42,6 +42,10 @@ func main() {
 		runStorage()
 	case "init":
 		runInit()
+	case "export":
+		runExport()
+	case "import":
+		runImport()
 	case "version", "-v", "--version":
 		runVersion()
 	default:
@@ -65,6 +69,8 @@ func printUsage() {
 	fmt.Println("  storage <subcommand>        Manage storage")
 	fmt.Println("  backup <subcommand>         Backup and restore operations")
 	fmt.Println("  migrate <subcommand>        Database migration operations")
+	fmt.Println("  export <format>             Export collections and data")
+	fmt.Println("  import <format>             Import data from external sources")
 	fmt.Println("  version                     Display version information")
 	fmt.Println("  help, -h, --help            Show this help message")
 	fmt.Println()
@@ -74,6 +80,8 @@ func printUsage() {
 	fmt.Println("  vault admin create --email user@example.com --username user --password pass")
 	fmt.Println("  vault backup create --output backup.zip")
 	fmt.Println("  vault collection create --name posts --fields \"title:text,body:text\" --email admin@example.com --password secret")
+	fmt.Println("  vault export json --output ./backup.json")
+	fmt.Println("  vault import d1 wrangler-export/d1/homepage-db.sql")
 	fmt.Println()
 	fmt.Println("Use 'vault <command> -h' or 'vault <command> --help' for detailed command usage.")
 	fmt.Println()
@@ -262,6 +270,51 @@ func runStorage() {
 	storageCmd := cli.NewStorageCommand(cfg)
 	if err := storageCmd.Run(os.Args[2:]); err != nil {
 		slog.Error("Storage command failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func runExport() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault export <format> [options]")
+		fmt.Println("Formats:")
+		fmt.Println("  json     Export collections and records as JSON")
+		fmt.Println("  sql      Export schema and data as SQL statements")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+
+	exportCmd := cli.NewExportCommand(cfg)
+	if err := exportCmd.Run(os.Args[2:]); err != nil {
+		slog.Error("Export command failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func runImport() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: vault import <format> [options] <file>")
+		fmt.Println("Formats:")
+		fmt.Println("  sql      Import from generic SQL file")
+		fmt.Println("  json     Import from JSON file")
+		fmt.Println("  d1       Import from Cloudflare D1 SQL dump")
+		os.Exit(1)
+	}
+
+	cfg := core.LoadConfig()
+	if err := core.InitLogger(cfg.LogLevel, cfg.LogFormat, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+
+	importCmd := cli.NewImportCommand(cfg)
+	if err := importCmd.Run(os.Args[2:]); err != nil {
+		slog.Error("Import command failed", "error", err)
 		os.Exit(1)
 	}
 }

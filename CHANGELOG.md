@@ -5,6 +5,45 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-17
+
+### Added
+- **Export Command** - Export collections and data in multiple formats
+  - `vault export json` - Export all or specific collections to JSON
+    - `--output FILE` - Output file path (default: `vault_export_TIMESTAMP.json`)
+    - `--collection NAME` - Export specific collection only
+    - `--pretty` - Pretty print JSON output
+  - `vault export sql` - Export schema and data as SQL statements
+    - `--output FILE` - Output SQL file path (default: `vault_export_TIMESTAMP.sql`)
+  - Includes schema definitions and all records
+  - Formatted table output with record counts and file sizes
+
+- **Import Command** - Import data from external sources
+  - `vault import d1` - Import from Cloudflare D1 SQL dumps
+    - Automatic table creation and record insertion
+    - Registers imported tables as Vault collections
+    - Maps SQL types to Vault field types (TEXT→text, INTEGER→number/bool, REAL→number)
+    - `--dry-run` - Validate without importing
+  - `vault import json` - Import from JSON files
+    - Supports Vault export format (with schema)
+    - Supports simple records array format
+    - `--collection NAME` - Target collection for simple imports
+  - `vault import sql` - Import from generic SQL files
+    - Supports CREATE TABLE and INSERT statements
+  - Comprehensive error handling with structured error codes
+
+- **Comprehensive Documentation** - Complete documentation in `docs/` directory
+  - **Getting Started**: Introduction, Quick Start, Installation guides
+  - **CLI Reference**: Complete documentation for all commands
+    - `vault init`, `vault serve`, `vault admin`
+    - `vault collection`, `vault storage`, `vault backup`
+    - `vault migrate`, `vault export`, `vault import`
+  - **Core Concepts**: Collections, Records, Authentication, Authorization Rules, Storage
+  - **API Reference**: REST API, Authentication, CRUD, Files, Real-time
+  - **Migration Guides**: From Cloudflare D1, From R2 Storage, SQL Import/Export
+  - **Troubleshooting**: Common Issues, Error Codes, FAQ
+  - All documentation includes working examples and best practices
+
 ## [0.7.0] - 2026-02-16
 
 ### Added

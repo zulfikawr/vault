@@ -4,6 +4,17 @@
 
 Vault is a self-contained, batteries-included backend framework written in Go. It provides a dynamic database schema engine, robust authentication, real-time subscriptions, and a professional administrative dashboard—all delivered as a single, lightweight binary.
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](./docs/README.md) directory:
+
+- **[Getting Started](./docs/quickstart.md)** - Quick start guide
+- **[CLI Reference](./docs/cli/overview.md)** - Complete CLI documentation
+- **[API Reference](./docs/api/rest.md)** - REST API documentation
+- **[Core Concepts](./docs/concepts/collections.md)** - Collections, Records, Auth, Rules
+- **[Migration Guides](./docs/migration/from-d1.md)** - Migrate from D1/R2
+- **[Troubleshooting](./docs/troubleshooting/common.md)** - Common issues and FAQ
+
 ## ✨ Features
 
 - **Embedded SQLite**: Pure-Go SQLite implementation (`modernc.org/sqlite`) with WAL mode enabled for high-concurrency performance.
@@ -261,6 +272,61 @@ Synchronize database schema with collections.
 Show current database and collection status.
 
 No flags required.
+
+---
+
+### `vault export json`
+
+Export collections and records as JSON.
+
+| Flag | Type | Default | Required | Description |
+|------|------|---------|----------|-------------|
+| `--output` | string | vault_export_TIMESTAMP.json | No | Output file path |
+| `--collection` | string | | No | Export specific collection |
+| `--pretty` | bool | false | No | Pretty print JSON |
+
+---
+
+### `vault export sql`
+
+Export schema and data as SQL statements.
+
+| Flag | Type | Default | Required | Description |
+|------|------|---------|----------|-------------|
+| `--output` | string | vault_export_TIMESTAMP.sql | No | Output SQL file path |
+
+---
+
+### `vault import d1`
+
+Import from Cloudflare D1 SQL dump.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--dry-run` | bool | No | Validate without importing |
+
+Automatically creates tables, imports records, and registers collections.
+
+---
+
+### `vault import json`
+
+Import from JSON file.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--collection` | string | Yes* | Target collection (for simple JSON) |
+| `--dry-run` | bool | No | Validate without importing |
+
+*Required for simple JSON arrays, optional for Vault export format.
+
+---
+
+### `vault import sql`
+
+Import from generic SQL file.
+
+Supports CREATE TABLE and INSERT statements.
 
 ---
 
