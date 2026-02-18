@@ -70,17 +70,19 @@ const validate = () => {
   let isValid = true;
 
   collection.value?.fields.forEach((field) => {
-    if (field.required && (formData.value[field.name] === undefined || formData.value[field.name] === '')) {
+    const value = formData.value[field.name];
+    
+    if (field.required && (value === undefined || value === null || value === '')) {
       if (field.type !== 'bool') {
         errors.value[field.name] = `${field.name} is required`;
         isValid = false;
       }
     }
 
-    if (field.type === 'json' && formData.value[field.name]) {
+    if (field.type === 'json' && value) {
       try {
-        if (typeof formData.value[field.name] === 'string') {
-          JSON.parse(formData.value[field.name] as string);
+        if (typeof value === 'string') {
+          JSON.parse(value);
         }
       } catch (e) {
         errors.value[field.name] = 'Invalid JSON format';
@@ -93,7 +95,10 @@ const validate = () => {
 };
 
 const handleSubmit = async () => {
-  if (!validate()) return;
+  if (!validate()) {
+    alert('Please fix the validation errors before saving.');
+    return;
+  }
 
   try {
     await axios.patch(
@@ -101,9 +106,13 @@ const handleSubmit = async () => {
       formData.value
     );
     router.push(`/collections/${collectionName.value}`);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Update failed', error);
-    alert('Failed to update record');
+    let message = 'Failed to update record';
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+    alert(message);
   }
 };
 
@@ -153,7 +162,7 @@ onMounted(() => {
     </AppHeader>
 
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-4xl mx-auto space-y-6">
+      <div class="max-w-7xl mx-auto space-y-6">
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
           <div>
@@ -180,6 +189,7 @@ onMounted(() => {
 
         <form
           v-if="collection"
+          id="record-edit-form"
           class="space-y-6"
           @submit.prevent="handleSubmit"
         >

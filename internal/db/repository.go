@@ -143,15 +143,29 @@ func (r *Repository) UpdateRecord(ctx context.Context, collectionName string, id
 		return nil, err
 	}
 
+	// Update existing data with new values, but only for valid schema fields
+	validFields := make(map[string]bool)
+	for _, f := range col.Fields {
+		validFields[f.Name] = true
+	}
+
 	for k, v := range data {
-		if k != "id" && k != "created" && k != "updated" {
+		if validFields[k] {
 			record.Data[k] = v
+		}
+	}
+
+	// Remove fields from record.Data that are no longer in schema
+	for k := range record.Data {
+		if !validFields[k] {
+			delete(record.Data, k)
 		}
 	}
 
 	updateData := make(map[string]any)
 	updateData["updated"] = time.Now().UTC().Format(time.RFC3339)
 
+	// Only include fields that exist in the collection schema
 	for _, f := range col.Fields {
 		if val, ok := record.Data[f.Name]; ok {
 			updateData[f.Name] = val

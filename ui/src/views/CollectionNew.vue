@@ -27,12 +27,31 @@ const removeField = (index: number) => {
   collectionFormData.value.fields.splice(index, 1);
 };
 
+const validate = () => {
+  if (!collectionFormData.value.name) {
+    alert('Collection name is required');
+    return false;
+  }
+  if (collectionFormData.value.fields.some(f => !f.name)) {
+    alert('All fields must have a name');
+    return false;
+  }
+  return true;
+};
+
 const saveCollection = async () => {
+  if (!validate()) return;
+
   try {
     await axios.post('/api/admin/collections', collectionFormData.value);
-    router.push('/');
-  } catch (error) {
+    router.push('/collections');
+  } catch (error: unknown) {
     console.error('Collection creation failed', error);
+    let message = 'Failed to create collection';
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+    alert(message);
   }
 };
 </script>
@@ -72,14 +91,14 @@ const saveCollection = async () => {
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" class="px-3 py-1.5 text-sm">
+            <Button size="sm" class="px-3 py-1.5 text-sm" @click="saveCollection">
               <Save class="w-4 h-4" />
               Create
             </Button>
           </div>
         </div>
 
-        <form class="space-y-4" @submit.prevent="saveCollection">
+        <form id="collection-form" class="space-y-4" @submit.prevent="saveCollection">
           <!-- Basic Info Card -->
           <div class="bg-surface-dark border border-border rounded-lg p-4">
             <h2 class="text-base font-medium text-text mb-3 flex items-center gap-2">

@@ -77,7 +77,8 @@ const validate = () => {
   let isValid = true;
 
   collection.value?.fields.forEach((field) => {
-    if (field.required && !formData.value[field.name]) {
+    const value = formData.value[field.name];
+    if (field.required && (value === undefined || value === null || value === '')) {
       if (field.type !== 'bool') {
         // bool is never 'empty' as it's false
         errors.value[field.name] = `${field.name} is required`;
@@ -85,9 +86,9 @@ const validate = () => {
       }
     }
 
-    if (field.type === 'json' && formData.value[field.name]) {
+    if (field.type === 'json' && value) {
       try {
-        JSON.parse(String(formData.value[field.name]));
+        JSON.parse(String(value));
       } catch (e) {
         errors.value[field.name] = 'Invalid JSON format';
         isValid = false;
@@ -99,14 +100,21 @@ const validate = () => {
 };
 
 const saveRecord = async () => {
-  if (!validate()) return;
+  if (!validate()) {
+    alert('Please fix the validation errors before creating.');
+    return;
+  }
 
   try {
     await axios.post(`/api/collections/${collectionName.value}/records`, formData.value);
     router.push(`/collections/${collectionName.value}`);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Save failed', error);
-    alert('Failed to save record. Check console for details.');
+    let message = 'Failed to save record.';
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+    alert(message);
   }
 };
 
@@ -158,7 +166,7 @@ onMounted(() => {
 
     <!-- Form Content -->
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-4xl mx-auto space-y-6">
+      <div class="max-w-7xl mx-auto space-y-6">
         <!-- Page Title -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
           <div>
@@ -181,7 +189,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <form class="space-y-6" @submit.prevent="saveRecord">
+        <form id="record-new-form" class="space-y-6" @submit.prevent="saveRecord">
           <div class="grid grid-cols-1 gap-6">
             <div v-for="field in collection?.fields" :key="field.name" class="space-y-2">
               <div class="flex items-center justify-between">

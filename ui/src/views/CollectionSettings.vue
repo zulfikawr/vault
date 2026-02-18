@@ -158,14 +158,14 @@ onMounted(() => {
               <Trash2 class="w-4 h-4" />
               Delete
             </Button>
-            <Button size="sm" type="submit" class="px-3 py-1.5 text-sm">
+            <Button size="sm" class="px-3 py-1.5 text-sm" @click="saveSettings">
               <Save class="w-4 h-4" />
               Save
             </Button>
           </div>
         </div>
 
-        <form class="space-y-4" @submit.prevent="saveSettings">
+        <form id="collection-settings-form" class="space-y-4" @submit.prevent="saveSettings">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-base font-medium text-text flex items-center gap-2">
               <Settings class="w-4 h-4 text-primary" />

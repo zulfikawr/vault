@@ -76,6 +76,7 @@ func (s *RecordService) UpdateRecord(ctx context.Context, collectionName string,
 		return nil, err
 	}
 
+	// Merge incoming data into existing record data
 	for k, v := range data {
 		if k != "id" && k != "created" && k != "updated" {
 			record.Data[k] = v
@@ -87,7 +88,8 @@ func (s *RecordService) UpdateRecord(ctx context.Context, collectionName string,
 		return nil, err
 	}
 
-	// Use record.Data which might have been modified by hooks
+	// Use record.Data which now contains merged data and potential hook modifications.
+	// The repository will handle filtering fields that are no longer in the schema.
 	updatedRecord, err := s.repo.UpdateRecord(ctx, collectionName, id, record.Data)
 	if err != nil {
 		return nil, err
