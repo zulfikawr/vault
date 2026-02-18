@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/zulfikawr/vault/internal/errors"
@@ -91,14 +92,22 @@ func (h *FileHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	collection := r.FormValue("collection")
 	recordID := r.FormValue("recordID")
+	preserveName := r.FormValue("preserve_name") == "true"
+
 	if collection == "" || recordID == "" {
 		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_PARAMS", "collection and recordID are required"))
 		return
 	}
 
-	// Generate a safe unique name
-	ext := filepath.Ext(header.Filename)
-	safeName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	// Generate a safe unique name or use original sanitized name
+	var safeName string
+	if preserveName {
+		// Basic sanitization: remove path traversal, special characters
+		safeName = sanitizeFileName(header.Filename)
+	} else {
+		ext := filepath.Ext(header.Filename)
+		safeName = fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	}
 	path := filepath.Join(collection, recordID, safeName)
 
 	if err := h.storage.Save(r.Context(), path, file); err != nil {
@@ -128,4 +137,19 @@ func isBlockedMimeType(mimeType string) bool {
 		return true
 	}
 	return false
+}
+
+func sanitizeFileName(name string) string {
+	name = filepath.Base(name)
+	name = strings.ReplaceAll(name, "..", "")
+	// Remove non-alphanumeric (keep ., -, _)
+	var result strings.Builder
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_' {
+			result.WriteRune(r)
+		} else {
+			result.WriteRune('_')
+		}
+	}
+	return result.String()
 }

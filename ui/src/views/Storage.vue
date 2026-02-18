@@ -8,6 +8,7 @@ import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import Modal from '../components/Modal.vue';
 import Input from '../components/Input.vue';
+import Checkbox from '../components/Checkbox.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
 import {
@@ -46,7 +47,7 @@ const loading = ref(false);
 const showUploadModal = ref(false);
 const showDeleteModal = ref(false);
 const fileToDelete = ref<FileInfo | null>(null);
-const uploadForm = ref({ collection: '', recordID: '', file: null as File | null });
+const uploadForm = ref({ collection: '', recordID: '', file: null as File | null, preserveName: true });
 const uploadProgress = ref(0);
 
 const pathParts = computed(() => {
@@ -177,13 +178,14 @@ async function uploadFile() {
   formData.append('file', uploadForm.value.file!);
   formData.append('collection', uploadForm.value.collection);
   formData.append('recordID', uploadForm.value.recordID);
+  formData.append('preserve_name', String(uploadForm.value.preserveName));
 
   try {
     uploadProgress.value = 50;
     await axios.post('/api/files', formData);
     uploadProgress.value = 100;
     showUploadModal.value = false;
-    uploadForm.value = { collection: '', recordID: '', file: null };
+    uploadForm.value = { collection: '', recordID: '', file: null, preserveName: true };
     uploadProgress.value = 0;
     loadStats();
     loadFiles(currentPath.value);
@@ -294,6 +296,10 @@ function getFileType(mimeType: string): string {
               @change="handleFileSelect"
             />
           </div>
+        </div>
+        <div class="pt-2">
+          <Checkbox v-model="uploadForm.preserveName" label="Keep original filename" />
+          <p class="text-[11px] text-text-muted mt-1 ml-7 italic">If unchecked, a random unique name will be generated.</p>
         </div>
         <div v-if="uploadProgress > 0" class="space-y-2">
           <div class="flex justify-between text-xs font-medium text-primary">
