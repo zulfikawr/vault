@@ -7,7 +7,17 @@ import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
-import { X, Save } from 'lucide-vue-next';
+import {
+  X,
+  Save,
+  Type,
+  Hash,
+  ToggleLeft,
+  Calendar,
+  Code,
+  FileText,
+  AlertCircle,
+} from 'lucide-vue-next';
 
 interface Field {
   name: string;
@@ -20,14 +30,15 @@ interface Collection {
   fields: Field[];
 }
 
-interface Record {
+interface RecordData {
   [key: string]: string | number | boolean;
 }
 
 const router = useRouter();
 const route = useRoute();
 const collection = ref<Collection | null>(null);
-const formData = ref<Record>({});
+const formData = ref<RecordData>({});
+const errors = ref<Record<string, string>>({});
 
 const collectionName = computed(() => route.params.name as string);
 const recordId = computed(() => route.params.id as string);
@@ -54,7 +65,36 @@ const fetchRecord = async () => {
   }
 };
 
+const validate = () => {
+  errors.value = {};
+  let isValid = true;
+
+  collection.value?.fields.forEach((field) => {
+    if (field.required && (formData.value[field.name] === undefined || formData.value[field.name] === '')) {
+      if (field.type !== 'bool') {
+        errors.value[field.name] = `${field.name} is required`;
+        isValid = false;
+      }
+    }
+
+    if (field.type === 'json' && formData.value[field.name]) {
+      try {
+        if (typeof formData.value[field.name] === 'string') {
+          JSON.parse(formData.value[field.name] as string);
+        }
+      } catch (e) {
+        errors.value[field.name] = 'Invalid JSON format';
+        isValid = false;
+      }
+    }
+  });
+
+  return isValid;
+};
+
 const handleSubmit = async () => {
+  if (!validate()) return;
+
   try {
     await axios.patch(
       `/api/collections/${collectionName.value}/records/${recordId.value}`,
@@ -64,6 +104,23 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error('Update failed', error);
     alert('Failed to update record');
+  }
+};
+
+const getFieldIcon = (type: string) => {
+  switch (type) {
+    case 'number':
+      return Hash;
+    case 'bool':
+      return ToggleLeft;
+    case 'date':
+      return Calendar;
+    case 'json':
+      return Code;
+    case 'file':
+      return FileText;
+    default:
+      return Type;
   }
 };
 
@@ -96,26 +153,25 @@ onMounted(() => {
     </AppHeader>
 
     <div class="flex-1 overflow-auto min-h-0 p-4 sm:p-8 pb-24 sm:pb-8">
-      <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+      <div class="max-w-4xl mx-auto space-y-6">
         <!-- Page Title -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
           <div>
-            <h1 class="text-xl font-semibold text-text">Edit Record</h1>
+            <h1 class="text-2xl font-bold text-text tracking-tight">Edit Record</h1>
             <p class="mt-1 text-sm text-text-muted">
-              Update record in {{ collectionName }} collection
+              Updating record <span class="font-mono text-primary">{{ recordId }}</span> in {{ collectionName }}
             </p>
           </div>
           <div class="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              class="px-3 py-1.5 text-sm"
               @click="router.push(`/collections/${collectionName}`)"
             >
               <X class="w-4 h-4" />
               Cancel
             </Button>
-            <Button type="submit" size="sm" class="px-3 py-1.5 text-sm">
+            <Button size="sm" @click="handleSubmit">
               <Save class="w-4 h-4" />
               Update
             </Button>
@@ -124,78 +180,83 @@ onMounted(() => {
 
         <form
           v-if="collection"
-          class="bg-surface-dark rounded-lg border border-border p-4 space-y-4"
+          class="space-y-6"
           @submit.prevent="handleSubmit"
         >
-          <div class="space-y-4">
-            <div v-for="field in collection.fields" :key="field.name">
-              <label :for="field.name" class="block text-sm font-medium text-text mb-1.5">
-                {{ field.name }}
-                <span v-if="field.required" class="text-error">*</span>
-              </label>
+          <div class="grid grid-cols-1 gap-6">
+            <div v-for="field in collection.fields" :key="field.name" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label :for="field.name" class="flex items-center gap-2 text-sm font-semibold text-text">
+                  <span>{{ field.name }}</span>
+                  <span v-if="field.required" class="text-error" title="Required">*</span>
+                </label>
+                <div 
+                  class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-dark border border-border text-[10px] font-bold uppercase tracking-widest text-text-muted"
+                >
+                  <component :is="getFieldIcon(field.type)" class="w-3 h-3" />
+                  {{ field.type }}
+                </div>
+              </div>
 
-              <Input
-                v-if="field.type === 'text'"
-                :model-value="String(formData[field.name] || '')"
-                type="text"
-                size="sm"
-                :required="field.required"
-                @update:model-value="formData[field.name] = $event"
-              />
-
-              <Input
-                v-else-if="field.type === 'number'"
-                :model-value="String(formData[field.name] || '')"
-                type="number"
-                size="sm"
-                :required="field.required"
-                @update:model-value="formData[field.name] = $event"
-              />
-
-              <Input
-                v-else-if="field.type === 'email'"
-                :model-value="String(formData[field.name] || '')"
-                type="email"
-                size="sm"
-                :required="field.required"
-                @update:model-value="formData[field.name] = $event"
-              />
-
-              <Input
-                v-else-if="field.type === 'date'"
-                :model-value="String(formData[field.name] || '')"
-                type="date"
-                size="sm"
-                :required="field.required"
-                @update:model-value="formData[field.name] = $event"
-              />
-
-              <div v-else-if="field.type === 'bool'" class="flex items-center">
-                <Checkbox
-                  :model-value="Boolean(formData[field.name])"
-                  label="Enable"
+              <div class="relative">
+                <Input
+                  v-if="field.type === 'text' || field.type === 'email' || field.type === 'date' || field.type === 'url'"
+                  :model-value="String(formData[field.name] || '')"
+                  :type="field.type === 'date' ? 'date' : field.type"
+                  size="md"
                   @update:model-value="formData[field.name] = $event"
+                  :class="{'!border-error !ring-error/20': errors[field.name]}"
+                />
+
+                <Input
+                  v-else-if="field.type === 'number'"
+                  :model-value="String(formData[field.name] || 0)"
+                  type="number"
+                  size="md"
+                  @update:model-value="formData[field.name] = Number($event)"
+                  :class="{'!border-error !ring-error/20': errors[field.name]}"
+                />
+
+                <div v-else-if="field.type === 'bool'" class="p-3 bg-surface border border-border rounded-lg">
+                  <Checkbox
+                    :model-value="Boolean(formData[field.name])"
+                    :label="Boolean(formData[field.name]) ? 'Enabled' : 'Disabled'"
+                    @update:model-value="formData[field.name] = $event"
+                  />
+                </div>
+
+                <Input
+                  v-else-if="field.type === 'json'"
+                  :model-value="typeof formData[field.name] === 'object' ? JSON.stringify(formData[field.name], null, 2) : String(formData[field.name] || '')"
+                  type="textarea"
+                  size="md"
+                  :rows="6"
+                  class="font-mono text-sm"
+                  @update:model-value="formData[field.name] = $event"
+                  :class="{'!border-error !ring-error/20': errors[field.name]}"
+                />
+
+                <div v-else-if="field.type === 'file'" class="p-8 border-2 border-dashed border-border rounded-lg bg-surface-dark/30 flex flex-col items-center justify-center text-text-muted">
+                   <FileText class="w-10 h-10 mb-2 opacity-20" />
+                   <p class="text-sm font-medium">File management via record forms coming soon</p>
+                   <p class="text-[11px] mt-1">Use Storage tab to manage media</p>
+                </div>
+
+                <Input
+                  v-else
+                  :model-value="String(formData[field.name] || '')"
+                  type="text"
+                  size="md"
+                  @update:model-value="formData[field.name] = $event"
+                  :class="{'!border-error !ring-error/20': errors[field.name]}"
                 />
               </div>
 
-              <Input
-                v-else-if="field.type === 'json'"
-                :model-value="String(formData[field.name] || '')"
-                type="textarea"
-                size="sm"
-                :required="field.required"
-                :rows="4"
-                @update:model-value="formData[field.name] = $event"
-              />
-
-              <Input
-                v-else
-                :model-value="String(formData[field.name] || '')"
-                type="text"
-                size="sm"
-                :required="field.required"
-                @update:model-value="formData[field.name] = $event"
-              />
+              <!-- Error Message -->
+              <div v-if="errors[field.name]" class="flex items-center gap-1.5 text-error text-[11px] font-medium">
+                <AlertCircle class="w-3.5 h-3.5" />
+                {{ errors[field.name] }}
+              </div>
             </div>
           </div>
         </form>

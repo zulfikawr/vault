@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI Enhancements** - Integrated custom favicon across the admin panel, sidebar, and login pages.
 - **Reusable Modal** - Introduced a general-purpose `Modal` component for consistent dialogs across the application, starting with the Storage view.
 - **File Management** - Added support for renaming files and folders, explicit directory creation, and batch deletion from the Storage view.
-- **Batch Operations** - Implemented multi-selection and batch deletion for both collection records and storage files.
+- **Batch Operations** - Implemented multi-selection and batch deletion for both collection records and storage files using a custom Checkbox component.
+- **Form Polishing** - Redesigned Record New/Edit forms with field type labels, icons, and improved validation.
+- **Storage Backend** - Added `Rename` and `CreateDir` methods to the Storage interface and Local implementation.
 - **File Upload Options** - Added support for preserving the original filename during upload with automatic sanitization.
 
 ### Fixed
