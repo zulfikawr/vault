@@ -88,6 +88,11 @@ func (mc *MigrateCommand) Sync(args []string) error {
 		return fmt.Errorf("failed to bootstrap audit logs collection: %w", err)
 	}
 
+	// Load existing collections from database
+	if err := registry.LoadFromDB(ctx); err != nil {
+		return fmt.Errorf("failed to load collections from database: %w", err)
+	}
+
 	// Get all collections
 	allCollections := registry.GetCollections()
 
@@ -190,6 +195,11 @@ func (mc *MigrateCommand) Status(args []string) error {
 
 	if err := registry.BootstrapAuditLogsCollection(); err != nil {
 		return fmt.Errorf("failed to bootstrap audit logs collection: %w", err)
+	}
+
+	// Load existing collections from database
+	if err := registry.LoadFromDB(ctx); err != nil {
+		return fmt.Errorf("failed to load collections from database: %w", err)
 	}
 
 	// Get all collections

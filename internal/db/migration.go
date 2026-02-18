@@ -152,6 +152,36 @@ func (m *MigrationEngine) updateTableTx(ctx context.Context, tx *sql.Tx, c *mode
 		}
 	}
 
+	// Ensure system columns exist
+	systemCols := map[string]string{
+		"created": "TEXT DEFAULT ''",
+		"updated": "TEXT DEFAULT ''",
+	}
+
+	for col, definition := range systemCols {
+		if !existingCols[col] {
+			query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", c.Name, col, definition)
+			if _, err := tx.ExecContext(ctx, query); err != nil {
+				return errors.NewError(http.StatusInternalServerError, "DB_ALTER_TABLE_FAILED", "Failed to add system column").WithDetails(map[string]any{"error": err.Error(), "field": col})
+			}
+			slog.Debug("Added system column", "collection", c.Name, "field", col, "request_id", core.GetRequestID(ctx))
+			
+			// Try to populate from created_at/updated_at if they exist
+			if col == "created" && existingCols["created_at"] {
+				updateQuery := fmt.Sprintf("UPDATE %s SET created = strftime('%%Y-%%m-%%dT%%H:%%M:%%SZ', created_at, 'unixepoch')", c.Name)
+				_, _ = tx.ExecContext(ctx, updateQuery)
+			}
+			if col == "updated" && existingCols["updated_at"] {
+				updateQuery := fmt.Sprintf("UPDATE %s SET updated = strftime('%%Y-%%m-%%dT%%H:%%M:%%SZ', updated_at, 'unixepoch')", c.Name)
+				_, _ = tx.ExecContext(ctx, updateQuery)
+			}
+			
+			// If still empty, use now
+			updateNow := fmt.Sprintf("UPDATE %s SET %s = strftime('%%Y-%%m-%%dT%%H:%%M:%%SZ', 'now') WHERE %s = ''", c.Name, col, col)
+			_, _ = tx.ExecContext(ctx, updateNow)
+		}
+	}
+
 	return nil
 }
 

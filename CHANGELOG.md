@@ -5,6 +5,16 @@ All notable changes to Vault will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-02-18
+
+### Added
+- **Record Counts** - Display record counts in `vault collection list` command for better data visibility.
+- **Auto-Migration** - Automatically ensure `created` and `updated` system columns exist and are populated during table migrations.
+
+### Fixed
+- **Type Safety** - Improved field mapping for records with safer type conversion from database values.
+- **Consistency** - Ensure collections are loaded from the database during migration sync and status checks.
+
 ## [0.8.0] - 2026-02-17
 
 ### Added

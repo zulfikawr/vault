@@ -118,10 +118,10 @@ func (r *Repository) FindRecordByID(ctx context.Context, collectionName string, 
 	}
 
 	record := &models.Record{
-		ID:         vals[0].(string),
+		ID:         fmt.Sprintf("%v", vals[0]),
 		Collection: collectionName,
-		Created:    vals[1].(string),
-		Updated:    vals[2].(string),
+		Created:    fmt.Sprintf("%v", vals[1]),
+		Updated:    fmt.Sprintf("%v", vals[2]),
 		Data:       make(map[string]any),
 	}
 
@@ -277,10 +277,10 @@ func (r *Repository) ListRecords(ctx context.Context, collectionName string, par
 		}
 
 		record := &models.Record{
-			ID:         vals[0].(string),
+			ID:         fmt.Sprintf("%v", vals[0]),
 			Collection: collectionName,
-			Created:    vals[1].(string),
-			Updated:    vals[2].(string),
+			Created:    fmt.Sprintf("%v", vals[1]),
+			Updated:    fmt.Sprintf("%v", vals[2]),
 			Data:       make(map[string]any),
 		}
 

@@ -194,6 +194,7 @@ func (cc *CollectionCommand) List(ctx context.Context, args []string) error {
 	maxNameLen := len("Name")
 	maxTypeLen := len("Type")
 	maxFieldsLen := len("Fields")
+	maxRecordsLen := len("Records")
 
 	for _, col := range collections {
 		if len(col.Name) > maxNameLen {
@@ -208,25 +209,51 @@ func (cc *CollectionCommand) List(ctx context.Context, args []string) error {
 		}
 	}
 
+	// Count records for each collection
+	recordCounts := make(map[string]int)
+	for _, col := range collections {
+		count, err := cc.countRecords(ctx, col.Name)
+		if err != nil {
+			recordCounts[col.Name] = 0
+		} else {
+			recordCounts[col.Name] = count
+		}
+		
+		recordCountStr := fmt.Sprintf("%d", recordCounts[col.Name])
+		if len(recordCountStr) > maxRecordsLen {
+			maxRecordsLen = len(recordCountStr)
+		}
+	}
+
 	fmt.Println("\nCollections:")
 	// Print top border
-	fmt.Printf("┌%s┬%s┬%s┐\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+	fmt.Printf("┌%s┬%s┬%s┬%s┐\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2), strings.Repeat("─", maxRecordsLen+2))
 	// Print header
-	fmt.Printf("│ %-*s │ %-*s │ %-*s │\n", maxNameLen, "Name", maxTypeLen, "Type", maxFieldsLen, "Fields")
+	fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │\n", maxNameLen, "Name", maxTypeLen, "Type", maxFieldsLen, "Fields", maxRecordsLen, "Records")
 	// Print separator
-	fmt.Printf("├%s┼%s┼%s┤\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+	fmt.Printf("├%s┼%s┼%s┼%s┤\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2), strings.Repeat("─", maxRecordsLen+2))
 	// Print data rows
 	for _, col := range collections {
-		fmt.Printf("│ %-*s │ %-*s │ %*d │\n", maxNameLen, col.Name, maxTypeLen, string(col.Type), maxFieldsLen, len(col.Fields))
+		fmt.Printf("│ %-*s │ %-*s │ %*d │ %*d │\n", maxNameLen, col.Name, maxTypeLen, string(col.Type), maxFieldsLen, len(col.Fields), maxRecordsLen, recordCounts[col.Name])
 	}
 
 	// Print bottom border
-	fmt.Printf("└%s┴%s┴%s┘\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2))
+	fmt.Printf("└%s┴%s┴%s┴%s┘\n", strings.Repeat("─", maxNameLen+2), strings.Repeat("─", maxTypeLen+2), strings.Repeat("─", maxFieldsLen+2), strings.Repeat("─", maxRecordsLen+2))
 
 	// Print total outside the table
 	fmt.Printf("\nTotal: %d collections\n\n", len(collections))
 
 	return nil
+}
+
+func (cc *CollectionCommand) countRecords(ctx context.Context, collectionName string) (int, error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", collectionName)
+	var count int
+	err := cc.db.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (cc *CollectionCommand) Get(ctx context.Context, args []string) error {
