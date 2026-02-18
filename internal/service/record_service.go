@@ -48,7 +48,8 @@ func (s *RecordService) CreateRecord(ctx context.Context, collectionName string,
 		return nil, err
 	}
 
-	createdRecord, err := s.repo.CreateRecord(ctx, collectionName, data)
+	// Use record.Data which might have been modified by hooks
+	createdRecord, err := s.repo.CreateRecord(ctx, collectionName, record.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,8 @@ func (s *RecordService) UpdateRecord(ctx context.Context, collectionName string,
 		return nil, err
 	}
 
-	updatedRecord, err := s.repo.UpdateRecord(ctx, collectionName, id, data)
+	// Use record.Data which might have been modified by hooks
+	updatedRecord, err := s.repo.UpdateRecord(ctx, collectionName, id, record.Data)
 	if err != nil {
 		return nil, err
 	}

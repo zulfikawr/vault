@@ -10,8 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Record Counts** - Display record counts in `vault collection list` command for better data visibility.
 - **Auto-Migration** - Automatically ensure `created` and `updated` system columns exist and are populated during table migrations.
+- **UI Enhancements** - Integrated custom favicon across the admin panel, sidebar, and login pages.
+- **Reusable Modal** - Introduced a general-purpose `Modal` component for consistent dialogs across the application, starting with the Storage view.
 
 ### Fixed
+- **Record Hooks** - Fixed a bug where data modified by hooks (e.g., password hashing) was not correctly persisted to the database.
 - **Type Safety** - Improved field mapping for records with safer type conversion from database values.
 - **Consistency** - Ensure collections are loaded from the database during migration sync and status checks.
 

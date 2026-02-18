@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth';
 import Button from '../components/Button.vue';
 import Input from '../components/Input.vue';
 import Checkbox from '../components/Checkbox.vue';
-import { Mail, KeyRound, AlertCircle, LockKeyhole } from 'lucide-vue-next';
+import { Mail, KeyRound, AlertCircle } from 'lucide-vue-next';
 
 const identity = ref('');
 const password = ref('');
@@ -80,7 +80,7 @@ onMounted(() => {
         <div
           class="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-surface border border-border shadow-lg mb-4 group transition-transform duration-300 hover:scale-105"
         >
-          <LockKeyhole class="text-primary w-8 h-8 group-hover:text-white transition-colors" />
+          <img src="/android-chrome-192x192.png" class="w-10 h-10 group-hover:scale-110 transition-transform" alt="Logo" />
         </div>
         <h1 class="text-3xl font-bold tracking-tight text-text mb-1">Vault Admin</h1>
         <p class="text-sm text-text-muted">Backend Management System</p>

@@ -6,6 +6,7 @@ import AppHeader from '../components/AppHeader.vue';
 import Button from '../components/Button.vue';
 import Table from '../components/Table.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import Modal from '../components/Modal.vue';
 import Input from '../components/Input.vue';
 import Popover from '../components/Popover.vue';
 import PopoverItem from '../components/PopoverItem.vue';
@@ -272,51 +273,50 @@ function getFileType(mimeType: string): string {
     />
 
     <!-- Upload Modal -->
-    <div
-      v-if="showUploadModal"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="showUploadModal = false"
-    >
-      <div class="bg-surface rounded-lg w-full max-w-md border border-border">
-        <div class="flex items-center justify-between p-6 border-b border-border">
-          <h2 class="text-lg font-semibold text-text">Upload File</h2>
-          <button class="text-text-muted hover:text-text" @click="showUploadModal = false">
-            ×
-          </button>
+    <Modal :show="showUploadModal" title="Upload File" maxWidth="2xl" @close="showUploadModal = false">
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-text">Target Collection</label>
+          <Input v-model="uploadForm.collection" placeholder="e.g., posts" class="w-full" />
+          <p class="text-[11px] text-text-muted italic">Specify which collection this file belongs to.</p>
         </div>
-        <div class="p-6 space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-muted mb-2">Collection</label>
-            <Input v-model="uploadForm.collection" placeholder="e.g., posts" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-text-muted mb-2">Record ID</label>
-            <Input v-model="uploadForm.recordID" placeholder="e.g., abc123" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-text-muted mb-2">File</label>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-text">Record ID</label>
+          <Input v-model="uploadForm.recordID" placeholder="e.g., abc123" class="w-full" />
+          <p class="text-[11px] text-text-muted italic">The specific record this file is attached to.</p>
+        </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-text">Choose File</label>
+          <div class="relative">
             <input
               type="file"
-              class="w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              class="w-full text-sm text-text-muted file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:transition-colors file:cursor-pointer border border-border rounded-lg p-1 bg-surface-dark/30"
               @change="handleFileSelect"
             />
           </div>
-          <div v-if="uploadProgress > 0" class="h-1 bg-surface-hover rounded overflow-hidden">
+        </div>
+        <div v-if="uploadProgress > 0" class="space-y-2">
+          <div class="flex justify-between text-xs font-medium text-primary">
+            <span>Uploading...</span>
+            <span>{{ uploadProgress }}%</span>
+          </div>
+          <div class="h-1.5 bg-surface-hover rounded-full overflow-hidden border border-border/50">
             <div
-              class="h-full bg-primary transition-all"
+              class="h-full bg-primary transition-all duration-300 ease-out shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"
               :style="{ width: uploadProgress + '%' }"
             ></div>
           </div>
         </div>
-        <div class="flex justify-end gap-3 p-6 border-t border-border">
-          <Button variant="secondary" @click="showUploadModal = false">Cancel</Button>
-          <Button :disabled="!canUpload" @click="uploadFile">
-            <template #leftIcon><Upload class="w-4 h-4" /></template>
-            Upload
-          </Button>
-        </div>
       </div>
-    </div>
+
+      <template #footer>
+        <Button variant="secondary" size="sm" @click="showUploadModal = false">Cancel</Button>
+        <Button :disabled="!canUpload || uploadProgress > 0" size="sm" @click="uploadFile">
+          <template #leftIcon><Upload class="w-4 h-4" /></template>
+          Start Upload
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Header -->
     <AppHeader>

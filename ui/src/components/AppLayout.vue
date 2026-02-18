@@ -91,11 +91,10 @@ onMounted(fetchCollections);
           class="h-16 flex items-center border-b border-border px-6"
           :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'justify-between'"
         >
-          <span
-            v-if="!sidebarCollapsed || isMobileMenuOpen"
-            class="font-bold text-lg tracking-tight text-primary"
-            >Vault</span
-          >
+          <div v-if="!sidebarCollapsed || isMobileMenuOpen" class="flex items-center gap-3">
+            <img src="/favicon-32x32.png" class="w-7 h-7 flex-shrink-0" alt="Vault logo" />
+            <span class="font-bold text-lg tracking-tight text-primary">Vault</span>
+          </div>
           <div class="hidden lg:block">
             <Button variant="ghost" size="sm" class="!p-2" @click="toggleSidebar">
               <ChevronLeft v-if="!sidebarCollapsed" class="w-5 h-5 text-text-muted" />
