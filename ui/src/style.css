@@ -2,26 +2,126 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-background: #282828;
-  --color-surface: #32302f;
-  --color-surface-dark: #1d2021;
-  --color-border: #504945;
-  --color-text: #ebdbb2;
-  --color-text-muted: #a89984;
-  --color-text-dim: #7c6f64;
-  --color-primary: #ee822b;
-  --color-primary-hover: #d9701a;
-  --color-secondary: #b8bb26;
-  --color-accent: #fabd2f;
-  --color-success: #b8bb26;
-  --color-error: #fb4934;
-  --color-warning: #fabd2f;
-  --color-info: #83a598;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-dark: var(--surface-dark);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
 }
 
 :root {
-  background-color: var(--color-background);
-  color: var(--color-text);
+  font-family: 'JetBrains Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* GRUVBOX (Default) */
+:root, .theme-gruvbox {
+  --background: #282828;
+  --surface: #32302f;
+  --surface-dark: #1d2021;
+  --border: #504945;
+  --text: #ebdbb2;
+  --text-muted: #a89984;
+  --text-dim: #7c6f64;
+  --primary: #ee822b;
+  --primary-hover: #d9701a;
+  --secondary: #b8bb26;
+  --accent: #fabd2f;
+  --success: #b8bb26;
+  --error: #fb4934;
+  --warning: #fabd2f;
+  --info: #83a598;
+}
+
+/* MONOKAI */
+.theme-monokai {
+  --background: #272822;
+  --surface: #3e3d32;
+  --surface-dark: #1e1f1c;
+  --border: #49483e;
+  --text: #f8f8f2;
+  --text-muted: #cfcfc2;
+  --text-dim: #75715e;
+  --primary: #f92672;
+  --primary-hover: #e02062;
+  --secondary: #a6e22e;
+  --accent: #fd971f;
+  --success: #a6e22e;
+  --error: #f92672;
+  --warning: #e6db74;
+  --info: #66d9ef;
+}
+
+/* NORD */
+.theme-nord {
+  --background: #2e3440;
+  --surface: #3b4252;
+  --surface-dark: #242933;
+  --border: #4c566a;
+  --text: #eceff4;
+  --text-muted: #d8dee9;
+  --text-dim: #616e88;
+  --primary: #88c0d0;
+  --primary-hover: #81a1c1;
+  --secondary: #a3be8c;
+  --accent: #ebcb8b;
+  --success: #a3be8c;
+  --error: #bf616a;
+  --warning: #ebcb8b;
+  --info: #81a1c1;
+}
+
+/* DRACULA */
+.theme-dracula {
+  --background: #282a36;
+  --surface: #44475a;
+  --surface-dark: #1e1f29;
+  --border: #6272a4;
+  --text: #f8f8f2;
+  --text-muted: #bd93f9;
+  --text-dim: #6272a4;
+  --primary: #bd93f9;
+  --primary-hover: #a179e0;
+  --secondary: #50fa7b;
+  --accent: #ff79c6;
+  --success: #50fa7b;
+  --error: #ff5555;
+  --warning: #f1fa8c;
+  --info: #8be9fd;
+}
+
+/* SOLARIZED */
+.theme-solarized {
+  --background: #002b36;
+  --surface: #073642;
+  --surface-dark: #001e26;
+  --border: #586e75;
+  --text: #839496;
+  --text-muted: #657b83;
+  --text-dim: #586e75;
+  --primary: #268bd2;
+  --primary-hover: #1e70a8;
+  --secondary: #859900;
+  --accent: #b58900;
+  --success: #859900;
+  --error: #dc322f;
+  --warning: #b58900;
+  --info: #2aa198;
+}
+
+:root {
+  background-color: var(--background);
+  color: var(--text);
   font-family: 'JetBrains Mono', monospace;
   -webkit-font-smoothing: antialiased;
 }

@@ -26,6 +26,13 @@ const emit = defineEmits<{
 }>();
 
 const isTextarea = () => props.type === 'textarea';
+
+const baseClasses = 'w-full bg-surface-dark/50 backdrop-blur-sm border border-border/50 rounded-xl text-text placeholder:text-text-dim/40 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all duration-300 font-mono disabled:opacity-30 disabled:cursor-not-allowed selection:bg-primary/20 shadow-inner';
+const sizeClasses = {
+  sm: 'px-3 h-8 text-xs',
+  md: 'px-4 h-10 text-sm',
+  lg: 'px-6 h-12 text-base',
+};
 </script>
 
 <template>
@@ -38,12 +45,9 @@ const isTextarea = () => props.type === 'textarea';
     :readonly="readonly"
     :rows="rows || 4"
     :class="[
-      'w-full bg-surface border border-border rounded-lg text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed',
-      props.size === 'sm'
-        ? 'px-3 py-1.5 text-sm'
-        : props.size === 'lg'
-          ? 'px-5 py-3 text-base'
-          : 'px-4 py-2.5 text-base',
+      'w-full bg-surface-dark/50 backdrop-blur-sm border border-border/50 rounded-xl text-text placeholder:text-text-dim/40 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all duration-300 font-mono disabled:opacity-30 disabled:cursor-not-allowed selection:bg-primary/20 shadow-inner',
+      props.size === 'sm' ? 'px-3 py-1.5 text-xs' : props.size === 'lg' ? 'px-6 py-4 text-base' : 'px-4 py-2.5 text-sm',
+      'resize-none'
     ]"
     @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
   />
@@ -56,12 +60,8 @@ const isTextarea = () => props.type === 'textarea';
     :disabled="disabled"
     :readonly="readonly"
     :class="[
-      'w-full bg-surface border border-border rounded-lg text-text placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed',
-      props.size === 'sm'
-        ? 'px-3 py-1.5 text-sm'
-        : props.size === 'lg'
-          ? 'px-5 py-3 text-base'
-          : 'px-4 py-2.5 text-base',
+      baseClasses,
+      sizeClasses[props.size],
     ]"
     @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />

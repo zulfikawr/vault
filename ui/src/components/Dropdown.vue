@@ -6,12 +6,14 @@ interface Props {
   align?: 'left' | 'right';
   modelValue?: string | number;
   size?: 'xs' | 'sm' | 'md' | 'lg';
+  headless?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   align: 'left',
   modelValue: '',
   size: 'md',
+  headless: false,
 });
 
 defineEmits<{
@@ -68,6 +70,12 @@ const close = () => {
   isOpen.value = false;
 };
 
+const handleEscape = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && isOpen.value) {
+    close();
+  }
+};
+
 const handleClickOutside = (event: MouseEvent) => {
   if (
     triggerRef.value &&
@@ -84,9 +92,11 @@ watch(isOpen, (val) => {
     updatePosition();
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
+    window.addEventListener('keydown', handleEscape);
   } else {
     window.removeEventListener('scroll', updatePosition, true);
     window.removeEventListener('resize', updatePosition);
+    window.removeEventListener('keydown', handleEscape);
   }
 });
 
@@ -98,6 +108,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('scroll', updatePosition, true);
   window.removeEventListener('resize', updatePosition);
+  window.removeEventListener('keydown', handleEscape);
 });
 
 defineExpose({ close });
@@ -106,17 +117,18 @@ defineExpose({ close });
 <template>
   <div class="relative inline-block w-full">
     <button
+      v-if="!headless"
       ref="triggerRef"
       type="button"
       :class="[
         'w-full bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all flex items-center justify-between',
         props.size === 'xs'
-          ? 'px-2 py-1 text-xs'
+          ? 'px-2 h-7 text-xs'
           : props.size === 'sm'
-            ? 'px-3 py-1.5 text-sm'
+            ? 'px-3 h-8 text-sm'
             : props.size === 'lg'
-              ? 'px-5 py-3 text-base'
-              : 'px-4 py-2.5 text-base',
+              ? 'px-5 h-12 text-base'
+              : 'px-4 h-10 text-sm',
       ]"
       @click="toggle"
     >
@@ -126,6 +138,10 @@ defineExpose({ close });
         :style="{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }"
       />
     </button>
+    
+    <div v-else ref="triggerRef" @click="toggle" class="cursor-pointer">
+      <slot name="trigger" />
+    </div>
 
     <Teleport to="body">
       <Transition name="dropdown">
