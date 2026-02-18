@@ -51,6 +51,7 @@ const showDeleteModal = ref(false);
 const showRenameModal = ref(false);
 const showNewFolderModal = ref(false);
 const fileToDelete = ref<FileInfo | null>(null);
+const selectedPaths = ref<string[]>([]);
 const fileToRename = ref<FileInfo | null>(null);
 const newName = ref('');
 const newFolderName = ref('');
@@ -256,19 +257,22 @@ async function createFolder() {
 }
 
 async function deleteFile() {
-  if (!fileToDelete.value) return;
+  if (selectedPaths.value.length === 0 && !fileToDelete.value) return;
 
   try {
-    const data: { path: string; recursive?: boolean } = { path: fileToDelete.value.path };
+    const pathsToDelete = selectedPaths.value.length > 0 ? selectedPaths.value : [fileToDelete.value!.path];
+    const recursive = true; // For simplicity in batch delete
 
-    // If it's a directory, add recursive flag
-    if (fileToDelete.value.isFolder) {
-      data.recursive = true;
-    }
+    await axios.delete('/api/admin/storage', {
+      data: {
+        paths: pathsToDelete,
+        recursive,
+      },
+    });
 
-    await axios.delete('/api/admin/storage', { data });
     showDeleteModal.value = false;
     fileToDelete.value = null;
+    selectedPaths.value = [];
     loadStats();
     loadFiles(currentPath.value);
   } catch (err) {
@@ -453,6 +457,15 @@ function getFileType(mimeType: string): string {
             <p class="mt-1 text-sm text-text-muted">Manage uploaded files and media assets.</p>
           </div>
           <div class="flex gap-3">
+            <Button
+              v-if="selectedPaths.length > 0"
+              variant="destructive"
+              size="sm"
+              @click="showDeleteModal = true"
+            >
+              <template #leftIcon><Trash2 class="w-4 h-4" /></template>
+              Delete Selected ({{ selectedPaths.length }})
+            </Button>
             <Button variant="secondary" size="sm" @click="showNewFolderModal = true">
               <template #leftIcon><FolderPlus class="w-4 h-4" /></template>
               New Folder
@@ -491,6 +504,9 @@ function getFileType(mimeType: string): string {
           :sort-key="sortKey"
           :sort-order="sortOrder"
           row-clickable
+          selectable
+          selection-key="path"
+          @selection-change="selectedPaths = $event"
           @sort-change="
             (key, order) => {
               sortKey = key;

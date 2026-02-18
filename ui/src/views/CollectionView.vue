@@ -36,6 +36,7 @@ const collection = ref<Collection | null>(null);
 const records = ref<RecordData[]>([]);
 const showDeleteModal = ref(false);
 const recordToDelete = ref('');
+const selectedRecords = ref<string[]>([]);
 const visibleFields = ref<Record<string, boolean>>({});
 
 const collectionName = computed(() => route.params.name as string);
@@ -88,12 +89,21 @@ const confirmDelete = (id: string) => {
 
 const deleteRecord = async () => {
   try {
-    await axios.delete(`/api/collections/${collectionName.value}/records/${recordToDelete.value}`);
+    if (selectedRecords.value.length > 0) {
+      await axios.delete(`/api/collections/${collectionName.value}/records`, {
+        data: { ids: selectedRecords.value },
+      });
+    } else {
+      await axios.delete(`/api/collections/${collectionName.value}/records/${recordToDelete.value}`);
+    }
+
     showDeleteModal.value = false;
     recordToDelete.value = '';
+    selectedRecords.value = [];
     fetchRecords();
   } catch (error) {
     console.error('Delete failed', error);
+    alert('Delete failed');
   }
 };
 
@@ -144,6 +154,16 @@ onMounted(() => {
             </p>
           </div>
           <div class="flex items-center gap-3">
+            <Button
+              v-if="selectedRecords.length > 0"
+              variant="destructive"
+              size="sm"
+              class="flex-1 sm:flex-none animate-in fade-in slide-in-from-right-4 duration-300"
+              @click="showDeleteModal = true"
+            >
+              <template #leftIcon><Trash2 class="w-4 h-4" /></template>
+              Delete Selected ({{ selectedRecords.length }})
+            </Button>
             <Button
               variant="secondary"
               size="sm"
@@ -199,6 +219,9 @@ onMounted(() => {
           :items="records"
           :enable-pagination="true"
           :default-page-size="15"
+          selectable
+          selection-key="id"
+          @selection-change="selectedRecords = $event"
         >
           <template
             v-for="field in filteredFields"

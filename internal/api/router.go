@@ -58,6 +58,7 @@ func NewRouter(
 	// CRUD routes (Dynamic)
 	mux.HandleFunc("GET /api/collections/{collection}/records", crudHandler.List)
 	mux.HandleFunc("POST /api/collections/{collection}/records", crudHandler.Create)
+	mux.HandleFunc("DELETE /api/collections/{collection}/records", crudHandler.BatchDelete)
 	mux.HandleFunc("GET /api/collections/{collection}/records/{id}", crudHandler.View)
 	mux.HandleFunc("PATCH /api/collections/{collection}/records/{id}", crudHandler.Update)
 	mux.HandleFunc("DELETE /api/collections/{collection}/records/{id}", crudHandler.Delete)

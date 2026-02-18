@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DropdownItem from './DropdownItem.vue';
+import Checkbox from './Checkbox.vue';
 import {
   ChevronFirst,
   ChevronLast,
@@ -29,6 +30,8 @@ interface Props {
   defaultPageSize?: number;
   sortKey?: string;
   sortOrder?: 'asc' | 'desc';
+  selectable?: boolean;
+  selectionKey?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,12 +42,57 @@ const props = withDefaults(defineProps<Props>(), {
   defaultPageSize: 20,
   sortKey: undefined,
   sortOrder: 'asc',
+  selectable: false,
+  selectionKey: 'id',
 });
 
 const emit = defineEmits<{
   rowClick: [item: Record<string, unknown>, event: Event];
   sortChange: [sortKey: string, sortOrder: 'asc' | 'desc'];
+  selectionChange: [selectedKeys: any[]];
 }>();
+
+const selectedKeys = ref<any[]>([]);
+
+const toggleItem = (item: Record<string, unknown>) => {
+  const key = item[props.selectionKey] as any;
+  const index = selectedKeys.value.indexOf(key);
+  if (index > -1) {
+    selectedKeys.value.splice(index, 1);
+  } else {
+    selectedKeys.value.push(key);
+  }
+  emit('selectionChange', selectedKeys.value);
+};
+
+const isItemSelected = (item: Record<string, unknown>) => {
+  return selectedKeys.value.includes(item[props.selectionKey] as any);
+};
+
+const isAllSelected = computed({
+  get: () => {
+    if (paginatedItems.value.length === 0) return false;
+    return paginatedItems.value.every((item) =>
+      selectedKeys.value.includes(item[props.selectionKey] as any)
+    );
+  },
+  set: (value: boolean) => {
+    if (value) {
+      const currentPageKeys = paginatedItems.value.map((item) => item[props.selectionKey] as any);
+      // Merge with already selected keys (if any from other pages)
+      const otherPageKeys = selectedKeys.value.filter(
+        (key) => !paginatedItems.value.some((item) => item[props.selectionKey] === key)
+      );
+      selectedKeys.value = [...otherPageKeys, ...currentPageKeys];
+    } else {
+      // Unselect only current page items
+      selectedKeys.value = selectedKeys.value.filter(
+        (key) => !paginatedItems.value.some((item) => item[props.selectionKey] === key)
+      );
+    }
+    emit('selectionChange', selectedKeys.value);
+  },
+});
 
 const handleSort = (headerKey: string) => {
   if (!props.headers.find((h) => h.key === headerKey)?.sortable) {
@@ -163,6 +211,9 @@ const getFlexAlignClass = (align?: string) => {
       <table class="w-full text-left text-sm whitespace-nowrap">
         <thead class="bg-surface border-b border-border">
           <tr>
+            <th v-if="selectable" class="px-4 py-3 w-4">
+              <Checkbox v-model="isAllSelected" size="sm" />
+            </th>
             <th
               v-for="header in headers"
               :key="header.key"
@@ -208,6 +259,14 @@ const getFlexAlignClass = (align?: string) => {
             ]"
             @click="rowClickable ? emit('rowClick', item, $event) : null"
           >
+            <td v-if="selectable" class="px-4 py-4 w-4">
+              <Checkbox
+                :model-value="isItemSelected(item)"
+                size="sm"
+                @update:model-value="toggleItem(item)"
+                @click.stop
+              />
+            </td>
             <td
               v-for="header in headers"
               :key="header.key"
@@ -224,7 +283,7 @@ const getFlexAlignClass = (align?: string) => {
           </tr>
 
           <tr v-if="paginatedItems.length === 0 && !loading">
-            <td :colspan="headers.length" class="px-4 sm:px-6 py-12 text-center text-text-muted">
+            <td :colspan="headers.length + (selectable ? 1 : 0)" class="px-4 sm:px-6 py-12 text-center text-text-muted">
               <slot name="empty">
                 <p class="text-sm">{{ emptyText }}</p>
               </slot>
@@ -232,7 +291,7 @@ const getFlexAlignClass = (align?: string) => {
           </tr>
 
           <tr v-if="loading">
-            <td :colspan="headers.length" class="px-4 sm:px-6 py-12 text-center text-text-muted">
+            <td :colspan="headers.length + (selectable ? 1 : 0)" class="px-4 sm:px-6 py-12 text-center text-text-muted">
               <div class="flex justify-center">
                 <svg
                   class="animate-spin h-6 w-6 text-primary"

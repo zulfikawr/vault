@@ -222,6 +222,49 @@ func (h *CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *CollectionHandler) BatchDelete(w http.ResponseWriter, r *http.Request) {
+	collectionName := r.PathValue("collection")
+	col, ok := h.registry.GetCollection(collectionName)
+	if !ok {
+		errors.SendError(w, errors.NewError(http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"))
+		return
+	}
+
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "INVALID_BODY", "Failed to decode request body"))
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		errors.SendError(w, errors.NewError(http.StatusBadRequest, "MISSING_IDS", "At least one ID is required"))
+		return
+	}
+
+	for _, id := range req.IDs {
+		// Fetch current for rule evaluation
+		existing, err := h.recordService.FindRecordByID(r.Context(), collectionName, id)
+		if err != nil {
+			continue // Skip if not found
+		}
+
+		// Rule Check
+		if col.DeleteRule != nil && *col.DeleteRule != "" {
+			evalCtx := service.GetEvaluationContext(r, existing.Data)
+			allowed, err := rules.Evaluate(*col.DeleteRule, evalCtx)
+			if !allowed || err != nil {
+				continue // Skip if forbidden
+			}
+		}
+
+		_ = h.recordService.DeleteRecord(r.Context(), collectionName, id)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *CollectionHandler) parseQueryParams(r *http.Request) db.QueryParams {
 	q := r.URL.Query()
 
