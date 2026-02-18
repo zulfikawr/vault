@@ -83,6 +83,8 @@ func NewRouter(
 	adminRouter.HandleFunc("GET /storage", storageHandler.List)
 	adminRouter.HandleFunc("GET /storage/stats", storageHandler.Stats)
 	adminRouter.HandleFunc("DELETE /storage", storageHandler.Delete)
+	adminRouter.HandleFunc("POST /storage/rename", storageHandler.Rename)
+	adminRouter.HandleFunc("POST /storage/mkdir", storageHandler.CreateDir)
 	adminRouter.HandleFunc("POST /query", adminHandler.ExecuteQuery)
 
 	// Apply rate limiting to admin operations

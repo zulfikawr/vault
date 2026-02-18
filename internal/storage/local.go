@@ -65,6 +65,32 @@ func (l *Local) Delete(ctx context.Context, path string) error {
 	return nil
 }
 
+func (l *Local) Rename(ctx context.Context, oldPath, newPath string) error {
+	oldFullPath := filepath.Join(l.basePath, oldPath)
+	newFullPath := filepath.Join(l.basePath, newPath)
+
+	// Ensure destination directory exists
+	if err := os.MkdirAll(filepath.Dir(newFullPath), 0755); err != nil {
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_DIR_CREATE_FAILED", "Failed to create destination directory").WithDetails(map[string]any{"error": err.Error(), "path": newPath})
+	}
+
+	if err := os.Rename(oldFullPath, newFullPath); err != nil {
+		if os.IsNotExist(err) {
+			return errors.NewError(http.StatusNotFound, "FILE_NOT_FOUND", "Original file not found")
+		}
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_RENAME_FAILED", "Failed to rename file").WithDetails(map[string]any{"error": err.Error(), "old_path": oldPath, "new_path": newPath})
+	}
+	return nil
+}
+
+func (l *Local) CreateDir(ctx context.Context, path string) error {
+	fullPath := filepath.Join(l.basePath, path)
+	if err := os.MkdirAll(fullPath, 0755); err != nil {
+		return errors.NewError(http.StatusInternalServerError, "STORAGE_DIR_CREATE_FAILED", "Failed to create directory").WithDetails(map[string]any{"error": err.Error(), "path": path})
+	}
+	return nil
+}
+
 func (l *Local) Exists(ctx context.Context, path string) (bool, error) {
 	fullPath := filepath.Join(l.basePath, path)
 	_, err := os.Stat(fullPath)

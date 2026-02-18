@@ -19,6 +19,8 @@ import {
   File,
   MoreHorizontal,
   Settings,
+  Pencil,
+  FolderPlus,
 } from 'lucide-vue-next';
 
 interface FileInfo {
@@ -46,7 +48,12 @@ const stats = ref<StorageStats>({ total_files: 0, total_size: 0, total_collectio
 const loading = ref(false);
 const showUploadModal = ref(false);
 const showDeleteModal = ref(false);
+const showRenameModal = ref(false);
+const showNewFolderModal = ref(false);
 const fileToDelete = ref<FileInfo | null>(null);
+const fileToRename = ref<FileInfo | null>(null);
+const newName = ref('');
+const newFolderName = ref('');
 const uploadForm = ref({ collection: '', recordID: '', file: null as File | null, preserveName: true });
 const uploadProgress = ref(0);
 
@@ -205,6 +212,49 @@ function confirmDelete(file: FileInfo) {
   showDeleteModal.value = true;
 }
 
+function confirmRename(file: FileInfo) {
+  fileToRename.value = file;
+  newName.value = file.name;
+  showRenameModal.value = true;
+}
+
+async function renameFile() {
+  if (!fileToRename.value || !newName.value || newName.value === fileToRename.value.name) {
+    showRenameModal.value = false;
+    return;
+  }
+
+  try {
+    await axios.post('/api/admin/storage/rename', {
+      old_path: fileToRename.value.path,
+      new_name: newName.value,
+    });
+    showRenameModal.value = false;
+    fileToRename.value = null;
+    loadFiles(currentPath.value);
+  } catch (err: any) {
+    console.error('Rename error:', err);
+    alert(err.response?.data?.message || 'Rename failed');
+  }
+}
+
+async function createFolder() {
+  if (!newFolderName.value) return;
+
+  try {
+    await axios.post('/api/admin/storage/mkdir', {
+      path: currentPath.value,
+      name: newFolderName.value,
+    });
+    showNewFolderModal.value = false;
+    newFolderName.value = '';
+    loadFiles(currentPath.value);
+  } catch (err: any) {
+    console.error('Create folder error:', err);
+    alert(err.response?.data?.message || 'Failed to create folder');
+  }
+}
+
 async function deleteFile() {
   if (!fileToDelete.value) return;
 
@@ -273,6 +323,44 @@ function getFileType(mimeType: string): string {
       @confirm="deleteFile"
       @cancel="showDeleteModal = false"
     />
+
+    <!-- New Folder Modal -->
+    <Modal :show="showNewFolderModal" title="Create Folder" maxWidth="sm" @close="showNewFolderModal = false">
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-text">Folder Name</label>
+          <Input v-model="newFolderName" placeholder="e.g. documents" class="w-full" @keyup.enter="createFolder" />
+          <p class="text-[11px] text-text-muted italic">Create a new directory in current path.</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button variant="secondary" size="sm" @click="showNewFolderModal = false">Cancel</Button>
+        <Button :disabled="!newFolderName" size="sm" @click="createFolder">
+          <template #leftIcon><FolderPlus class="w-4 h-4" /></template>
+          Create
+        </Button>
+      </template>
+    </Modal>
+
+    <!-- Rename Modal -->
+    <Modal :show="showRenameModal" title="Rename" maxWidth="sm" @close="showRenameModal = false">
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-text">New Name</label>
+          <Input v-model="newName" placeholder="Enter new name" class="w-full" @keyup.enter="renameFile" />
+          <p class="text-[11px] text-text-muted italic">Renaming '{{ fileToRename?.name }}'</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button variant="secondary" size="sm" @click="showRenameModal = false">Cancel</Button>
+        <Button :disabled="!newName || newName === fileToRename?.name" size="sm" @click="renameFile">
+          <template #leftIcon><Pencil class="w-4 h-4" /></template>
+          Rename
+        </Button>
+      </template>
+    </Modal>
 
     <!-- Upload Modal -->
     <Modal :show="showUploadModal" title="Upload File" maxWidth="2xl" @close="showUploadModal = false">
@@ -364,10 +452,16 @@ function getFileType(mimeType: string): string {
             <h1 class="text-2xl font-bold text-text tracking-tight">Storage Bucket</h1>
             <p class="mt-1 text-sm text-text-muted">Manage uploaded files and media assets.</p>
           </div>
-          <Button size="sm" @click="showUploadModal = true">
-            <template #leftIcon><Upload class="w-4 h-4" /></template>
-            Upload File
-          </Button>
+          <div class="flex gap-3">
+            <Button variant="secondary" size="sm" @click="showNewFolderModal = true">
+              <template #leftIcon><FolderPlus class="w-4 h-4" /></template>
+              New Folder
+            </Button>
+            <Button size="sm" @click="showUploadModal = true">
+              <template #leftIcon><Upload class="w-4 h-4" /></template>
+              Upload File
+            </Button>
+          </div>
         </div>
 
         <!-- Stats Cards -->
@@ -459,6 +553,15 @@ function getFileType(mimeType: string): string {
                   </PopoverItem>
                   <PopoverItem v-if="item.isFolder" :icon="Settings" @click="close()">
                     Settings
+                  </PopoverItem>
+                  <PopoverItem
+                    :icon="Pencil"
+                    @click="
+                      close();
+                      confirmRename(item as unknown as FileInfo);
+                    "
+                  >
+                    Rename
                   </PopoverItem>
                   <PopoverItem
                     v-if="!item.isFolder"

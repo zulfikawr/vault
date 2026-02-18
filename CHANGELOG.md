@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Auto-Migration** - Automatically ensure `created` and `updated` system columns exist and are populated during table migrations.
 - **UI Enhancements** - Integrated custom favicon across the admin panel, sidebar, and login pages.
 - **Reusable Modal** - Introduced a general-purpose `Modal` component for consistent dialogs across the application, starting with the Storage view.
+- **File Management** - Added support for renaming files and folders, and explicit directory creation directly from the Storage view.
 - **File Upload Options** - Added support for preserving the original filename during upload with automatic sanitization.
 
 ### Fixed
